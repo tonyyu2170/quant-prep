@@ -4,3 +4,4 @@ export * from "./parse";
 export * from "./grade";
 export * from "./session";
 export * from "./presets";
+export * from "./stats";

@@ -22,7 +22,7 @@ export const PRESETS: Record<string, Preset> = {
 };
 
 Object.freeze(PRESETS);
-for (const p of Object.values(PRESETS)) Object.freeze(p);
+for (const p of Object.values(PRESETS)) { Object.freeze(p); Object.freeze(p.scoring); }
 
 export function getPreset(id: string): Preset | null {
   return Object.hasOwn(PRESETS, id) ? PRESETS[id] : null;
