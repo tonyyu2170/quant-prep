@@ -19,4 +19,24 @@ describe("parseAnswer", () => {
     expect(parseAnswer("1/0")).toBeNull();
     expect(parseAnswer("1/2/3")).toBeNull();
   });
+  it("accepts hardened forms (leading/trailing dot, plus sign, unicode minus, spaced fraction)", () => {
+    expect(parseAnswer(".5")).toBeCloseTo(0.5);
+    expect(parseAnswer("-.5")).toBeCloseTo(-0.5);
+    expect(parseAnswer("3.")).toBe(3);
+    expect(parseAnswer("+5")).toBe(5);
+    expect(parseAnswer("−4")).toBe(-4);
+    expect(parseAnswer("–5")).toBe(-5);
+    expect(parseAnswer("1 / 2")).toBeCloseTo(0.5);
+  });
+  it("still rejects malformed input", () => {
+    expect(parseAnswer(".")).toBeNull();
+    expect(parseAnswer("-")).toBeNull();
+    expect(parseAnswer("1.2.3")).toBeNull();
+    expect(parseAnswer("--4")).toBeNull();
+    expect(parseAnswer("4-")).toBeNull();
+    expect(parseAnswer("1 2")).toBeNull();
+    expect(parseAnswer("1e3")).toBeNull();
+    expect(parseAnswer("1//2")).toBeNull();
+    expect(parseAnswer("/2")).toBeNull();
+  });
 });
