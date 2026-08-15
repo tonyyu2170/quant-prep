@@ -9,8 +9,8 @@ function recompute(meta: Record<string, number | string>): number {
     case "sub": return a - b;
     case "mul": return a * b;
     case "div": return a / b;
-    case "pct": return (a / 100) * b;
-    case "dec": return Math.round(a * b * 100) / 100;
+    case "pct": return (a * b) / 100;
+    case "dec": return (Math.round(a * 10) * b) / 10;
     default: throw new Error("unknown op " + meta.op);
   }
 }
@@ -25,7 +25,9 @@ describe("arithmeticItem", () => {
     for (let i = 0; i < 2000; i++) {
       const d = ((i % 3) + 1) as 1 | 2 | 3;
       const item = arithmeticItem(rng, d);
-      expect(item.answer, item.prompt).toBeCloseTo(recompute(item.meta), 10);
+      expect(item.answer, item.prompt).toBe(recompute(item.meta));
+      expect(Number.isInteger(item.answer * 10), item.prompt).toBe(true);
+      if (item.meta.op === "sub") expect(item.answer).toBeGreaterThanOrEqual(0);
       expect(item.topic).toBe("arithmetic");
     }
   });

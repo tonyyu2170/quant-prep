@@ -10,12 +10,11 @@ const RANGES: Record<1 | 2 | 3, { small: [number, number]; big: [number, number]
   3: { small: [21, 99], big: [101, 999], mul: [31, 99] },
 };
 
-let counter = 0;
-
 export function arithmeticItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
   const r = RANGES[difficulty];
   const op = pick(rng, ARITH_OPS);
   let a: number, b: number, answer: number, prompt: string;
+  // Every branch consumes exactly 3 rng draws (op pick + 2 operand draws) — keeps seed replay stream-aligned.
   switch (op) {
     case "add":
       a = randInt(rng, ...r.big); b = randInt(rng, ...r.big);
@@ -41,5 +40,5 @@ export function arithmeticItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
       b = randInt(rng, 2, 9);
       answer = Math.round(a * b * 100) / 100; prompt = `${a} × ${b}`; break;
   }
-  return { id: `arith-${counter++}`, topic: "arithmetic", prompt, answer, meta: { op, a, b } };
+  return { id: `arith-${difficulty}-${op}-${a}-${b}`, topic: "arithmetic", prompt, answer, meta: { op, a, b } };
 }
