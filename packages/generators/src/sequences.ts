@@ -34,10 +34,10 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
       return { terms, answer, rule: `Two interleaved streams: +${d1} and ${d2}` };
     }
     case "recur-linear": {
-      const a = randInt(rng, 2, 3), b = randInt(rng, 1, 9), len = 5;
+      const a = randInt(rng, 2, 3), b = randInt(rng, 1, 9);
       const terms = [randInt(rng, 1, 5)];
-      for (let i = 1; i < len; i++) terms.push(a * terms[i - 1] + b);
-      return { terms, answer: a * terms[len - 1] + b, rule: `Each term = ${a}×previous + ${b}` };
+      for (let i = 1; i < n; i++) terms.push(a * terms[i - 1] + b);
+      return { terms, answer: a * terms[n - 1] + b, rule: `Each term = ${a}×previous + ${b}` };
     }
     case "fiblike": {
       const terms = [randInt(rng, 1, 9), randInt(rng, 1, 9)];
@@ -45,10 +45,10 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
       return { terms, answer: terms[n - 1] + terms[n - 2], rule: "Each term = sum of previous two" };
     }
     case "alt-ops": {
-      const a = randInt(rng, 2, 9), b = randInt(rng, 2, 3), len = 5;
+      const a = randInt(rng, 2, 9), b = randInt(rng, 2, 3);
       const terms = [randInt(rng, 1, 6)];
-      for (let i = 1; i < len; i++) terms.push(i % 2 === 1 ? terms[i - 1] + a : terms[i - 1] * b);
-      const answer = len % 2 === 1 ? terms[len - 1] + a : terms[len - 1] * b;
+      for (let i = 1; i < n; i++) terms.push(i % 2 === 1 ? terms[i - 1] + a : terms[i - 1] * b);
+      const answer = n % 2 === 1 ? terms[n - 1] + a : terms[n - 1] * b;
       return { terms, answer, rule: `Alternating: +${a}, then ×${b}`, extra: { a, b } };
     }
     case "squares-offset": {
