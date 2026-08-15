@@ -40,5 +40,5 @@ export function arithmeticItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
       b = randInt(rng, 2, 9);
       answer = Math.round(a * b * 100) / 100; prompt = `${a} × ${b}`; break;
   }
-  return { id: `arith-${difficulty}-${op}-${a}-${b}`, topic: "arithmetic", prompt, answer, meta: { op, a, b } };
+  return { id: `arith-${op}-${a}-${b}`, topic: "arithmetic", prompt, answer, meta: { op, a, b } };
 }
