@@ -18,7 +18,7 @@ function recompute(meta: Record<string, number | string>): number {
 describe("arithmeticItem", () => {
   it("is deterministic per seed", () => {
     const x = arithmeticItem(makeRng(9), 2), y = arithmeticItem(makeRng(9), 2);
-    expect({ ...x, id: "" }).toEqual({ ...y, id: "" });
+    expect(x).toEqual(y);
   });
   it("answers verify against independent recomputation across 2000 draws and all difficulties", () => {
     const rng = makeRng(1234);
