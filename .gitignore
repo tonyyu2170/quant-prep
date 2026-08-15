@@ -1,0 +1,14 @@
+# brainstorm companion mockups (session-local)
+.superpowers/
+
+# dependencies & builds (future)
+node_modules/
+.next/
+out/
+
+# env & secrets
+.env
+.env.*
+
+# misc
+.DS_Store
