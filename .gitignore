@@ -12,3 +12,6 @@ out/
 
 # misc
 .DS_Store
+
+# git worktrees
+.worktrees/
