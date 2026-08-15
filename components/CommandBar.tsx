@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isFocusMode } from "@/lib/routes";
 
 const links = [
   { href: "/drills/arithmetic", label: "Drills" },
@@ -10,7 +11,7 @@ const links = [
 
 export default function CommandBar() {
   const path = usePathname();
-  if (path?.startsWith("/test/")) return null; // focus mode: chrome disappears (spec §5)
+  if (isFocusMode(path)) return null; // focus mode: chrome disappears (spec §5)
   const activeFor = (href: string) => path?.startsWith("/" + href.split("/")[1]);
   return (
     <nav style={{ background: "var(--ink)", color: "var(--paper)" }}>
