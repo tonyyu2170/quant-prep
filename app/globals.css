@@ -1,0 +1,16 @@
+:root {
+  --paper: #FFF1E5; --surface: #FFFAF4; --card-border: #F0DFD0; --rule: #EBD9C6;
+  --ink: #33302E; --body: #4A453F; --muted: #8C8378; --faint: #A79886;
+  --teal: #0D7680; --teal-on-ink: #4FB3BF;
+  --good: #147D64; --bad: #B4231F;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); color: var(--ink); }
+body { font-family: var(--font-ui), sans-serif; line-height: 1.5; }
+.mono { font-family: var(--font-mono), monospace; }
+a { color: var(--teal); text-decoration: none; cursor: pointer; }
+button { cursor: pointer; font: inherit; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.microlabel { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--faint); }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
