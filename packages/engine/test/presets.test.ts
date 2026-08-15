@@ -19,4 +19,18 @@ describe("presets", () => {
   it("unknown preset returns null", () => {
     expect(getPreset("nope")).toBeNull();
   });
+  it("sequences-sprint matches the documented format", () => {
+    expect(getPreset("sequences-sprint")).toMatchObject({ count: 20, durationS: 480, topic: "sequences", scoring: { correct: 1, wrong: 0, skip: 0 } });
+  });
+  it("difficulty boundaries are exact", () => {
+    const o = getPreset("optiver-80in8")!;
+    expect([o.difficulty(0), o.difficulty(19), o.difficulty(20), o.difficulty(54), o.difficulty(55), o.difficulty(79)]).toEqual([1, 1, 2, 2, 3, 3]);
+    const s = getPreset("sequences-sprint")!;
+    expect([s.difficulty(0), s.difficulty(6), s.difficulty(7), s.difficulty(13), s.difficulty(14), s.difficulty(19)]).toEqual([1, 1, 2, 2, 3, 3]);
+  });
+  it("rejects prototype-chain keys", () => {
+    expect(getPreset("toString")).toBeNull();
+    expect(getPreset("__proto__")).toBeNull();
+    expect(getPreset("constructor")).toBeNull();
+  });
 });

@@ -21,6 +21,9 @@ export const PRESETS: Record<string, Preset> = {
   },
 };
 
+Object.freeze(PRESETS);
+for (const p of Object.values(PRESETS)) Object.freeze(p);
+
 export function getPreset(id: string): Preset | null {
-  return PRESETS[id] ?? null;
+  return Object.hasOwn(PRESETS, id) ? PRESETS[id] : null;
 }

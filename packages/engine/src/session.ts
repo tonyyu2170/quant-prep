@@ -19,7 +19,8 @@ export interface Summary {
 }
 
 export function startSession(preset: Preset, items: Item[], seed: number): SessionState {
-  return { preset, seed, items: items.slice(0, preset.count), index: 0, answers: [], grades: [], timings: [], finished: items.length === 0 };
+  const sliced = items.slice(0, preset.count);
+  return { preset, seed, items: sliced, index: 0, answers: [], grades: [], timings: [], finished: sliced.length === 0 };
 }
 
 function advance(s: SessionState, answer: number | null, ok: boolean, elapsedMs: number): SessionState {

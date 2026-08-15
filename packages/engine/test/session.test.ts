@@ -34,4 +34,41 @@ describe("timed session", () => {
     s = answerCurrent(s, 4, 10); s = answerCurrent(s, 6, 10); s = answerCurrent(s, 1, 10);
     expect(s.grades).toEqual([true, true, false]);
   });
+  it("summarize stays coherent when the timer expires mid-session", () => {
+    let s = startSession(preset, items, 7);
+    s = answerCurrent(s, 4, 100);
+    const sum = summarize({ ...s, finished: true });
+    expect(sum).toMatchObject({ score: 1, correct: 1, wrong: 0, skipped: 0, total: 1 });
+    expect(sum.correct + sum.wrong + sum.skipped).toBe(sum.total);
+  });
+  it("terminates gracefully when items are fewer than preset.count", () => {
+    let s = startSession(preset, items.slice(0, 2), 1);
+    s = answerCurrent(s, 4, 10);
+    s = answerCurrent(s, 6, 10);
+    expect(s.finished).toBe(true);
+    expect(answerCurrent(s, 1, 10)).toBe(s);
+    expect(summarize(s).total).toBe(2);
+  });
+  it("starts finished when count is 0", () => {
+    const s = startSession({ ...preset, count: 0 }, items, 1);
+    expect(s.finished).toBe(true);
+    expect(skipCurrent(s, 1)).toBe(s);
+  });
+  it("treats answer 0 as an answer, not a skip", () => {
+    const zeroItems: Item[] = [{ id: "z", topic: "arithmetic", prompt: "5 − 5", answer: 0, meta: {} }];
+    let s = startSession({ ...preset, count: 1 }, zeroItems, 1);
+    s = answerCurrent(s, 0, 10);
+    expect(summarize(s)).toMatchObject({ correct: 1, skipped: 0 });
+  });
+  it("applies a nonzero skip penalty via preset scoring", () => {
+    const p: Preset = { ...preset, scoring: { correct: 1, wrong: -2, skip: -1 } };
+    let s = startSession(p, items, 1);
+    s = skipCurrent(s, 5); s = skipCurrent(s, 5); s = skipCurrent(s, 5);
+    expect(summarize(s).score).toBe(-3);
+  });
+  it("skipCurrent after finish returns the identical reference", () => {
+    let s = startSession(preset, items, 1);
+    s = skipCurrent(s, 1); s = skipCurrent(s, 1); s = skipCurrent(s, 1);
+    expect(skipCurrent(s, 1)).toBe(s);
+  });
 });
