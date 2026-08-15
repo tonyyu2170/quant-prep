@@ -32,8 +32,8 @@ Company-specific content policy (owner's explicit call): be as company-specific 
 - Sequences Trainer — generated pattern families (arithmetic, geometric, interleaved, recursive, digit-manipulation, meta); timed test mode.
 - Probability & EV Bank — authored + verified + parameterized; topics: counting, conditional/Bayes, EV & variance, distributions, gambler's ruin, geometric probability; 3 difficulty tiers; full walkthrough solutions.
 - Timed OA Simulator — real conditions: countdown, no pause, question-per-screen, penalty scoring where firms use it, post-test miss review.
-- Accounts & Stats Dashboard — Supabase auth, attempt history, per-topic accuracy, trends, streaks.
-- Leaderboards & Percentiles — per timed preset; seeded with curated benchmarks until user base fills in. (Build order: lands in Phase 1.5, immediately after the drilling core — see §9.)
+- Accounts & Stats Dashboard — Supabase auth, attempt history, per-topic accuracy, trends, streaks. The dashboard's percentile stat and per-session percentile chips render against the seeded `benchmarks` table from day one, so the v4 mockup is fully realizable in Phase 1.
+- Leaderboards & Percentiles — per timed preset; seeded with curated benchmarks until user base fills in. (Build order: benchmark seeding ships with the Phase 1 dashboard; user-vs-user leaderboards land in Phase 1.5, immediately after the drilling core — see §9.)
 
 **Phase 2 — Company Tracks & Games:**
 - Firm Tracks ×~14: process map (apply → OA → phones → superday), what-they-ask intel, format-exact OA simulator, tailored sets, superday guide. Firms: Optiver, IMC, Flow, Akuna, CTC, Jane Street, SIG, Five Rings, DRW, Citadel Sec, HRT, Jump, Tower, DE Shaw. Build order = whose OAs hit first.
@@ -87,7 +87,7 @@ Identity: exam-paper cleanliness + financial-press warmth. Reference mockups: `.
 
 **Stats dashboard (v4, editorial):** quiet text-level filter line (time range 7D/30D/90D/ALL · topic links · mode selector) driving all panels → single stat line (Accuracy, Pace, Sessions, Percentile — tiny caps label, 26px mono value, small delta) → one ruled row of three compact charts (Accuracy trend, Pace trend, sim-score bars with threshold) with live hover per chart rules → two dot-leader columns (Weakest topics with "drill these →", Recent sessions with percentile chip + "retry →"). Zero nested boxes.
 
-**Firm track page:** firm header + season status → process pipeline pills with the user's current stage highlighted → two-up: "what they test here" intel vs "your readiness" (best sim score, weak spot, trend) → full-width CTA to the format-exact simulator. Template ×14 firms; "last verified" date stamped.
+**Firm track page:** firm header + season status → process pipeline pills with the user's current stage highlighted → two-up: "what they test here" intel vs "your readiness" (best sim score, weak spot, trend) → full-width CTA to the format-exact simulator. Template ×14 firms; "last verified" date stamped. Every firm page and the site footer carry an "independent — not affiliated with or endorsed by any firm" disclaimer.
 
 ## 6. Content Engine (approved Section 4)
 
@@ -97,11 +97,11 @@ Identity: exam-paper cleanliness + financial-press warmth. Reference mockups: `.
 {
   id, slug, topic: "probability/bayes", difficulty: 1|2|3,
   firms: [{ firm: "sig", weight: 0.8 }],
-  source: { kind: "original" | "adapted", inspiration: "classic: base-rate fallacy" },
+  source: { kind: "original" | "free-resource" | "textbook" | "paid-sample", inspiration: "classic: base-rate fallacy" }, // kind mirrors §6 source categories a–d for coverage auditing
   params: { sensitivity: { choices: [0.95, 0.99] }, prevalence: { range: [1e-4, 1e-3], clean: true } },
   statement: "A test is {{sensitivity%}} sensitive…",
   answer: "expr: (sens*prev) / (sens*prev + (1-spec)*(1-prev))",
-  accepted: { forms: ["fraction", "decimal", "expression"], tolerance: 0.005 },
+  accepted: { forms: ["fraction", "decimal", "expression"], tolerance: { rel: 0.005 } }, // rel | abs — explicit per problem, never implied
   solution: [ /* step templates, KaTeX, params interpolated */ ],
   keyInsight, commonTrap,
   verify: { method: "montecarlo", trials: 1e6 } // or "symbolic" | "brute-force"
@@ -110,7 +110,7 @@ Identity: exam-paper cleanliness + financial-press warmth. Reference mockups: `.
 
 **Sources (owner-approved), one transformation rule:** (a) originals; (b) free-resource classics; (c) textbook classics; (d) paid-site free samples — for b–d always **new prose + new parameters + our own solution**; inspiration lineage recorded internally for coverage auditing.
 
-**Verification (CI gate, `verification/` Python):** per problem, ~100 param draws; closed-form answer checked against seeded Monte Carlo (or SymPy exact); every number appearing in solution text re-computed; KaTeX compiles; no un-interpolated params. Generators verified against brute-force solvers. **Red CI = no deploy.**
+**Verification (CI gate, `verification/` Python):** per problem, ~100 param draws; closed-form answer checked against seeded Monte Carlo (or SymPy exact); every number appearing in solution text re-computed; KaTeX compiles; no un-interpolated params. Generators verified against brute-force solvers. Tolerance semantics are explicit per problem (`{ rel }` or `{ abs }`); verification fails any problem whose tolerance is loose relative to its answer's magnitude (e.g. an absolute 0.005 on a rare-event posterior of ~0.01). Monte Carlo trial counts scale with event rarity so sampling noise sits well inside the tolerance; problems whose target events are too rare to sample cheaply must use `symbolic` verification instead. **Red CI = no deploy.**
 
 **Launch targets:** arithmetic infinite; ~30 sequence families; ~10 chart archetypes; ~12 matrix rule types; 150 probability/EV authored at launch → 500+ by peak season; 75 brainteasers; 50 market-logic; 40 behavioral; 14 firm tracks.
 
@@ -122,10 +122,10 @@ Identity: exam-paper cleanliness + financial-press warmth. Reference mockups: `.
 
 Tables (all RLS): `profiles` (auto-generated changeable handle, target firms) · `attempts` (problem id + version + param seed, answer, correct, time_ms, mode, session) · `test_sessions` (preset, score, correct/wrong/skipped, duration) · `game_sessions` · `review_queue` (SRS state) · `streaks` · `problem_reports` · `benchmarks` (curated thresholds).
 
-- **Leaderboards/percentiles:** best-score views per preset, window-function ranks, public view exposes handle + score only.
-- **Auth:** magic-link + Google. **Anonymous mode is complete** (localStorage) with sign-in nudge; local history merges on first sign-in.
-- **Resilience:** studying never blocks — backend outage queues writes locally, flushes later; CI cron pings weekly vs idle-pause.
-- **Integrity:** timed submissions carry per-question timings; server-side checks reject impossible scores (sub-human timing, > max, non-monotonic). Accepted limitation: client games aren't cheat-proof; mitigated by flag-score reports + benchmarks.
+- **Leaderboards/percentiles:** best-score views per preset, window-function ranks, public view exposes handle + score only. Each `benchmarks` row records its provenance (owner's own scores, publicly reported thresholds), so authoritative-looking lines like "55 invite zone" cite a source.
+- **Auth:** magic-link + Google. **Anonymous mode is complete** (localStorage) with sign-in nudge; local history merges on first sign-in. Merged local history feeds stats, streaks, and the review queue only — never leaderboards or percentile ranks (localStorage records are forgeable); only server-recorded sessions rank.
+- **Resilience:** studying never blocks — backend outage queues writes locally, flushes later; CI cron pings every 2–3 days to stay clear of Supabase's 7-day idle-pause (weekly is exactly the boundary — one delayed run pauses the project).
+- **Integrity:** timed submissions carry per-question timings; server-side checks reject impossible scores (sub-human timing, > max, non-monotonic). Accepted limitation: answers ship in the static content bundle, so **no client-graded mode is cheat-proof** — timed sims included, not just games — against answer extraction at human-plausible pace. Accepted for v1; mitigated by flag-score reports + benchmarks. Revisit only if leaderboards gain stakes: ranked presets would then need server-side grading, a deliberate exception to "problems never live in the DB."
 
 ## 8. Architecture & Repo (approved Section 6)
 
@@ -149,7 +149,7 @@ quant-prep/
 
 ## 9. Build Order & Skill Loadout
 
-1. **Phase 1 (days):** repo/CI/Supabase → engine + arithmetic generator + Optiver 80-in-8 sim → sequences trainer → auth + attempts + v4 dashboard. Public deploy immediately.
+1. **Phase 1 (days):** repo/CI/Supabase → engine + arithmetic generator + Optiver 80-in-8 sim → sequences trainer → auth + attempts + benchmark seeding + v4 dashboard. Public deploy immediately.
 2. **Phase 1.5:** 150 probability/EV problems with walkthroughs; leaderboards/percentiles; review queue.
 3. **Phase 2:** firm tracks by OA order (Optiver/IMC/Flow → JS/SIG/Five Rings → Citadel/HRT/…); numerical-reasoning + matrix generators; market-making game.
 4. **Phase 3:** behavioral hub; brainteasers; betting/calibration games; study plans; tips hub.
