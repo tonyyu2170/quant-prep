@@ -24,4 +24,11 @@ describe("seeded rng", () => {
     const rng = makeRng(7);
     expect(["a", "b", "c"]).toContain(pick(rng, ["a", "b", "c"]));
   });
+  it("produces frozen output values (do not change without a data migration)", () => {
+    const r = makeRng(42);
+    expect(Array.from({ length: 5 }, () => r())).toEqual([
+      0.6011037519201636, 0.44829055899754167, 0.8524657934904099,
+      0.6697340414393693, 0.17481389874592423,
+    ]);
+  });
 });
