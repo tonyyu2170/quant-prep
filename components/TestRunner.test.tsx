@@ -33,7 +33,7 @@ describe("TestRunner", () => {
   });
   it("never repeats a question id within a session", () => {
     const preset = { ...getPreset("optiver-80in8")!, count: 40, durationS: 60 };
-    render(<TestRunner preset={preset} seed={1234} onDone={() => {}} />);
+    render(<TestRunner preset={preset} seed={12} onDone={() => {}} />);
     const seen = new Set<string>();
     for (let i = 0; i < 40; i++) {
       const prompt = screen.getByTestId("prompt").textContent!;

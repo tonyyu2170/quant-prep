@@ -83,7 +83,7 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
           onChange={(e) => { setValue(e.target.value); setShowHint(false); }}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
           className="mono"
-          style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, color: "var(--ink)" }}
+          style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, padding: "6px 0", color: "var(--ink)" }}
         />
         {showHint && <p data-testid="parse-hint" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8 }}>couldn't read that answer</p>}
         <p className="microlabel" style={{ marginTop: 20 }}>Enter submits · empty Enter skips · no backtracking</p>
