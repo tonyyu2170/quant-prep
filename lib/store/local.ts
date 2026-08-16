@@ -1,0 +1,25 @@
+import type { AttemptRow, Store, TestSessionRow } from "./types";
+
+const A_KEY = "qp.attempts.v1";
+const S_KEY = "qp.sessions.v1";
+const CAP = 5000;
+
+function read<T>(key: string): T[] {
+  try { return JSON.parse(localStorage.getItem(key) ?? "[]") as T[]; } catch { return []; }
+}
+function write<T>(key: string, rows: T[]) {
+  localStorage.setItem(key, JSON.stringify(rows));
+}
+
+export class LocalStore implements Store {
+  async saveAttempts(rows: AttemptRow[]) {
+    const all = [...read<AttemptRow>(A_KEY), ...rows];
+    write(A_KEY, all.slice(-CAP));
+  }
+  async saveSession(row: TestSessionRow) {
+    write(S_KEY, [...read<TestSessionRow>(S_KEY), row]);
+  }
+  async listAttempts() { return read<AttemptRow>(A_KEY); }
+  async listSessions() { return read<TestSessionRow>(S_KEY); }
+  async clear() { localStorage.removeItem(A_KEY); localStorage.removeItem(S_KEY); }
+}
