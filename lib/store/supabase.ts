@@ -27,9 +27,9 @@ export class SupabaseStore implements Store {
     if (error) throw error;
   }
   async listAttempts(): Promise<AttemptRow[]> {
-    const { data, error } = await this.client.from("attempts").select("*").order("created_at", { ascending: true }).limit(5000);
+    const { data, error } = await this.client.from("attempts").select("*").order("created_at", { ascending: false }).limit(5000);
     if (error) throw error;
-    return (data ?? []).map((d) => ({
+    return [...(data ?? [])].reverse().map((d) => ({
       problemId: d.problem_id, problemVersion: d.problem_version, seed: d.seed, mode: d.mode,
       topic: d.topic, answer: d.answer, correct: d.correct, timeMs: d.time_ms,
       sessionId: d.session_id, createdAt: d.created_at, mergedFromLocal: d.merged_from_local,

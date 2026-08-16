@@ -7,6 +7,7 @@ import type { Preset, Summary } from "@qp/engine";
 
 const MERGED_FLAG = "qp.merged.v1";
 let cached: { store: Store; signedIn: boolean } | null = null;
+let resolving: Promise<{ store: Store; signedIn: boolean }> | null = null;
 
 const uuid = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -29,21 +30,27 @@ async function mergeLocalIntoRemote(local: LocalStore, remote: SupabaseStore): P
 
 export async function resolveStore(): Promise<{ store: Store; signedIn: boolean }> {
   if (cached) return cached;
-  const local = new LocalStore();
-  try {
-    const supa = supabaseBrowser();
-    const { data } = await supa.auth.getUser();
-    if (!data.user) return (cached = { store: local, signedIn: false });
-    const remote = new SupabaseStore(supa, data.user.id);
-    if (!localStorage.getItem(MERGED_FLAG)) {
-      try {
-        await mergeLocalIntoRemote(local, remote);
-      } catch { /* partial merge: flag stays unset, retried next load; stay signed in (spec §8) */ }
+  if (resolving) return resolving; // one auth+merge per page load, even under concurrent writes
+  resolving = (async () => {
+    const local = new LocalStore();
+    try {
+      const supa = supabaseBrowser();
+      const { data } = await supa.auth.getUser();
+      if (!data.user) return (cached = { store: local, signedIn: false });
+      const remote = new SupabaseStore(supa, data.user.id);
+      if (!localStorage.getItem(MERGED_FLAG)) {
+        try {
+          await mergeLocalIntoRemote(local, remote);
+        } catch { /* partial merge: flag stays unset, retried next load; stay signed in (spec §8) */ }
+      }
+      return (cached = { store: remote, signedIn: true });
+    } catch {
+      return { store: local, signedIn: false }; // backend unreachable → local, never block
+    } finally {
+      resolving = null; // successes served by `cached`; the catch path retries next call
     }
-    return (cached = { store: remote, signedIn: true });
-  } catch {
-    return { store: local, signedIn: false }; // backend unreachable → local, never block
-  }
+  })();
+  return resolving;
 }
 
 async function saveWithFallback(fn: (s: Store) => Promise<void>, fallback: (l: LocalStore) => Promise<void>): Promise<void> {
