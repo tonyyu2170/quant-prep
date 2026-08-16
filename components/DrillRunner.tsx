@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { grade, makeRng, parseAnswer, type Item, type Rng, type Topic } from "@qp/engine";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { grade, makeRng, parseAnswer, type Item, type Topic } from "@qp/engine";
 import { arithmeticItem, sequenceItem } from "@qp/generators";
 import { getStore } from "@/lib/store/useStore";
 
@@ -8,13 +8,14 @@ type Feedback = { ok: boolean; item: Item } | null;
 
 export default function DrillRunner({ topic }: { topic: Topic }) {
   // Hydration-safe: randomness only exists client-side, after mount.
-  const [rng, setRng] = useState<Rng | null>(null);
-  useEffect(() => { setRng(() => makeRng(Math.floor(Math.random() * 2 ** 31))); }, []);
-  if (rng === null) return null;
-  return <DrillSession topic={topic} rng={rng} />;
+  const [seed, setSeed] = useState<number | null>(null);
+  useEffect(() => { setSeed(Math.floor(Math.random() * 2 ** 31)); }, []);
+  if (seed === null) return null;
+  return <DrillSession topic={topic} seed={seed} />;
 }
 
-function DrillSession({ topic, rng }: { topic: Topic; rng: Rng }) {
+function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
+  const rng = useMemo(() => makeRng(seed), [seed]);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
   const next = () => (topic === "arithmetic" ? arithmeticItem(rng, difficulty) : sequenceItem(rng, difficulty));
   const [item, setItem] = useState<Item>(next);
@@ -23,6 +24,7 @@ function DrillSession({ topic, rng }: { topic: Topic; rng: Rng }) {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [streak, setStreak] = useState(0);
   const qStart = useRef(Date.now());
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function submit() {
     const parsed = parseAnswer(value);
@@ -31,13 +33,13 @@ function DrillSession({ topic, rng }: { topic: Topic; rng: Rng }) {
       return;
     }
     const ok = grade(parsed, item.answer);
-    void getStore().saveAttempts([{
-      problemId: item.id, problemVersion: 1, seed: 0, mode: "practice",
+    getStore().saveAttempts([{
+      problemId: item.id, problemVersion: 1, seed, mode: "practice",
       topic, answer: value, correct: ok, timeMs: Date.now() - qStart.current,
       sessionId: null, createdAt: new Date().toISOString(),
-    }]);
+    }]).catch(() => {});
     setFeedback({ ok, item });
-    setStreak(ok ? streak + 1 : 0);
+    setStreak((s) => (ok ? s + 1 : 0));
     setShowHint(false);
   }
 
@@ -56,18 +58,25 @@ function DrillSession({ topic, rng }: { topic: Topic; rng: Rng }) {
         <p className="microlabel">{topic} drill · endless</p>
         <p className="mono" style={{ fontSize: 12 }}>
           {[1, 2, 3].map((d) => (
-            <button key={d} onClick={() => setDifficulty(d as 1 | 2 | 3)} style={{ background: "none", border: "none", marginLeft: 12, color: d === difficulty ? "var(--teal)" : "var(--faint)", fontWeight: d === difficulty ? 700 : 400, borderBottom: d === difficulty ? "2px solid var(--teal)" : "none" }}>
+            <button
+              key={d}
+              type="button"
+              aria-pressed={d === difficulty}
+              onClick={() => { setDifficulty(d as 1 | 2 | 3); inputRef.current?.focus(); }}
+              style={{ background: "none", border: "none", marginLeft: 12, color: d === difficulty ? "var(--teal)" : "var(--faint)", fontWeight: d === difficulty ? 700 : 400, borderBottom: d === difficulty ? "2px solid var(--teal)" : "none" }}
+            >
               L{d}
             </button>
           ))}
           <span style={{ marginLeft: 18, color: "var(--muted)" }}>streak {streak}</span>
         </p>
       </div>
-      <p data-testid="prompt" className="mono" style={{ fontSize: 32, fontWeight: 600, margin: "34px 0 16px" }}>{item.prompt}</p>
+      <p id="drill-prompt" data-testid="prompt" className="mono" style={{ fontSize: 32, fontWeight: 600, margin: "34px 0 16px" }}>{item.prompt}</p>
       {feedback === null ? (
         <>
           <input
-            aria-label="answer" autoFocus inputMode={topic === "sequences" ? "text" : "decimal"} value={value}
+            ref={inputRef}
+            aria-label="answer" aria-describedby="drill-prompt" autoFocus inputMode={topic === "sequences" ? "text" : "decimal"} value={value}
             onChange={(e) => { setValue(e.target.value); setShowHint(false); }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) submit(); }}
             className="mono"

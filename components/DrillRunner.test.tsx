@@ -45,4 +45,36 @@ describe("DrillRunner", () => {
     expect(rows[0].mode).toBe("practice");
     expect(rows[0].topic).toBe("arithmetic");
   });
+  it("keeps keyboard focus through the answer→feedback→next loop", async () => {
+    render(<DrillRunner topic="arithmetic" />);
+    const input = await screen.findByLabelText("answer");
+    expect(document.activeElement).toBe(input);
+    fireEvent.change(input, { target: { value: "1" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(document.activeElement).toBe(screen.getByTestId("feedback"));
+    fireEvent.keyDown(screen.getByTestId("feedback"), { key: "Enter" });
+    expect(document.activeElement).toBe(screen.getByLabelText("answer"));
+  });
+  it("applies a difficulty change from the next question onward", async () => {
+    render(<DrillRunner topic="sequences" />);
+    const input = await screen.findByLabelText("answer");
+    const q1 = screen.getByTestId("prompt").textContent!;
+    expect(q1.split(",").length).toBe(6); // L1 shows 5 terms + "?"
+    fireEvent.click(screen.getByText("L2"));
+    expect(screen.getByTestId("prompt").textContent).toBe(q1); // current question unchanged
+    fireEvent.change(screen.getByLabelText("answer"), { target: { value: "1" } });
+    fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByTestId("feedback"), { key: "Enter" });
+    expect(screen.getByTestId("prompt").textContent!.split(",").length).toBe(7); // L2 shows 6 terms + "?"
+  });
+  it("ignores auto-repeated Enter on the feedback panel", async () => {
+    render(<DrillRunner topic="arithmetic" />);
+    const input = await screen.findByLabelText("answer");
+    fireEvent.change(input, { target: { value: "1" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    const fb = screen.getByTestId("feedback");
+    fireEvent.keyDown(fb, { key: "Enter", repeat: true });
+    fireEvent.keyDown(fb, { key: "Enter", repeat: true });
+    expect(screen.getByTestId("feedback")).toBeInTheDocument();
+  });
 });
