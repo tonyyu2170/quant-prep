@@ -42,7 +42,9 @@ function DrillSession({ topic, rng }: { topic: Topic; rng: Rng }) {
   }
 
   function advance() {
-    setItem(next());
+    let n = next();
+    for (let tries = 0; tries < 5 && n.prompt === item.prompt; tries++) n = next();
+    setItem(n);
     setValue("");
     setFeedback(null);
     qStart.current = Date.now();
