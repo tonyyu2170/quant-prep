@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { accuracySeries, bestScoreSeries, currentStreak, paceSeries, topicAccuracy } from "@qp/engine";
+import { accuracySeries, bestScoreSeries, currentStreak, getPreset, paceSeries, topicAccuracy } from "@qp/engine";
 import { getStore } from "@/lib/store/useStore";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AttemptRow, TestSessionRow } from "@/lib/store/types";
@@ -11,6 +11,9 @@ import BarChart from "@/components/charts/BarChart";
 const RANGES = { "7D": 7, "30D": 30, "90D": 90, ALL: 36500 } as const;
 type RangeKey = keyof typeof RANGES;
 const TOPICS = ["All topics", "arithmetic", "sequences"] as const;
+const SIM_PRESETS = ["optiver-80in8", "sequences-sprint"] as const;
+type SimPreset = (typeof SIM_PRESETS)[number];
+const SIM_LABELS: Record<SimPreset, string> = { "optiver-80in8": "80-in-8 scores", "sequences-sprint": "Seq-sprint scores" };
 
 interface Benchmark { preset: string; label: string; value: number }
 
@@ -26,6 +29,8 @@ export default function StatsPage() {
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
   const [range, setRange] = useState<RangeKey>("30D");
   const [topic, setTopic] = useState<(typeof TOPICS)[number]>("All topics");
+  const [simPreset, setSimPreset] = useState<SimPreset>("optiver-80in8");
+  const simDef = getPreset(simPreset)!;
 
   useEffect(() => {
     void (async () => {
@@ -54,18 +59,19 @@ export default function StatsPage() {
   const byTopic = useMemo(() => topicAccuracy(rows), [rows]);
   const scores = useMemo(
     () => bestScoreSeries(
-      sessions.filter((s) => !s.mergedFromLocal)
+      sessions
+        .filter((s) => !s.mergedFromLocal && (s.total === undefined || s.total === simDef.count))
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         .map((s) => ({ preset: s.preset, score: s.score, createdAt: localDate(s.createdAt) })),
-      "optiver-80in8",
+      simPreset,
     ),
-    [sessions],
+    [sessions, simPreset, simDef.count],
   );
   const streak = useMemo(
     () => currentStreak([...new Set(attempts.map((a) => localDate(a.createdAt)))], localDate(new Date())),
     [attempts],
   );
-  const bench = benchmarks.find((b) => b.preset === "optiver-80in8");
+  const bench = benchmarks.find((b) => b.preset === simPreset);
   const totalAcc = rows.length ? Math.round((1000 * rows.filter((r) => r.correct).length) / rows.length) / 10 : null;
   const avgPace = rows.length ? Math.round(rows.reduce((s, r) => s + r.timeMs, 0) / rows.length / 100) / 10 : null;
 
@@ -100,7 +106,18 @@ export default function StatsPage() {
         {[
           { title: <><b style={{ color: "var(--ink)" }}>Accuracy</b> · {range} window</>, chart: <LineChart points={acc} unit="%" progressWord={(d) => `${d >= 0 ? "▲ +" : "▼ "}${d.toFixed(1)} since start`} /> },
           { title: <><b style={{ color: "var(--ink)" }}>Pace</b> · s/question · lower = better</>, chart: <LineChart points={pace} unit="s/q" progressWord={(d) => (d <= 0 ? `▲ ${Math.abs(d).toFixed(1)}s faster than start` : `▼ ${d.toFixed(1)}s slower than start`)} /> },
-          { title: <><b style={{ color: "var(--ink)" }}>80-in-8 scores</b>{bench ? ` · dash = ${bench.label}` : ""}</>, chart: <BarChart bars={scores.map((s) => ({ value: s.score, date: s.date }))} maxValue={80} threshold={bench?.value} thresholdLabel={bench?.label} /> },
+          {
+            title: <>
+              {SIM_PRESETS.map((p) => (
+                <button key={p} onClick={() => setSimPreset(p)}
+                  style={{ background: "none", border: "none", padding: 0, marginRight: 10, font: "inherit", letterSpacing: "inherit", textTransform: "inherit", cursor: "pointer", color: p === simPreset ? "var(--ink)" : "var(--faint)", fontWeight: p === simPreset ? 700 : 400 }}>
+                  {SIM_LABELS[p]}
+                </button>
+              ))}
+              {bench ? ` · dash = ${bench.label}` : ""}
+            </>,
+            chart: <BarChart bars={scores.map((s) => ({ value: s.score, date: s.date }))} maxValue={simDef.count * simDef.scoring.correct} threshold={bench?.value} thresholdLabel={bench?.label} />,
+          },
         ].map((c, i) => (
           <div key={i} style={{ flex: "1 1 240px", padding: i > 0 ? "14px 18px 8px 18px" : "14px 18px 8px 0", borderLeft: i > 0 ? "1px solid var(--rule)" : "none" }}>
             <p className="microlabel" style={{ marginBottom: 10 }}>{c.title}</p>
