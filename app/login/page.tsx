@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-export default function Login() {
+function LoginInner() {
+  const sp = useSearchParams();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -21,6 +23,7 @@ export default function Login() {
     <div className="container" style={{ padding: "72px 24px", maxWidth: 460 }}>
       <p className="microlabel">Sign in</p>
       <h1 style={{ fontSize: 30, margin: "8px 0 6px" }}>Save progress. Get ranked.</h1>
+      {sp.get("error") === "link" && <p style={{ color: "var(--bad)", fontSize: 13, marginBottom: 10 }}>That sign-in link didn't work or expired — request a new one.</p>}
       <p style={{ color: "var(--body)", fontSize: 14, marginBottom: 22 }}>Everything works without an account — signing in syncs your history across devices. Local history merges in (it feeds stats only, never leaderboards).</p>
       {sent ? (
         <p style={{ color: "var(--good)", fontWeight: 600 }}>Magic link sent — check your email.</p>
@@ -37,5 +40,13 @@ export default function Login() {
         </>
       )}
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   );
 }
