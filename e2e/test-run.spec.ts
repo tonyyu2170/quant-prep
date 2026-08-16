@@ -13,6 +13,12 @@ test("timed sim happy path: answer/skip through, land on results, stats renders"
   await page.goto("/stats");
   await expect(page.getByText("Recent sims")).toBeVisible();
   await expect(page.getByText("optiver-80in8").first()).toBeVisible();
+  // Phase 1.5A: the sim wrote 3 per-question attempts → per-topic accuracy row appears
+  await expect(page.getByText("3q")).toBeVisible();
+  // …but the ?count=3 run is non-standard, so the 80-in-8 score chart stays empty
+  await expect(page.getByText("No timed sims yet.")).toBeVisible();
+  // and the score chart's preset toggle is present
+  await expect(page.getByRole("button", { name: "Seq-sprint scores" })).toBeVisible();
 });
 
 test("sequences drill reveals the rule after answering", async ({ page }) => {
