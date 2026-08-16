@@ -10,6 +10,7 @@ export interface TestSessionRow {
   id: string; preset: string; score: number;
   correct: number; wrong: number; skipped: number;
   durationS: number; timings: number[]; createdAt: string;
+  total?: number; // configured question count for the run; absent on rows saved before Phase 1.5
   mergedFromLocal?: boolean;
 }
 
