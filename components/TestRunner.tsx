@@ -86,7 +86,7 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
           className="mono"
           style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, padding: "6px 0", color: "var(--ink)" }}
         />
-        {showHint && <p data-testid="parse-hint" aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8 }}>couldn't read that answer</p>}
+        <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
         <p className="microlabel" style={{ marginTop: 20 }}>Enter submits · empty Enter skips · no backtracking</p>
       </div>
     </div>
