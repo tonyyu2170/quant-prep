@@ -61,4 +61,19 @@ describe("TestRunner", () => {
       vi.useRealTimers();
     }
   });
+  it("passes the finished session state to onDone", () => {
+    const preset = { ...getPreset("optiver-80in8")!, count: 2, durationS: 60 };
+    const onDone = vi.fn();
+    render(<TestRunner preset={preset} seed={42} onDone={onDone} />);
+    const input = screen.getByLabelText("answer") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "0.5" } });
+    fireEvent.keyDown(input, { key: "Enter" });                                // answered (wrong)
+    fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });      // skipped
+    expect(onDone).toHaveBeenCalledTimes(1);
+    const state = onDone.mock.calls[0][1];
+    expect(state.answers).toEqual([0.5, null]);
+    expect(state.grades).toEqual([false, false]);
+    expect(state.timings).toHaveLength(2);
+    expect(state.seed).toBe(42);
+  });
 });

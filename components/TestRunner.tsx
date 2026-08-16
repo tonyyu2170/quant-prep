@@ -19,7 +19,7 @@ function generate(preset: Preset, seed: number): Item[] {
   return items;
 }
 
-export default function TestRunner({ preset, seed, onDone }: { preset: Preset; seed: number; onDone: (s: Summary) => void }) {
+export default function TestRunner({ preset, seed, onDone }: { preset: Preset; seed: number; onDone: (s: Summary, state: SessionState) => void }) {
   const items = useMemo(() => generate(preset, seed), [preset, seed]);
   const [state, setState] = useState<SessionState>(() => startSession(preset, items, seed));
   const [value, setValue] = useState("");
@@ -32,7 +32,7 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
   const finish = useCallback((s: SessionState) => {
     if (doneRef.current) return;
     doneRef.current = true;
-    onDone(summarize(s));
+    onDone(summarize(s), s);
   }, [onDone]);
 
   useEffect(() => {

@@ -39,4 +39,27 @@ describe("attemptRowsFromSession", () => {
     const allSkipped: SessionState = { ...state, answers: [null, null, null], grades: [false, false, false] };
     expect(attemptRowsFromSession(allSkipped, "sess-1", "2026-08-16T12:00:00.000Z")).toEqual([]);
   });
+  it("treats an answer of 0 as answered, not skipped", () => {
+    const zeroFirst: SessionState = { ...state, answers: [0, 5, null], grades: [true, false, false] };
+    const rows = attemptRowsFromSession(zeroFirst, "sess-1", "2026-08-16T12:00:00.000Z");
+    expect(rows[0]).toMatchObject({ problemId: "a:1", answer: "0", correct: true });
+  });
+  it("stops at the progressed index when the timer expired mid-session", () => {
+    const partial: SessionState = {
+      ...state,
+      index: 2,
+      answers: [7, null],
+      grades: [true, false],
+      timings: [1000, 800],
+      finished: true,
+    };
+    const rows = attemptRowsFromSession(partial, "sess-1", "2026-08-16T12:00:00.000Z");
+    expect(rows).toEqual([
+      {
+        problemId: "a:1", problemVersion: 1, seed: 42, mode: "test", topic: "arithmetic",
+        answer: "7", correct: true, timeMs: 1000, sessionId: "sess-1",
+        createdAt: "2026-08-16T12:00:00.000Z",
+      },
+    ]);
+  });
 });

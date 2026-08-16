@@ -1,9 +1,10 @@
 import { LocalStore } from "./local";
 import { SupabaseStore } from "./supabase";
 import { planMerge } from "./merge";
+import { attemptRowsFromSession } from "./testAttempts";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AttemptRow, Store, TestSessionRow } from "./types";
-import type { Preset, Summary } from "@qp/engine";
+import type { Preset, SessionState, Summary } from "@qp/engine";
 
 const MERGED_FLAG = "qp.merged.v1";
 let cached: { store: Store; signedIn: boolean } | null = null;
@@ -78,11 +79,15 @@ export function getStore(): Store {
   };
 }
 
-export async function saveRun(preset: Preset, summary: Summary): Promise<void> {
+export async function saveRun(preset: Preset, summary: Summary, state: SessionState): Promise<void> {
   const row: TestSessionRow = {
     id: uuid(), preset: preset.id, score: summary.score,
     correct: summary.correct, wrong: summary.wrong, skipped: summary.skipped,
-    durationS: preset.durationS, timings: summary.timings, createdAt: new Date().toISOString(),
+    durationS: preset.durationS, timings: summary.timings, total: preset.count,
+    createdAt: new Date().toISOString(),
   };
-  await getStore().saveSession(row);
+  const store = getStore();
+  await store.saveSession(row);
+  const attempts = attemptRowsFromSession(state, row.id, row.createdAt);
+  if (attempts.length) await store.saveAttempts(attempts);
 }

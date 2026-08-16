@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, use, useCallback, useEffect, useMemo, useState } from "react";
 import { notFound, useSearchParams } from "next/navigation";
-import { getPreset, type Summary } from "@qp/engine";
+import { getPreset, type SessionState, type Summary } from "@qp/engine";
 import TestRunner from "@/components/TestRunner";
 import { saveRun } from "@/lib/store/useStore";
 
@@ -21,7 +21,7 @@ function TestPageInner({ base }: { base: NonNullable<ReturnType<typeof getPreset
   useEffect(() => {
     if (seed === null) setSeed(Math.floor(Math.random() * 2 ** 31));
   }, [seed]);
-  const onDone = useCallback((s: Summary) => { void saveRun(preset, s); }, [preset]);
+  const onDone = useCallback((s: Summary, st: SessionState) => { void saveRun(preset, s, st); }, [preset]);
   if (seed === null) return null; // stable markup until the client picks randomness
   return <TestRunner preset={preset} seed={seed} onDone={onDone} />;
 }
