@@ -33,4 +33,11 @@ describe("presets", () => {
     expect(getPreset("__proto__")).toBeNull();
     expect(getPreset("constructor")).toBeNull();
   });
+  it("presets and their scoring are deeply frozen", () => {
+    for (const p of Object.values(PRESETS)) {
+      expect(Object.isFrozen(p)).toBe(true);
+      expect(Object.isFrozen(p.scoring)).toBe(true);
+    }
+    expect(() => { getPreset("optiver-80in8")!.scoring.wrong = 999; }).toThrow(TypeError);
+  });
 });

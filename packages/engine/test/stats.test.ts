@@ -37,4 +37,13 @@ describe("stats aggregations", () => {
     expect(currentStreak(["2026-08-12", "2026-08-14"], today)).toBe(0);
     expect(currentStreak([], today)).toBe(0);
   });
+  it("currentStreak is 0 when today is inactive even if yesterday was active", () => {
+    expect(currentStreak(["2026-08-14"], "2026-08-15")).toBe(0);
+  });
+  it("currentStreak crosses month boundaries", () => {
+    expect(currentStreak(["2026-08-30", "2026-08-31", "2026-09-01"], "2026-09-01")).toBe(3);
+  });
+  it("currentStreak requires a bare YYYY-MM-DD today", () => {
+    expect(() => currentStreak(["2026-08-15"], "2026-08-15T12:00:00.000Z")).toThrow(RangeError);
+  });
 });
