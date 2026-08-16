@@ -52,7 +52,10 @@ export default function StatsPage() {
   const pace = useMemo(() => paceSeries(rows), [rows]);
   const byTopic = useMemo(() => topicAccuracy(rows), [rows]);
   const scores = useMemo(
-    () => bestScoreSeries(sessions.filter((s) => !s.mergedFromLocal).map((s) => ({ preset: s.preset, score: s.score, createdAt: s.createdAt })), "optiver-80in8"),
+    () => bestScoreSeries(
+      sessions.filter((s) => !s.mergedFromLocal).map((s) => ({ preset: s.preset, score: s.score, createdAt: localDate(s.createdAt) + s.createdAt.slice(10) })),
+      "optiver-80in8",
+    ),
     [sessions],
   );
   const streak = useMemo(
@@ -118,7 +121,7 @@ export default function StatsPage() {
           <p className="microlabel" style={{ marginBottom: 8 }}>Recent sims</p>
           {sessions.slice(-3).reverse().map((s) => (
             <p key={s.id} style={{ display: "flex", alignItems: "baseline", fontSize: 13, padding: "4px 0", color: "var(--body)" }}>
-              <span className="mono" style={{ color: "var(--faint)", fontSize: 10, marginRight: 10 }}>{s.createdAt.slice(5, 10)}</span>
+              <span className="mono" style={{ color: "var(--faint)", fontSize: 10, marginRight: 10 }}>{localDate(s.createdAt).slice(5)}</span>
               {s.preset}{s.mergedFromLocal ? " (pre-signin)" : ""}
               <span style={dotLeader} />
               <b className="mono">{s.score}</b>
