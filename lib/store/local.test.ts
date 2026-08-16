@@ -25,6 +25,23 @@ describe("LocalStore", () => {
     await store.saveAttempts(Array.from({ length: 5100 }, (_, i) => attempt({ problemId: `p${i}` })));
     expect(await store.listAttempts()).toHaveLength(5000);
   });
+  it("treats non-array junk in storage as empty and does not corrupt subsequent saves", async () => {
+    localStorage.setItem("qp.attempts.v1", '"hello"');
+    const store = new LocalStore();
+    expect(await store.listAttempts()).toEqual([]);
+    await store.saveAttempts([attempt()]);
+    const rows = await store.listAttempts();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].problemId).toBe("arith-1");
+  });
+  it("clear removes both attempts and sessions", async () => {
+    const store = new LocalStore();
+    await store.saveAttempts([attempt()]);
+    await store.saveSession({ id: "s9", preset: "optiver-80in8", score: 1, correct: 1, wrong: 0, skipped: 0, durationS: 480, timings: [], createdAt: new Date().toISOString() });
+    await store.clear();
+    expect(await store.listAttempts()).toEqual([]);
+    expect(await store.listSessions()).toEqual([]);
+  });
 });
 
 describe("planMerge", () => {

@@ -5,7 +5,10 @@ const S_KEY = "qp.sessions.v1";
 const CAP = 5000;
 
 function read<T>(key: string): T[] {
-  try { return JSON.parse(localStorage.getItem(key) ?? "[]") as T[]; } catch { return []; }
+  try {
+    const v = JSON.parse(localStorage.getItem(key) ?? "[]");
+    return Array.isArray(v) ? (v as T[]) : [];
+  } catch { return []; }
 }
 function write<T>(key: string, rows: T[]) {
   localStorage.setItem(key, JSON.stringify(rows));
