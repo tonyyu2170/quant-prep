@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    include: ["packages/**/test/**/*.test.ts", "lib/**/*.test.ts", "components/**/*.test.tsx"],
+    include: ["packages/**/test/**/*.test.ts", "lib/**/*.test.ts", "components/**/*.test.tsx", "app/**/*.test.tsx"],
   },
   resolve: { alias: {
     "@qp/engine": path.resolve(__dirname, "packages/engine/src/index.ts"),

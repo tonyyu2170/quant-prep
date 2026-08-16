@@ -116,7 +116,7 @@ export default function StatsPage() {
               ))}
               {bench ? ` · dash = ${bench.label}` : ""}
             </>,
-            chart: <BarChart bars={scores.map((s) => ({ value: s.score, date: s.date }))} maxValue={simDef.count * simDef.scoring.correct} threshold={bench?.value} thresholdLabel={bench?.label} />,
+            chart: <BarChart key={simPreset} bars={scores.map((s) => ({ value: s.score, date: s.date }))} maxValue={simDef.count * simDef.scoring.correct} threshold={bench?.value} thresholdLabel={bench?.label} />,
           },
         ].map((c, i) => (
           <div key={i} style={{ flex: "1 1 240px", padding: i > 0 ? "14px 18px 8px 18px" : "14px 18px 8px 0", borderLeft: i > 0 ? "1px solid var(--rule)" : "none" }}>
