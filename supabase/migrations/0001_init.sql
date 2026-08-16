@@ -120,7 +120,10 @@ create policy "own games insert" on public.game_sessions for insert with check (
 create policy "own queue all" on public.review_queue for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own streaks all" on public.streaks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "reports insert" on public.problem_reports for insert with check (auth.uid() = user_id or user_id is null);
+create policy "reports insert" on public.problem_reports for insert
+  with check ((auth.uid() = user_id or user_id is null)
+    and char_length(reason) <= 60
+    and (note is null or char_length(note) <= 2000));
 
 create policy "benchmarks public read" on public.benchmarks for select using (true);
 

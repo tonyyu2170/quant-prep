@@ -16,7 +16,7 @@ function TestPageInner({ base }: { base: NonNullable<ReturnType<typeof getPreset
   const [seed, setSeed] = useState<number | null>(() => {
     const raw = sp.get("seed");
     const n = raw === null ? NaN : Number(raw);
-    return Number.isInteger(n) ? n : null; // deterministic on server AND client
+    return Number.isInteger(n) && n >= 0 && n < 2 ** 31 ? n : null; // deterministic on server AND client
   });
   useEffect(() => {
     if (seed === null) setSeed(Math.floor(Math.random() * 2 ** 31));
