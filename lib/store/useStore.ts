@@ -6,9 +6,14 @@ export function getStore(): Store {
   return new LocalStore();
 }
 
+const uuid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
 export async function saveRun(preset: Preset, summary: Summary): Promise<void> {
   const row: TestSessionRow = {
-    id: crypto.randomUUID(),
+    id: uuid(),
     preset: preset.id,
     score: summary.score,
     correct: summary.correct,

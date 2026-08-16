@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import type { Item, Preset, SessionState, Summary } from "@qp/engine";
+import type { Preset, SessionState, Summary } from "@qp/engine";
 
-export default function Results({ summary, preset, items, state }: { summary: Summary; preset: Preset; items: Item[]; state: SessionState }) {
+export default function Results({ summary, preset, state }: { summary: Summary; preset: Preset; state: SessionState }) {
   const misses = state.grades
     .map((g, i) => ({ g, i }))
     .filter(({ g, i }) => !g && state.answers[i] !== null);
@@ -18,15 +18,15 @@ export default function Results({ summary, preset, items, state }: { summary: Su
           <p className="microlabel" style={{ marginBottom: 8 }}>Misses</p>
           {misses.map(({ i }) => (
             <p key={i} className="mono" style={{ fontSize: 13, padding: "4px 0", color: "var(--body)" }}>
-              {items[i].prompt} <span style={{ color: "var(--bad)" }}>you: {String(state.answers[i])}</span>{" "}
-              <span style={{ color: "var(--good)" }}>ans: {items[i].answer}</span>
-              {items[i].rule ? <span style={{ color: "var(--muted)" }}> — {items[i].rule}</span> : null}
+              {state.items[i].prompt} <span style={{ color: "var(--bad)" }}>you: {String(state.answers[i])}</span>{" "}
+              <span style={{ color: "var(--good)" }}>ans: {state.items[i].answer}</span>
+              {state.items[i].rule ? <span style={{ color: "var(--muted)" }}> — {state.items[i].rule}</span> : null}
             </p>
           ))}
         </div>
       )}
       <p style={{ marginTop: 30 }}>
-        <Link href={`/test/${preset.id}`} style={{ fontWeight: 700 }}>Run again →</Link>
+        <a href={`/test/${preset.id}`} style={{ fontWeight: 700 }}>Run again →</a>
         <Link href="/stats" style={{ marginLeft: 20 }}>See stats</Link>
       </p>
     </div>

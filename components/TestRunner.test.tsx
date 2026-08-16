@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import TestRunner from "./TestRunner";
 import { getPreset } from "@qp/engine";
@@ -42,5 +42,23 @@ describe("TestRunner", () => {
       fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" }); // skip through
     }
     expect(screen.getByTestId("score")).toBeInTheDocument();
+  });
+  it("finishes when the timer expires and reports a partial run", () => {
+    vi.useFakeTimers();
+    try {
+      const preset = { ...getPreset("optiver-80in8")!, count: 5, durationS: 60 };
+      const onDone = vi.fn();
+      render(<TestRunner preset={preset} seed={42} onDone={onDone} />);
+      const input = screen.getByLabelText("answer") as HTMLInputElement;
+      fireEvent.change(input, { target: { value: "1" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      act(() => { vi.advanceTimersByTime(61_000); });
+      expect(screen.getByTestId("score")).toBeInTheDocument();
+      expect(onDone).toHaveBeenCalledTimes(1);
+      expect(onDone.mock.calls[0][0].total).toBe(1);
+      expect(screen.getByText(/answered 1\/5/)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

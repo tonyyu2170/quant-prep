@@ -36,17 +36,18 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
   }, [onDone]);
 
   useEffect(() => {
+    if (state.finished) return;
     const t = setInterval(() => {
       const left = Math.max(0, Math.ceil((endAt.current - Date.now()) / 1000));
       setRemaining(left);
       if (left === 0) setState((s) => (s.finished ? s : { ...s, finished: true }));
     }, 250);
     return () => clearInterval(t);
-  }, []);
+  }, [state.finished]);
 
   useEffect(() => { if (state.finished) finish(state); }, [state, finish]);
 
-  if (state.finished) return <Results summary={summarize(state)} preset={preset} items={items} state={state} />;
+  if (state.finished) return <Results summary={summarize(state)} preset={preset} state={state} />;
 
   const item = state.items[state.index];
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
@@ -67,7 +68,7 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
 
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
-      <div style={{ height: 3, background: "var(--card-border)" }}>
+      <div role="progressbar" aria-valuemin={0} aria-valuemax={preset.count} aria-valuenow={state.index} style={{ height: 3, background: "var(--card-border)" }}>
         <div style={{ height: "100%", width: `${(state.index / preset.count) * 100}%`, background: "var(--teal)" }} />
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
@@ -81,11 +82,11 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
           inputMode={preset.topic === "sequences" ? "text" : "decimal"}
           value={value}
           onChange={(e) => { setValue(e.target.value); setShowHint(false); }}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) submit(); }}
           className="mono"
           style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, padding: "6px 0", color: "var(--ink)" }}
         />
-        {showHint && <p data-testid="parse-hint" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8 }}>couldn't read that answer</p>}
+        {showHint && <p data-testid="parse-hint" aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8 }}>couldn't read that answer</p>}
         <p className="microlabel" style={{ marginTop: 20 }}>Enter submits · empty Enter skips · no backtracking</p>
       </div>
     </div>
