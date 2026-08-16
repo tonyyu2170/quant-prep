@@ -30,10 +30,8 @@ export default function StatsPage() {
   useEffect(() => {
     void (async () => {
       const store = getStore();
-      try {
-        setAttempts(await store.listAttempts());
-        setSessions(await store.listSessions());
-      } catch { /* remote hiccup: render empty rather than crash (spec §8) */ }
+      try { setAttempts(await store.listAttempts()); } catch { /* render empty rather than crash */ }
+      try { setSessions(await store.listSessions()); } catch { /* render empty rather than crash */ }
       try {
         const { data } = await supabaseBrowser().from("benchmarks").select("preset,label,value");
         if (data) setBenchmarks(data);
@@ -41,7 +39,10 @@ export default function StatsPage() {
     })();
   }, []);
 
-  const cutoffDay = useMemo(() => localDate(new Date(Date.now() - (RANGES[range] - 1) * 864e5)), [range]);
+  const cutoffDay = useMemo(() => {
+    const n = new Date();
+    return localDate(new Date(n.getFullYear(), n.getMonth(), n.getDate() - (RANGES[range] - 1)));
+  }, [range]);
   const rows = useMemo(
     () => attempts
       .filter((a) => localDate(a.createdAt) >= cutoffDay && (topic === "All topics" || a.topic === topic))
@@ -53,7 +54,9 @@ export default function StatsPage() {
   const byTopic = useMemo(() => topicAccuracy(rows), [rows]);
   const scores = useMemo(
     () => bestScoreSeries(
-      sessions.filter((s) => !s.mergedFromLocal).map((s) => ({ preset: s.preset, score: s.score, createdAt: localDate(s.createdAt) + s.createdAt.slice(10) })),
+      sessions.filter((s) => !s.mergedFromLocal)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        .map((s) => ({ preset: s.preset, score: s.score, createdAt: localDate(s.createdAt) })),
       "optiver-80in8",
     ),
     [sessions],
