@@ -29,7 +29,7 @@ export const networkOutageJointAlerts: ProblemTemplate = {
   },
   statement: (p, d) =>
     `A network operations team monitors two alert systems, Alert 1 and Alert 2, which share upstream infrastructure. The prior probability of an actual outage on any given check is ${pc(p.prior)}%. ` +
-    `During an outage, Alert 1 fires ${pc(p.pS1D)}% of the time on its own and Alert 2 fires ${pc(p.pS2D)}% of the time on its own — but because they share dependencies, they do NOT fire independently: ` +
+    `During an outage, Alert 1 fires ${pc(p.pS1D)}% of the time individually and Alert 2 fires ${pc(p.pS2D)}% of the time individually — but because they share dependencies, they do NOT fire independently: ` +
     `during an outage, BOTH alerts fire together ${pc(d.jointD)}% of the time (more than the ${pc(d.productD)}% that independence would predict). During normal operation (no outage), both alerts still fire together ${pc(p.jointND)}% of the time due to shared background noise. ` +
     `Both Alert 1 and Alert 2 fire right now. What is the probability there is an actual outage?`,
   answerKey: "postD",

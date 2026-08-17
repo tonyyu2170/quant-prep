@@ -8,7 +8,7 @@ export const twoSignalFraud: ProblemTemplate = {
   version: 1,
   topic: "probability/bayes",
   difficulty: 2,
-  firms: [{ firm: "citadel", weight: 0.6 }, { firm: "jane-street", weight: 0.4 }, { firm: "hrt", weight: 0.3 }],
+  firms: [{ firm: "citadel-securities", weight: 0.6 }, { firm: "jane-street", weight: 0.4 }, { firm: "hrt", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "classic: sequential Bayesian update with two conditionally independent signals" },
   params: {
     prior: { choices: [0.01, 0.02, 0.05] },

@@ -16,8 +16,10 @@ export const threeBoxUnequalPrior: ProblemTemplate = {
     p2: { choices: [0.15, 0.2, 0.25, 0.3, 0.35, 0.4] },
   },
   // Keeps Box 3's prior strictly above half of Box 1's, so the sanity check's
-  // direction (postBox3 > 0.5) is guaranteed for every draw.
-  constraint: (p) => 1 - p.p1 - p.p2 > 0.5 * p.p1,
+  // direction (postBox3 > 0.5) is guaranteed for every draw. Also excludes p3≈p1,
+  // where the classic uniform-prior trap answer (two-thirds) would coincide with
+  // the correct answer within tolerance — the trap must be wrong on every draw.
+  constraint: (p) => 1 - p.p1 - p.p2 > 0.5 * p.p1 && Math.abs((1 - p.p1 - p.p2) - p.p1) > 0.01,
   derived: (p) => {
     const p3 = 1 - p.p1 - p.p2;
     const halfP1 = 0.5 * p.p1;

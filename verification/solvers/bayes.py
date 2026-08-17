@@ -417,15 +417,31 @@ def three_box_unequal_prior_exact(p):
 
 
 def three_box_unequal_prior_brute(p):
-    # Enumerate (prize location, host's open choice) atoms directly.
+    # True enumeration over (prize location, coin-flip) atoms with Fraction weights, applying
+    # the stated host procedure atom-by-atom — no Bayes formula anywhere.
     p1 = Fraction(str(p["p1"]))
     p2 = Fraction(str(p["p2"]))
     p3 = 1 - p1 - p2
     half = Fraction(1, 2)
-    # P(host opens Box2 | prize=Box1)=1/2, |prize=Box2)=0, |prize=Box3)=1
-    mass_box3_open2 = p3 * 1
-    mass_open2 = p1 * half + p2 * 0 + p3 * 1
-    return float(mass_box3_open2 / mass_open2)
+    priors = {"box1": p1, "box2": p2, "box3": p3}
+    mass_open2 = Fraction(0)
+    mass_open2_and_box3 = Fraction(0)
+    for prize, prior in priors.items():
+        for coin in ("heads", "tails"):
+            atom_mass = prior * half
+            # Host never opens the contestant's box (box1) or the prize box.
+            if prize == "box1":
+                # Both box2 and box3 are empty — the coin flip breaks the tie.
+                opens = "box2" if coin == "heads" else "box3"
+            elif prize == "box2":
+                opens = "box3"  # box3 is the only empty non-chosen box (forced)
+            else:
+                opens = "box2"  # box2 is the only empty non-chosen box (forced)
+            if opens == "box2":
+                mass_open2 += atom_mass
+                if prize == "box3":
+                    mass_open2_and_box3 += atom_mass
+    return float(mass_open2_and_box3 / mass_open2)
 
 
 def dice_max_given_threshold_exact(p):
@@ -509,17 +525,14 @@ def coffee_supplier_all_pass_brute(p):
 
 def airport_two_stage_screening_exact(p):
     legit = 1 - p["prior"]
-    numA = p["prior"] * p["sens1"]
-    fpA = legit * p["fpr1"]
-    denomA = numA + fpA
-    post1 = numA / denomA
-    legit1 = 1 - post1
-    numB = post1 * p["sens2"]
-    fpB = legit1 * p["fpr2"]
-    denomB = numB + fpB
-    post2 = numB / denomB
-    return {"legit": legit, "numA": numA, "fpA": fpA, "denomA": denomA, "post1": post1,
-            "legit1": legit1, "numB": numB, "fpB": fpB, "denomB": denomB, "post2": post2}
+    hitProduct = p["sens1"] * p["sens2"]
+    fpProduct = p["fpr1"] * p["fpr2"]
+    threatMass = p["prior"] * hitProduct
+    clearMass = legit * fpProduct
+    denom = threatMass + clearMass
+    post2 = threatMass / denom
+    return {"legit": legit, "hitProduct": hitProduct, "fpProduct": fpProduct,
+            "threatMass": threatMass, "clearMass": clearMass, "denom": denom, "post2": post2}
 
 
 def airport_two_stage_screening_brute(p):

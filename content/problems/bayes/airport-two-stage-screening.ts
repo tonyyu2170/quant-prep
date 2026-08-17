@@ -3,12 +3,15 @@ import { fmtNum, pc } from "../util";
 
 // Rare-event two-stage independent screening chain. Prior is deliberately tiny (0.001-0.005)
 // to make the rare-event lesson concrete; parameter ranges keep every derived value well
-// clear of the fmtNum decimal-safe floor (1e-6).
+// clear of the fmtNum decimal-safe floor (1e-6). Solved via the one-shot joint method:
+// multiply each hypothesis's full chain of stage likelihoods against its own prior and
+// normalize once, rather than chaining stage-by-stage as two-signal-fraud does — the two
+// are mathematically equivalent, this just never carries an intermediate posterior forward.
 export const airportTwoStageScreening: ProblemTemplate = {
   id: "bayes/airport-two-stage-screening",
   version: 1,
   topic: "probability/bayes",
-  difficulty: 3,
+  difficulty: 2,
   firms: [{ firm: "citadel-securities", weight: 0.5 }, { firm: "optiver", weight: 0.4 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "classic: rare-event two-stage independent diagnostic screening" },
   params: {
@@ -20,16 +23,13 @@ export const airportTwoStageScreening: ProblemTemplate = {
   },
   derived: (p) => {
     const legit = 1 - p.prior;
-    const numA = p.prior * p.sens1;
-    const fpA = legit * p.fpr1;
-    const denomA = numA + fpA;
-    const post1 = numA / denomA;
-    const legit1 = 1 - post1;
-    const numB = post1 * p.sens2;
-    const fpB = legit1 * p.fpr2;
-    const denomB = numB + fpB;
-    const post2 = numB / denomB;
-    return { legit, numA, fpA, denomA, post1, legit1, numB, fpB, denomB, post2 };
+    const hitProduct = p.sens1 * p.sens2;
+    const fpProduct = p.fpr1 * p.fpr2;
+    const threatMass = p.prior * hitProduct;
+    const clearMass = legit * fpProduct;
+    const denom = threatMass + clearMass;
+    const post2 = threatMass / denom;
+    return { legit, hitProduct, fpProduct, threatMass, clearMass, denom, post2 };
   },
   statement: (p) =>
     `An airport's passenger risk model assigns a prior probability of ${pc(p.prior)}% that any given passenger poses an actual threat. ` +
@@ -39,14 +39,14 @@ export const airportTwoStageScreening: ProblemTemplate = {
   answerKey: "post2",
   accepted: { tolerance: { rel: 0.005 } },
   solution: (p, d) => [
-    { title: "Setup", body: `Let $T$ = actual threat, $F_1,F_2$ = flagged at stage one, stage two. Given $P(T)=${p.prior}$, $P(F_1\\mid T)=${p.sens1}$, $P(F_1\\mid \\bar T)=${p.fpr1}$, $P(F_2\\mid T)=${p.sens2}$, $P(F_2\\mid \\bar T)=${p.fpr2}$, with the two stages independent given threat status.` },
-    { title: "Update on stage one", body: `True-flag mass: $${p.prior}\\times${p.sens1}=${fmtNum(d.numA)}$. False-flag mass: the non-threat share is ${fmtNum(d.legit)}, giving $${fmtNum(d.legit)}\\times${p.fpr1}=${fmtNum(d.fpA)}$. So $P(T\\mid F_1)=${fmtNum(d.numA)}/(${fmtNum(d.numA)}+${fmtNum(d.fpA)})=${fmtNum(d.post1)}$.` },
-    { title: "Update on stage two", body: `Treat $${fmtNum(d.post1)}$ as the new prior. True-flag mass: $${fmtNum(d.post1)}\\times${p.sens2}=${fmtNum(d.numB)}$. False-flag mass: the non-threat share is now ${fmtNum(d.legit1)}, giving $${fmtNum(d.legit1)}\\times${p.fpr2}=${fmtNum(d.fpB)}$. So $P(T\\mid F_1,F_2)=${fmtNum(d.numB)}/(${fmtNum(d.numB)}+${fmtNum(d.fpB)})=${fmtNum(d.post2)}$.` },
-    { title: "Sanity check", body: `Both stages are more likely to fire on an actual threat than on a non-threat, so each additional positive flag can only raise the posterior, never lower it: $${p.prior}<${fmtNum(d.post1)}$ and $${fmtNum(d.post1)}<${fmtNum(d.post2)}$ both hold.` },
+    { title: "Setup", body: `Let $T$ = actual threat, $F_1,F_2$ = flagged at stage one, stage two, conditionally independent given threat status. The four relevant masses are the prior branches $P(T)=${p.prior}$ and $P(\\bar T)=${fmtNum(d.legit)}$, and the combined stage likelihoods $P(F_1,F_2\\mid T)=${p.sens1}\\times${p.sens2}=${fmtNum(d.hitProduct)}$ and $P(F_1,F_2\\mid \\bar T)=${p.fpr1}\\times${p.fpr2}=${fmtNum(d.fpProduct)}$.` },
+    { title: "Combine into joint masses", body: `Multiply each branch's prior by its combined likelihood: threat-mass $=${p.prior}\\times${fmtNum(d.hitProduct)}=${fmtNum(d.threatMass)}$, clear-mass $=${fmtNum(d.legit)}\\times${fmtNum(d.fpProduct)}=${fmtNum(d.clearMass)}$.` },
+    { title: "Posterior", body: `$P(T\\mid F_1,F_2)=\\dfrac{${fmtNum(d.threatMass)}}{${fmtNum(d.threatMass)}+${fmtNum(d.clearMass)}}=${fmtNum(d.threatMass)}/${fmtNum(d.denom)}=${fmtNum(d.post2)}$. This one-shot computation lands on the same value as updating on each stage's result in turn, treating the first stage's posterior as the second stage's prior — the two orderings are mathematically identical, just different bookkeeping.` },
+    { title: "Sanity check", body: `The combined stage likelihoods favor the threat branch over the clear branch in every case here ($${fmtNum(d.hitProduct)} > ${fmtNum(d.fpProduct)}$), so the posterior must clear the raw prior — and $${fmtNum(d.post2)} > ${p.prior}$ holds.` },
   ],
-  keyInsight: "When the prior is extremely small, a single positive screen typically leaves the posterior still far from certainty even if the screen is fairly accurate — it takes several independent positive results, each compounding the odds further, before a rare event becomes more plausible than not.",
+  keyInsight: "Multiplying each hypothesis's full chain of stage likelihoods against its own prior and normalizing once means no intermediate posterior ever has to be reported or rounded partway through the chain — with a prior this tiny, a rounding error in a reported intermediate could quietly distort the next stage's update in a way the one-shot computation never exposes.",
   commonTrap: "Multiplying the two sensitivities together and reporting that product as the answer — that's P(both flags | threat), not P(threat | both flags), and it skips the tiny prior entirely, which is exactly the quantity a rare-event problem can't afford to drop.",
-  expectedPaceS: 140,
+  expectedPaceS: 100,
   verify: { method: "brute-force" },
   constants: [1, 2],
 };
