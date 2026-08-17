@@ -1,5 +1,5 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import { fmtNum } from "../util";
 
 // The classic (and famously ambiguous) two-children problem. The sampling model is pinned
 // explicitly: a family is drawn uniformly from the subset of two-child families with at

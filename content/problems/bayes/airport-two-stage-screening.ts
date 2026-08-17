@@ -34,7 +34,7 @@ export const airportTwoStageScreening: ProblemTemplate = {
   statement: (p) =>
     `An airport's passenger risk model assigns a prior probability of ${pc(p.prior)}% that any given passenger poses an actual threat. ` +
     `Stage-one screening flags ${pc(p.sens1)}% of actual threats and also flags ${pc(p.fpr1)}% of non-threats. ` +
-    `Stage-two screening, an independent secondary check, flags ${pc(p.sens2)}% of actual threats and ${pc(p.fpr2)}% of non-threats. ` +
+    `Stage-two screening is a separate secondary check that flags ${pc(p.sens2)}% of actual threats and ${pc(p.fpr2)}% of non-threats, independently of the stage-one result given the passenger's true status. ` +
     `A passenger is flagged by both stages. What is the probability this passenger is an actual threat?`,
   answerKey: "post2",
   accepted: { tolerance: { rel: 0.005 } },
@@ -45,7 +45,7 @@ export const airportTwoStageScreening: ProblemTemplate = {
     { title: "Sanity check", body: `Both stages are more likely to fire on an actual threat than on a non-threat, so each additional positive flag can only raise the posterior, never lower it: $${p.prior}<${fmtNum(d.post1)}$ and $${fmtNum(d.post1)}<${fmtNum(d.post2)}$ both hold.` },
   ],
   keyInsight: "When the prior is extremely small, a single positive screen typically leaves the posterior still far from certainty even if the screen is fairly accurate — it takes several independent positive results, each compounding the odds further, before a rare event becomes more plausible than not.",
-  commonTrap: "Assuming that two independent positive flags must mean the passenger is almost certainly a threat — with a prior this low, even a modest false-positive rate at each stage still generates a false-alarm pool that can rival or dwarf the tiny true-threat pool, especially after only two stages.",
+  commonTrap: "Multiplying the two sensitivities together (stage-one flag rate times stage-two flag rate) and reporting that product as the answer — that's P(both flags | threat), not P(threat | both flags), and it skips the tiny prior entirely, which is exactly the quantity a rare-event problem can't afford to drop.",
   expectedPaceS: 140,
   verify: { method: "brute-force" },
   constants: [1, 2],

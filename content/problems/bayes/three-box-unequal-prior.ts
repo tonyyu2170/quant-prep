@@ -1,5 +1,5 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import { fmtNum } from "../util";
 
 // Monty-Hall-adjacent with an unequal, explicitly given prior over box contents. The host's
 // procedure is stated unambiguously: never opens the contestant's box or the prize box, and

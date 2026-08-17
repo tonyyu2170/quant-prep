@@ -1,5 +1,5 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import { fmtNum } from "../util";
 
 // Conditioning on an "at least one" event: three flips of a (possibly biased) coin,
 // P(exactly two heads | at least one head) — full enumeration, like dice-face-given-sum.
