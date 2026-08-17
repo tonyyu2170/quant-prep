@@ -1,11 +1,32 @@
+const NUM = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)`;
+const FRACTION = new RegExp(`^(${NUM})/(${NUM})$`);
+const PLAIN = new RegExp(`^${NUM}$`);
+
+// Plain answer parser: numbers and simple fractions only. Used by timed drills to prevent
+// typed-expression cheating (e.g. typing "17*23" for a timed problem asking "17 × 23").
+export function parseAnswer(raw: string): number | null {
+  const s = raw.trim().replace(/[−‒–—―]/g, "-").replace(/,/g, "").replace(/\s*\/\s*/, "/");
+  if (s === "") return null;
+  const frac = s.match(FRACTION);
+  if (frac) {
+    const num = Number(frac[1]), den = Number(frac[2]);
+    if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return null;
+    return num / den;
+  }
+  if (!PLAIN.test(s)) return null;
+  const v = Number(s);
+  return Number.isFinite(v) ? v : null;
+}
+
 const MAX_LEN = 64;
 
-// Recursive-descent evaluator for drill answers (spec §4): numbers, %, + − × / ^, parens.
-// No eval; unparseable input returns null so the drill can show a hint instead of grading.
-export function parseAnswer(raw: string): number | null {
+// Expression evaluator for drill answers (spec §4): numbers, %, + − × / ^, parens.
+// Full arithmetic expressions with operator precedence. No eval; unparseable input
+// returns null so the drill can show a hint instead of grading.
+export function parseAnswerExpr(raw: string): number | null {
   const s = raw.trim().replace(/[−‒–—―]/g, "-").replace(/,/g, "");
   // Whitespace is stripped only adjacent to operators/parens, so junk like "1 2" stays rejected while spaced expressions work.
-  const t = s.replace(/\s*([()+\-*/^×])\s*/g, "$1");
+  const t = s.replace(/\s*([()+\-*/^×%])\s*/g, "$1");
   if (t === "" || t.length > MAX_LEN) return null;
   const p = new Parser(t);
   const v = p.parseExpr();
@@ -53,6 +74,7 @@ class Parser {
     return v;
   }
   private parseUnary(): number | null {
+    // Unary minus binds tighter than ^ (Excel convention): -2^2 = -(2^2) = -4, not (-2)^2 = 4.
     if (this.peek() === "-") { this.i++; const v = this.parseUnary(); return v === null ? null : -v; }
     if (this.peek() === "+") { this.i++; return this.parseUnary(); }
     return this.parseBase();
