@@ -24,3 +24,4 @@ playwright-report/
 # verification (generated artifact + local venv)
 verification/instances.json
 verification/.venv/
+__pycache__/
