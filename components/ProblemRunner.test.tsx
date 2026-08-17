@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { answerOf, drawParams } from "@qp/engine";
@@ -48,5 +48,23 @@ describe("ProblemSession", () => {
     fireEvent.change(input, { target: { value: `(${exact}) * (2/2)` } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(screen.getByTestId("verdict").textContent).toMatch(/✓/);
+  });
+  it("shows the parse hint on garbage and records no attempt", () => {
+    render(<ProblemSession template={template} seed={7} onNext={() => {}} onHarder={null} />);
+    const input = screen.getByLabelText("answer") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "abc" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByTestId("parse-hint")).toBeInTheDocument();
+    expect(screen.queryByTestId("walkthrough")).not.toBeInTheDocument();
+    expect(localStorage.getItem("qp.attempts.v1")).toBeNull();
+  });
+  it("does not bubble Enter from the Re-roll button to onNext", () => {
+    const onNext = vi.fn();
+    render(<ProblemSession template={template} seed={7} onNext={onNext} onHarder={null} />);
+    const input = screen.getByLabelText("answer") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "0.999" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("button", { name: "Re-roll numbers" }), { key: "Enter" });
+    expect(onNext).not.toHaveBeenCalled();
   });
 });

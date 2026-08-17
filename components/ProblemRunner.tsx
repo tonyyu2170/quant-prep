@@ -44,6 +44,11 @@ export function ProblemSession({ template, seed, onNext, onHarder }: {
   const [done, setDone] = useState<null | boolean>(null);
   const [reported, setReported] = useState(false);
   const qStart = useRef(Date.now());
+  const walkthroughRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (done !== null) walkthroughRef.current?.focus();
+  }, [done]);
 
   function submit() {
     const parsed = parseAnswerExpr(value);
@@ -88,10 +93,11 @@ export function ProblemSession({ template, seed, onNext, onHarder }: {
           <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
         </>
       ) : (
-        <div data-testid="walkthrough" tabIndex={0} ref={(el) => el?.focus()}
-             onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) onNext(); }}
+        <div data-testid="walkthrough" tabIndex={0} ref={walkthroughRef}
+             onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat && e.target === e.currentTarget) onNext(); }}
              style={{ borderTop: `2px solid ${done ? "var(--good)" : "var(--bad)"}`, paddingTop: 14, maxWidth: "68ch" }}>
           <p data-testid="verdict" className="mono" style={{ color: done ? "var(--good)" : "var(--bad)", fontWeight: 700 }}>
+            <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>{done ? "correct" : "incorrect"}</span>
             {done ? "✓ CORRECT" : "✗"} · you: {value || "—"} · exact: {fmtNum(exact)}
           </p>
           <ol style={{ margin: "14px 0 0 18px" }}>
