@@ -50,6 +50,9 @@ describe("parseAnswer", () => {
     expect(parseAnswer("2^-2")).toBeCloseTo(0.25, 12);
     expect(parseAnswer("-(1/4)")).toBeCloseTo(-0.25, 12);
     expect(parseAnswer("1/6×3")).toBeCloseTo(0.5, 12);
+    expect(parseAnswer("( 1 + 2 )")).toBe(3);
+    expect(parseAnswer("2 ^ 10")).toBe(1024);
+    expect(parseAnswer("1 × 3")).toBe(3);
   });
   it("rejects malformed expressions", () => {
     expect(parseAnswer("1/0")).toBeNull();
@@ -58,5 +61,6 @@ describe("parseAnswer", () => {
     expect(parseAnswer("1e5")).toBeNull();
     expect(parseAnswer("a+b")).toBeNull();
     expect(parseAnswer("1".repeat(70))).toBeNull();
+    expect(parseAnswer("1 2")).toBeNull();
   });
 });

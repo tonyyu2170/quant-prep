@@ -3,9 +3,11 @@ const MAX_LEN = 64;
 // Recursive-descent evaluator for drill answers (spec §4): numbers, %, + − × / ^, parens.
 // No eval; unparseable input returns null so the drill can show a hint instead of grading.
 export function parseAnswer(raw: string): number | null {
-  const s = raw.trim().replace(/[−‒–—―]/g, "-").replace(/,/g, "").replace(/\s*([+\-*/^×])\s*/g, "$1");
-  if (s === "" || s.length > MAX_LEN) return null;
-  const p = new Parser(s);
+  const s = raw.trim().replace(/[−‒–—―]/g, "-").replace(/,/g, "");
+  // Whitespace is stripped only adjacent to operators/parens, so junk like "1 2" stays rejected while spaced expressions work.
+  const t = s.replace(/\s*([()+\-*/^×])\s*/g, "$1");
+  if (t === "" || t.length > MAX_LEN) return null;
+  const p = new Parser(t);
   const v = p.parseExpr();
   return v !== null && p.done() && Number.isFinite(v) ? v : null;
 }
