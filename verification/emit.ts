@@ -16,6 +16,7 @@ const fnv = (s: string) => {
 function auditText(t: ProblemTemplate, text: string, allowed: Set<string>, seed: number) {
   for (const bad of ["NaN", "undefined", "Infinity", "{{"])
     if (text.includes(bad)) fail.push(`${t.id} seed ${seed}: forbidden "${bad}" in text`);
+  if (((text.match(/\$/g) ?? []).length % 2) !== 0) fail.push(`${t.id} seed ${seed}: unpaired $ in text`);
   const mathSegs = text.split(/\$([^$]+)\$/g);
   for (let i = 1; i < mathSegs.length; i += 2) {
     try { katex.renderToString(mathSegs[i], { throwOnError: true }); }
@@ -42,12 +43,12 @@ for (const t of PROBLEMS) {
     if (tol.abs !== undefined && tol.abs > Math.abs(answer) / 10)
       fail.push(`${t.id} seed ${seed}: abs tolerance ${tol.abs} loose vs answer ${answer}`);
     for (const v of [...Object.values(p), ...Object.values(d)])
-      if (v !== 0 && (Math.abs(v) < 1e-6 || Math.abs(v) >= 1e15))
+      if (!Number.isFinite(v) || (v !== 0 && (Math.abs(v) < 1e-6 || Math.abs(v) >= 1e15)))
         fail.push(`${t.id} seed ${seed}: value ${v} outside fmtNum decimal-safe window`);
     const allowed = new Set<string>();
     for (const v of [...Object.values(p), ...Object.values(d), ...(t.constants ?? [])]) {
       allowed.add(fmtNum(v));
-      allowed.add(fmtNum(Math.round(100 * v * 1e8) / 1e8)); // percent renderings
+      if (v > 0 && v < 1) allowed.add(fmtNum(Math.round(100 * v * 1e8) / 1e8)); // percent renderings
     }
     auditText(t, t.statement(p, d), allowed, seed);
     for (const step of t.solution(p, d)) auditText(t, `${step.title} ${step.body}`, allowed, seed);
