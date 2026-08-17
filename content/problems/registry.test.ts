@@ -25,4 +25,11 @@ describe("problem registry invariants", () => {
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
   });
+  it("bayes batch hits the 12/12/6 difficulty distribution", () => {
+    const bayes = PROBLEMS.filter((t) => t.id.startsWith("bayes/"));
+    expect(bayes.length).toBe(30);
+    expect(bayes.filter((t) => t.difficulty === 1).length).toBe(12);
+    expect(bayes.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(bayes.filter((t) => t.difficulty === 3).length).toBe(6);
+  });
 });

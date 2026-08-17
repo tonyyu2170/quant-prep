@@ -21,6 +21,14 @@ import { twoChildrenAtLeastOneBoy } from "./bayes/two-children-at-least-one-boy"
 import { coffeeSupplierAllPass } from "./bayes/coffee-supplier-all-pass";
 import { airportTwoStageScreening } from "./bayes/airport-two-stage-screening";
 import { networkOutageJointAlerts } from "./bayes/network-outage-joint-alerts";
+import { loanDefaultNaturalFrequency } from "./bayes/loan-default-natural-frequency";
+import { flightDelayStormTree } from "./bayes/flight-delay-storm-tree";
+import { batteryNegativeTest } from "./bayes/battery-negative-test";
+import { creditBureauDisagreement } from "./bayes/credit-bureau-disagreement";
+import { insuranceRiskPoolMixture } from "./bayes/insurance-risk-pool-mixture";
+import { strategyEdgeStreak } from "./bayes/strategy-edge-streak";
+import { dataVendorWorstSource } from "./bayes/data-vendor-worst-source";
+import { twoUrnsWithoutReplacement } from "./bayes/two-urns-without-replacement";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -45,6 +53,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   coffeeSupplierAllPass,
   airportTwoStageScreening,
   networkOutageJointAlerts,
+  loanDefaultNaturalFrequency,
+  flightDelayStormTree,
+  batteryNegativeTest,
+  creditBureauDisagreement,
+  insuranceRiskPoolMixture,
+  strategyEdgeStreak,
+  dataVendorWorstSource,
+  twoUrnsWithoutReplacement,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

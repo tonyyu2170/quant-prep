@@ -574,6 +574,239 @@ def network_outage_joint_alerts_brute(p):
     return float(numD / (numD + numND))
 
 
+def loan_default_natural_frequency_exact(p):
+    nonD = p["N"] - p["D"]
+    correctFlags = p["D"] - p["missedD"]
+    totalFlagged = correctFlags + p["fpFlags"]
+    posterior = correctFlags / totalFlagged
+    catchRate = correctFlags / p["D"]
+    return {"nonD": nonD, "correctFlags": correctFlags, "totalFlagged": totalFlagged,
+            "posterior": posterior, "catchRate": catchRate}
+
+
+def loan_default_natural_frequency_brute(p):
+    # Enumerate the flagged pool directly as raw counts — no probability formula anywhere.
+    correctFlags = int(p["D"]) - int(p["missedD"])
+    fpFlags = int(p["fpFlags"])
+    return float(Fraction(correctFlags, correctFlags + fpFlags))
+
+
+def flight_delay_storm_tree_exact(p):
+    noStorm = 1 - p["prior"]
+    onTimeStorm = 1 - p["pDelayStorm"]
+    onTimeNoStorm = 1 - p["pDelayNoStorm"]
+    massStormDelay = p["prior"] * p["pDelayStorm"]
+    massStormOnTime = p["prior"] * onTimeStorm
+    massNoStormDelay = noStorm * p["pDelayNoStorm"]
+    massNoStormOnTime = noStorm * onTimeNoStorm
+    pDelay = massStormDelay + massNoStormDelay
+    postStorm = massStormDelay / pDelay
+    leafSum = massStormDelay + massStormOnTime + massNoStormDelay + massNoStormOnTime
+    return {"noStorm": noStorm, "onTimeStorm": onTimeStorm, "onTimeNoStorm": onTimeNoStorm,
+            "massStormDelay": massStormDelay, "massStormOnTime": massStormOnTime,
+            "massNoStormDelay": massNoStormDelay, "massNoStormOnTime": massNoStormOnTime,
+            "pDelay": pDelay, "postStorm": postStorm, "leafSum": leafSum}
+
+
+def flight_delay_storm_tree_brute(p):
+    # Enumerate the four (storm?, delayed?) leaves directly with Fraction weights.
+    prior = Fraction(str(p["prior"]))
+    pDS = Fraction(str(p["pDelayStorm"]))
+    pDN = Fraction(str(p["pDelayNoStorm"]))
+    noStorm = 1 - prior
+    leaf_storm_delay = prior * pDS
+    leaf_clear_delay = noStorm * pDN
+    return float(leaf_storm_delay / (leaf_storm_delay + leaf_clear_delay))
+
+
+def battery_negative_test_exact(p):
+    fnr = 1 - p["sens"]
+    fpr = 1 - p["spec"]
+    goodShare = 1 - p["prior"]
+    massDefectiveNeg = p["prior"] * fnr
+    massGoodNeg = goodShare * p["spec"]
+    totalNeg = massDefectiveNeg + massGoodNeg
+    postNeg = massDefectiveNeg / totalNeg
+    massDefectivePos = p["prior"] * p["sens"]
+    massGoodPos = goodShare * fpr
+    totalPos = massDefectivePos + massGoodPos
+    postPos = massDefectivePos / totalPos
+    return {"fnr": fnr, "fpr": fpr, "goodShare": goodShare, "massDefectiveNeg": massDefectiveNeg,
+            "massGoodNeg": massGoodNeg, "totalNeg": totalNeg, "postNeg": postNeg,
+            "massDefectivePos": massDefectivePos, "massGoodPos": massGoodPos,
+            "totalPos": totalPos, "postPos": postPos}
+
+
+def battery_negative_test_brute(p):
+    # Enumerate (defective?, result) atoms directly — no Bayes formula.
+    prior = Fraction(str(p["prior"]))
+    sens = Fraction(str(p["sens"]))
+    spec = Fraction(str(p["spec"]))
+    good = 1 - prior
+    fnr = 1 - sens
+    mass_def_neg = prior * fnr
+    mass_good_neg = good * spec
+    return float(mass_def_neg / (mass_def_neg + mass_good_neg))
+
+
+def credit_bureau_disagreement_exact(p):
+    safe = 1 - p["prior"]
+    missB = 1 - p["sensB"]
+    specB = 1 - p["fprB"]
+    riskyLikelihood = p["sensA"] * missB
+    safeLikelihood = p["fprA"] * specB
+    riskyMass = p["prior"] * riskyLikelihood
+    safeMass = safe * safeLikelihood
+    denom = riskyMass + safeMass
+    posterior = riskyMass / denom
+    return {"safe": safe, "missB": missB, "specB": specB, "riskyLikelihood": riskyLikelihood,
+            "safeLikelihood": safeLikelihood, "riskyMass": riskyMass, "safeMass": safeMass,
+            "denom": denom, "posterior": posterior}
+
+
+def credit_bureau_disagreement_brute(p):
+    # Enumerate (risky?, A-fires?, B-fires?) atoms directly, using the disagreement branch.
+    prior = Fraction(str(p["prior"]))
+    sensA = Fraction(str(p["sensA"]))
+    fprA = Fraction(str(p["fprA"]))
+    sensB = Fraction(str(p["sensB"]))
+    fprB = Fraction(str(p["fprB"]))
+    safe = 1 - prior
+    risky_mass = prior * sensA * (1 - sensB)
+    safe_mass = safe * fprA * (1 - fprB)
+    return float(risky_mass / (risky_mass + safe_mass))
+
+
+def insurance_risk_pool_mixture_exact(p):
+    lowShare = 1 - p["mixShare"]
+    basePrior = p["mixShare"] * p["rateHigh"] + lowShare * p["rateLow"]
+    distLow = basePrior - p["rateLow"]
+    distHigh = p["rateHigh"] - basePrior
+    healthy = 1 - basePrior
+    tp = basePrior * p["sens"]
+    fp = healthy * p["fpr"]
+    posTotal = tp + fp
+    posterior = tp / posTotal
+    return {"lowShare": lowShare, "basePrior": basePrior, "distLow": distLow, "distHigh": distHigh,
+            "healthy": healthy, "tp": tp, "fp": fp, "posTotal": posTotal, "posterior": posterior}
+
+
+def insurance_risk_pool_mixture_brute(p):
+    # Enumerate (pool, condition?) atoms for the mixture, then (condition?, flagged?) atoms.
+    mixShare = Fraction(str(p["mixShare"]))
+    rateHigh = Fraction(str(p["rateHigh"]))
+    rateLow = Fraction(str(p["rateLow"]))
+    sens = Fraction(str(p["sens"]))
+    fpr = Fraction(str(p["fpr"]))
+    mass_cond = mixShare * rateHigh + (1 - mixShare) * rateLow
+    mass_healthy = 1 - mass_cond
+    tp = mass_cond * sens
+    fp = mass_healthy * fpr
+    return float(tp / (tp + fp))
+
+
+def strategy_edge_streak_exact(p):
+    n = p["h"] + p["t"]
+    q1 = 1 - p["p1"]
+    q0 = 1 - p["p0"]
+    likeH1 = (p["p1"] ** p["h"]) * (q1 ** p["t"])
+    likeH0 = (p["p0"] ** p["h"]) * (q0 ** p["t"])
+    massH1 = 0.5 * likeH1
+    massH0 = 0.5 * likeH0
+    denom = massH1 + massH0
+    posterior = massH1 / denom
+    return {"n": n, "q1": q1, "q0": q0, "likeH1": likeH1, "likeH0": likeH0,
+            "massH1": massH1, "massH0": massH0, "denom": denom, "posterior": posterior}
+
+
+def strategy_edge_streak_brute(p):
+    # True enumeration over every win/loss sequence of length h+t, filtered to exactly h wins —
+    # the count of matching orderings falls out of the enumeration instead of being multiplied
+    # in as a binomial coefficient, independently confirming that it cancels in the posterior.
+    h, t = int(p["h"]), int(p["t"])
+    p1 = Fraction(str(p["p1"]))
+    p0 = Fraction(str(p["p0"]))
+    half = Fraction(1, 2)
+
+    def seq_mass(win_prob):
+        total = Fraction(0)
+        for seq in itertools.product([True, False], repeat=h + t):
+            if sum(seq) != h:
+                continue
+            w = Fraction(1)
+            for flip in seq:
+                w *= win_prob if flip else (1 - win_prob)
+            total += w
+        return total
+
+    massH1 = half * seq_mass(p1)
+    massH0 = half * seq_mass(p0)
+    return float(massH1 / (massH1 + massH0))
+
+
+def data_vendor_worst_source_exact(p):
+    shareC = 1 - p["shareA"] - p["shareB"]
+    likeA = p["rateA"] ** 2
+    likeB = p["rateB"] ** 2
+    likeC = p["rateC"] ** 2
+    massA = p["shareA"] * likeA
+    massB = p["shareB"] * likeB
+    massC = shareC * likeC
+    totalMass = massA + massB + massC
+    postC = massC / totalMass
+    return {"shareC": shareC, "likeA": likeA, "likeB": likeB, "likeC": likeC,
+            "massA": massA, "massB": massB, "massC": massC, "totalMass": totalMass, "postC": postC}
+
+
+def data_vendor_worst_source_brute(p):
+    # Enumerate (vendor, tick1 bad?, tick2 bad?) atoms directly via exact Fraction squares.
+    shareA = Fraction(str(p["shareA"]))
+    shareB = Fraction(str(p["shareB"]))
+    shareC = 1 - shareA - shareB
+    rateA = Fraction(str(p["rateA"]))
+    rateB = Fraction(str(p["rateB"]))
+    rateC = Fraction(str(p["rateC"]))
+    massA = shareA * rateA * rateA
+    massB = shareB * rateB * rateB
+    massC = shareC * rateC * rateC
+    return float(massC / (massA + massB + massC))
+
+
+def two_urns_without_replacement_exact(p):
+    aTotal = p["aRed"] + p["aBlue"]
+    bTotal = p["bRed"] + p["bBlue"]
+    pTwoRedA = (p["aRed"] * (p["aRed"] - 1)) / (aTotal * (aTotal - 1))
+    pTwoRedB = (p["bRed"] * (p["bRed"] - 1)) / (bTotal * (bTotal - 1))
+    massA = 0.5 * pTwoRedA
+    massB = 0.5 * pTwoRedB
+    denom = massA + massB
+    postA = massA / denom
+    return {"aTotal": aTotal, "bTotal": bTotal, "pTwoRedA": pTwoRedA, "pTwoRedB": pTwoRedB,
+            "massA": massA, "massB": massB, "denom": denom, "postA": postA}
+
+
+def two_urns_without_replacement_brute(p):
+    # Enumerate every ordered pair of distinct balls per urn: index < red is a red ball.
+    def two_red_mass(red, blue):
+        total = red + blue
+        w = Fraction(1, total * (total - 1))
+        count = 0
+        for i in range(total):
+            for j in range(total):
+                if i == j:
+                    continue
+                if i < red and j < red:
+                    count += 1
+        return count * w
+
+    pa = two_red_mass(int(p["aRed"]), int(p["aBlue"]))
+    pb = two_red_mass(int(p["bRed"]), int(p["bBlue"]))
+    half = Fraction(1, 2)
+    massA = half * pa
+    massB = half * pb
+    return float(massA / (massA + massB))
+
+
 SOLVERS = {
     "bayes/base-rate-test": {"exact": base_rate_exact, "simulate": base_rate_sim},
     "bayes/two-urns": {"exact": two_urns_exact, "brute": two_urns_brute},
@@ -597,4 +830,12 @@ SOLVERS = {
     "bayes/coffee-supplier-all-pass": {"exact": coffee_supplier_all_pass_exact, "brute": coffee_supplier_all_pass_brute},
     "bayes/airport-two-stage-screening": {"exact": airport_two_stage_screening_exact, "brute": airport_two_stage_screening_brute},
     "bayes/network-outage-joint-alerts": {"exact": network_outage_joint_alerts_exact, "brute": network_outage_joint_alerts_brute},
+    "bayes/loan-default-natural-frequency": {"exact": loan_default_natural_frequency_exact, "brute": loan_default_natural_frequency_brute},
+    "bayes/flight-delay-storm-tree": {"exact": flight_delay_storm_tree_exact, "brute": flight_delay_storm_tree_brute},
+    "bayes/battery-negative-test": {"exact": battery_negative_test_exact, "brute": battery_negative_test_brute},
+    "bayes/credit-bureau-disagreement": {"exact": credit_bureau_disagreement_exact, "brute": credit_bureau_disagreement_brute},
+    "bayes/insurance-risk-pool-mixture": {"exact": insurance_risk_pool_mixture_exact, "brute": insurance_risk_pool_mixture_brute},
+    "bayes/strategy-edge-streak": {"exact": strategy_edge_streak_exact, "brute": strategy_edge_streak_brute},
+    "bayes/data-vendor-worst-source": {"exact": data_vendor_worst_source_exact, "brute": data_vendor_worst_source_brute},
+    "bayes/two-urns-without-replacement": {"exact": two_urns_without_replacement_exact, "brute": two_urns_without_replacement_brute},
 }
