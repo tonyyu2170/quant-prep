@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import StatsPage from "./page";
 import type { TestSessionRow } from "@/lib/store/types";
@@ -29,5 +29,17 @@ describe("StatsPage score chart", () => {
     // this assertion is satisfied by the pre-load empty state too and proves nothing.
     await screen.findByText("optiver-80in8");
     expect(screen.getByText("No timed sims yet.")).toBeInTheDocument();
+  });
+
+  it("filters attempts by probability topic prefix", async () => {
+    localStorage.setItem("qp.attempts.v1", JSON.stringify([
+      { problemId: "a:1", problemVersion: 1, seed: 1, mode: "practice", topic: "arithmetic", answer: "1", correct: true, timeMs: 1000, sessionId: null, createdAt: new Date().toISOString() },
+      { problemId: "bayes/two-urns", problemVersion: 1, seed: 2, mode: "practice", topic: "probability/bayes", answer: "0.4", correct: true, timeMs: 2000, sessionId: null, createdAt: new Date().toISOString() },
+    ]));
+    render(<StatsPage />);
+    await screen.findByText("probability/bayes"); // per-topic list loaded
+    fireEvent.click(screen.getByRole("button", { name: "probability" }));
+    expect(screen.getByText("probability/bayes")).toBeInTheDocument();
+    expect(screen.getAllByText(/1q/)).toHaveLength(1); // only the probability row remains in the list
   });
 });

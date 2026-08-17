@@ -10,7 +10,7 @@ import BarChart from "@/components/charts/BarChart";
 
 const RANGES = { "7D": 7, "30D": 30, "90D": 90, ALL: 36500 } as const;
 type RangeKey = keyof typeof RANGES;
-const TOPICS = ["All topics", "arithmetic", "sequences"] as const;
+const TOPICS = ["All topics", "arithmetic", "sequences", "probability"] as const;
 const SIM_PRESETS = ["optiver-80in8", "sequences-sprint"] as const;
 type SimPreset = (typeof SIM_PRESETS)[number];
 const SIM_LABELS: Record<SimPreset, string> = { "optiver-80in8": "80-in-8 scores", "sequences-sprint": "Seq-sprint scores" };
@@ -50,7 +50,7 @@ export default function StatsPage() {
   }, [range]);
   const rows = useMemo(
     () => attempts
-      .filter((a) => localDate(a.createdAt) >= cutoffDay && (topic === "All topics" || a.topic === topic))
+      .filter((a) => localDate(a.createdAt) >= cutoffDay && (topic === "All topics" || a.topic === topic || a.topic.startsWith(topic + "/")))
       .map((a) => ({ topic: a.topic, correct: a.correct, timeMs: a.timeMs, createdAt: localDate(a.createdAt) })),
     [attempts, cutoffDay, topic],
   );
