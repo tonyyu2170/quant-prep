@@ -29,3 +29,18 @@ test("sequences drill reveals the rule after answering", async ({ page }) => {
   await expect(page.getByText(/ANSWER:|CORRECT/)).toBeVisible();
   await expect(page.getByText("Enter for next")).toBeVisible();
 });
+
+test("probability drill unfolds a walkthrough and re-rolls", async ({ page }) => {
+  await page.goto("/drills/probability");
+  const input = page.getByLabel("answer");
+  await expect(input).toBeVisible();
+  await input.fill("99999");
+  await input.press("Enter");
+  await expect(page.getByTestId("walkthrough")).toBeVisible();
+  await expect(page.getByTestId("verdict")).toContainText("✗");
+  await expect(page.getByText("Key insight.")).toBeVisible();
+  await expect(page.getByText("Report issue")).toBeVisible();
+  await page.getByRole("button", { name: "Re-roll numbers" }).click();
+  await expect(page.getByLabel("answer")).toBeVisible();
+  await expect(page.getByLabel("answer")).toHaveValue(""); // fresh roll, cleared input
+});
