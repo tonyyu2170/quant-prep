@@ -36,13 +36,18 @@ export function drawParams(t: ProblemTemplate, seed: number): Params {
   const rng = makeRng(seed);
   for (let attempt = 0; attempt < 100; attempt++) {
     const p: Params = {};
+    // Sorted keys: adding/removing a param reshuffles every other param's draw — bump template version when the param set changes.
     for (const key of Object.keys(t.params).sort()) {
       const spec = t.params[key];
-      if (spec.choices) p[key] = spec.choices[Math.floor(rng() * spec.choices.length)];
-      else if (spec.range) {
+      if (spec.choices) {
+        if (spec.choices.length === 0) throw new Error(`drawParams: invalid spec for '${key}' in ${t.id}`);
+        p[key] = spec.choices[Math.floor(rng() * spec.choices.length)];
+      } else if (spec.range) {
         const { min, max, step } = spec.range;
-        const steps = Math.floor((max - min) / step);
+        const steps = Math.round((max - min) / step);
         p[key] = Math.round((min + step * Math.floor(rng() * (steps + 1))) * 1e10) / 1e10;
+      } else {
+        throw new Error(`drawParams: invalid spec for '${key}' in ${t.id}`);
       }
     }
     if (!t.constraint || t.constraint(p)) return p;

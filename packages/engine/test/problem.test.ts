@@ -29,4 +29,15 @@ describe("drawParams", () => {
   it("throws when the constraint is unsatisfiable", () => {
     expect(() => drawParams({ ...t, constraint: () => false }, 1)).toThrow(/constraint/);
   });
+  it("reaches the grid maximum on decimal steps", () => {
+    const g: ProblemTemplate = { ...t, params: { x: { range: { min: 0.05, max: 0.95, step: 0.05 } } }, constraint: undefined, derived: (p) => ({ sum: p.x }), answerKey: "sum" };
+    const seen = new Set<number>();
+    for (let s = 0; s < 500; s++) seen.add(drawParams(g, s).x);
+    expect(seen.has(0.95)).toBe(true);
+    expect(seen.has(0.05)).toBe(true);
+  });
+  it("throws on degenerate param specs", () => {
+    expect(() => drawParams({ ...t, params: { x: {} } }, 1)).toThrow(/invalid spec/);
+    expect(() => drawParams({ ...t, params: { x: { choices: [] } } }, 1)).toThrow(/invalid spec/);
+  });
 });
