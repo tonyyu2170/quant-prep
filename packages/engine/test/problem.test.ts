@@ -40,4 +40,8 @@ describe("drawParams", () => {
     expect(() => drawParams({ ...t, params: { x: {} } }, 1)).toThrow(/invalid spec/);
     expect(() => drawParams({ ...t, params: { x: { choices: [] } } }, 1)).toThrow(/invalid spec/);
   });
+  it("throws on non-divisible or zero-step grids", () => {
+    expect(() => drawParams({ ...t, params: { x: { range: { min: 0.05, max: 0.98, step: 0.05 } } } }, 1)).toThrow(/invalid spec/);
+    expect(() => drawParams({ ...t, params: { x: { range: { min: 1, max: 5, step: 0 } } } }, 1)).toThrow(/invalid spec/);
+  });
 });

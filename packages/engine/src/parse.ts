@@ -74,7 +74,7 @@ class Parser {
     return v;
   }
   private parseUnary(): number | null {
-    // Unary minus binds tighter than ^ (Excel convention): -2^2 = -(2^2) = -4, not (-2)^2 = 4.
+    // Unary minus binds tighter than ^ (Excel convention): -2^2 = (-2)^2 = 4, not -(2^2) = -4.
     if (this.peek() === "-") { this.i++; const v = this.parseUnary(); return v === null ? null : -v; }
     if (this.peek() === "+") { this.i++; return this.parseUnary(); }
     return this.parseBase();

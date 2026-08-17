@@ -44,6 +44,8 @@ export function drawParams(t: ProblemTemplate, seed: number): Params {
         p[key] = spec.choices[Math.floor(rng() * spec.choices.length)];
       } else if (spec.range) {
         const { min, max, step } = spec.range;
+        if (step <= 0 || Math.abs(Math.round((max - min) / step) * step - (max - min)) > 1e-9)
+          throw new Error(`drawParams: invalid spec for '${key}' in ${t.id}`);
         const steps = Math.round((max - min) / step);
         p[key] = Math.round((min + step * Math.floor(rng() * (steps + 1))) * 1e10) / 1e10;
       } else {
