@@ -14,7 +14,7 @@ export const twoUrns: ProblemTemplate = {
     bRed: { choices: [5, 6, 7] },
     bBlue: { choices: [2, 3] },
   },
-  constraint: (p) => p.aRed / (p.aRed + p.aBlue) !== p.bRed / (p.bRed + p.bBlue),
+  constraint: (p) => p.aRed / (p.aRed + p.aBlue) < p.bRed / (p.bRed + p.bBlue),
   derived: (p) => {
     const aTotal = p.aRed + p.aBlue;
     const bTotal = p.bRed + p.bBlue;

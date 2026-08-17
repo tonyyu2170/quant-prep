@@ -40,5 +40,5 @@ export const baseRateTest: ProblemTemplate = {
   commonTrap: "Answering with the sensitivity itself — that inverts the conditional and ignores the base rate entirely.",
   expectedPaceS: 90,
   verify: { method: "montecarlo" },
-  constants: [1],
+  constants: [],
 };
