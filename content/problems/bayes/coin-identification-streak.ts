@@ -32,7 +32,7 @@ export const coinIdentificationStreak: ProblemTemplate = {
     { title: "Likelihood under each hypothesis", body: `Flips are independent given the coin, so $P(H_${p.k}\\mid B)=${p.pBiased}^{${p.k}}=${fmtNum(d.pBiasedK)}$ and $P(H_${p.k}\\mid F)=0.5^{${p.k}}=${fmtNum(d.pFairK)}$.` },
     { title: "Joint masses", body: `$0.5\\times${fmtNum(d.pBiasedK)}=${fmtNum(d.numBiased)}$ for the biased branch, $0.5\\times${fmtNum(d.pFairK)}=${fmtNum(d.numFair)}$ for the fair branch.` },
     { title: "Normalize", body: `$P(H_${p.k})=${fmtNum(d.numBiased)}+${fmtNum(d.numFair)}=${fmtNum(d.denom)}$, so $P(B\\mid H_${p.k})=${fmtNum(d.numBiased)}/${fmtNum(d.denom)}=${fmtNum(d.postBiased)}$.` },
-    { title: "Sanity check", body: `The biased coin favors heads more than a fair coin at every flip, so its streak likelihood exceeds the fair coin's for any ${p.k}, pushing the posterior above the $0.5$ prior — and $${fmtNum(d.postBiased)} > 0.5$ holds.` },
+    { title: "Sanity check", body: `The biased coin favors heads more than a fair coin at every flip, so its streak likelihood exceeds the fair coin's at any streak length, pushing the posterior above the $0.5$ prior — and $${fmtNum(d.postBiased)} > 0.5$ holds.` },
   ],
   keyInsight: "A run of k identical outcomes is strong evidence precisely because the likelihood ratio compounds multiplicatively with each additional flip — longer streaks make the biased hypothesis dominate much faster than the streak length alone suggests.",
   commonTrap: "Treating a streak of heads as several independent pieces of weak evidence to be added — the per-flip likelihoods multiply, they don't add, so confidence grows far faster than linearly in the streak length.",

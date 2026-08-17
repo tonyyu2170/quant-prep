@@ -2,7 +2,7 @@ import type { ProblemTemplate } from "@qp/engine";
 import { fmtNum, pc } from "../util";
 
 // Posterior odds / likelihood-ratio framing: answer is a probability, steps work through odds
-// (spec §6 source kind: textbook classic, new prose + new parameters + our own solution).
+// (spec §6 source kind: free-resource classic, new prose + new parameters + our own solution).
 export const spamFilterOdds: ProblemTemplate = {
   id: "bayes/spam-filter-odds",
   version: 1,

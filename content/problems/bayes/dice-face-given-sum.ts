@@ -44,16 +44,27 @@ export const diceFaceGivenSum: ProblemTemplate = {
     `Two fair six-sided dice are rolled and their sum is ${p.s}. Given this, what is the probability that at least one of the two dice shows a ${p.face}?`,
   answerKey: "probFace",
   accepted: { tolerance: { rel: 0.005 } },
-  solution: (p, d) => [
-    { title: "Setup", body: `Condition on the sum being ${p.s}: list every ordered pair of dice values that adds to ${p.s}. That restricted set is the new sample space.` },
-    { title: "Count the restricted sample space", body: `There are ${fmtNum(d.total)} ordered pairs that sum to ${p.s}.` },
-    { title: "Count the favorable pairs", body: `Of those, ${fmtNum(d.favorable)} pairs include at least one die showing ${p.face}.` },
-    { title: "Conditional probability", body: `$P(\\text{shows }${p.face}\\mid \\text{sum}=${p.s})=${fmtNum(d.favorable)}/${fmtNum(d.total)}=${fmtNum(d.probFace)}$.` },
-    { title: "Sanity check", body: `Only some, not all, of the pairs summing to ${p.s} include a ${p.face}, so the conditional probability must land strictly between $0$ and $1$ — and $${fmtNum(d.probFace)}$ does.` },
-  ],
+  solution: (p, d) => {
+    const pairs: [number, number][] = [];
+    for (let d1 = 1; d1 <= 6; d1++) {
+      for (let d2 = 1; d2 <= 6; d2++) {
+        if (d1 + d2 === p.s) pairs.push([d1, d2]);
+      }
+    }
+    const pairsList = pairs.map(([a, b]) => `(${a},${b})`).join(", ");
+    const favorablePairs = pairs.filter(([a, b]) => a === p.face || b === p.face);
+    const favorableList = favorablePairs.map(([a, b]) => `(${a},${b})`).join(", ");
+    return [
+      { title: "Setup", body: `Condition on the sum being ${p.s}: list every ordered pair of dice values that adds to ${p.s}. That restricted set is the new sample space.` },
+      { title: "Enumerate the restricted sample space", body: `The ordered pairs summing to ${p.s} are ${pairsList} — ${fmtNum(d.total)} pairs in all.` },
+      { title: "Identify the favorable pairs", body: `Of those, the pairs showing a ${p.face} are ${favorableList} — ${fmtNum(d.favorable)} pairs.` },
+      { title: "Conditional probability", body: `$P(\\text{shows }${p.face}\\mid \\text{sum}=${p.s})=${fmtNum(d.favorable)}/${fmtNum(d.total)}=${fmtNum(d.probFace)}$.` },
+      { title: "Sanity check", body: `Only some, not all, of the pairs summing to ${p.s} include a ${p.face}, so the conditional probability must land strictly between $0$ and $1$ — and $${fmtNum(d.probFace)}$ does.` },
+    ];
+  },
   keyInsight: "Conditioning on a fixed sum collapses the sample space to just the ordered pairs that make that sum — count favorable outcomes only within that smaller set.",
-  commonTrap: "Computing the unconditional probability of showing the given face across all dice rolls instead of restricting to only the pairs that already sum to the given total.",
+  commonTrap: "Treating unordered dice pairs as equally likely — a double is only one ordered outcome while a mixed pair is two, so collapsing them to 'the same' silently breaks whenever the target sum admits a double.",
   expectedPaceS: 50,
   verify: { method: "brute-force" },
-  constants: [0, 1],
+  constants: [0, 1, 2, 3, 4, 5, 6],
 };

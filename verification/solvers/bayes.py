@@ -295,7 +295,8 @@ def dice_face_given_sum_brute(p):
 
 
 def survey_overlap_conditional_exact(p):
-    return {"pAgivenB": p["countAB"] / p["countB"]}
+    total = p["countB"] + p["nonMorning"]
+    return {"total": total, "pAgivenB": p["countAB"] / p["countB"]}
 
 
 def survey_overlap_conditional_brute(p):
