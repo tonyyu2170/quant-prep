@@ -45,7 +45,7 @@ export const airportTwoStageScreening: ProblemTemplate = {
     { title: "Sanity check", body: `Both stages are more likely to fire on an actual threat than on a non-threat, so each additional positive flag can only raise the posterior, never lower it: $${p.prior}<${fmtNum(d.post1)}$ and $${fmtNum(d.post1)}<${fmtNum(d.post2)}$ both hold.` },
   ],
   keyInsight: "When the prior is extremely small, a single positive screen typically leaves the posterior still far from certainty even if the screen is fairly accurate — it takes several independent positive results, each compounding the odds further, before a rare event becomes more plausible than not.",
-  commonTrap: "Multiplying the two sensitivities together (stage-one flag rate times stage-two flag rate) and reporting that product as the answer — that's P(both flags | threat), not P(threat | both flags), and it skips the tiny prior entirely, which is exactly the quantity a rare-event problem can't afford to drop.",
+  commonTrap: "Multiplying the two sensitivities together and reporting that product as the answer — that's P(both flags | threat), not P(threat | both flags), and it skips the tiny prior entirely, which is exactly the quantity a rare-event problem can't afford to drop.",
   expectedPaceS: 140,
   verify: { method: "brute-force" },
   constants: [1, 2],
