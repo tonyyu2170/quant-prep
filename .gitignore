@@ -20,3 +20,7 @@ playwright-report/
 # git worktrees
 .worktrees/
 *.tsbuildinfo
+
+# verification (generated artifact + local venv)
+verification/instances.json
+verification/.venv/
