@@ -37,7 +37,7 @@ export const spamFilterOdds: ProblemTemplate = {
     { title: "Convert to probability", body: `$P(S\\mid H) = \\dfrac{${fmtNum(d.posteriorOdds)}}{${fmtNum(d.posteriorOdds)}+1} = \\dfrac{${fmtNum(d.posteriorOdds)}}{${fmtNum(d.onePlusOdds)}} = ${fmtNum(d.posterior)}$.` },
     { title: "Sanity check", body: `The phrase is more common in spam than in ham, so the likelihood ratio exceeds 1 and the posterior must exceed the raw $${p.priorSpam}$ prior — and $${fmtNum(d.posterior)} > ${p.priorSpam}$ holds.` },
   ],
-  keyInsight: "Posterior odds are just prior odds multiplied by the likelihood ratio — no need to compute a total-probability denominator explicitly.",
+  keyInsight: "Working in odds space lets you skip the total-probability denominator entirely — multiply through by the likelihood ratio, then convert back to a probability only at the very end.",
   commonTrap: "Treating the likelihood ratio itself as the answer instead of multiplying it into the prior odds and then converting the result back into a probability.",
   expectedPaceS: 90,
   verify: { method: "brute-force" },

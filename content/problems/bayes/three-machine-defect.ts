@@ -8,7 +8,7 @@ export const threeMachineDefect: ProblemTemplate = {
   version: 1,
   topic: "probability/bayes",
   difficulty: 2,
-  firms: [{ firm: "susquehanna", weight: 0.5 }, { firm: "akuna", weight: 0.3 }],
+  firms: [{ firm: "sig", weight: 0.5 }, { firm: "akuna", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "classic: multi-source total-probability / posterior-on-source" },
   params: {
     shareA: { choices: [0.2, 0.3, 0.4] },

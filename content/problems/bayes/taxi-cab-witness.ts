@@ -28,7 +28,7 @@ export const taxiCabWitness: ProblemTemplate = {
     return { total, pBlue, pGreen, missBlue, numBlue, numGreenAsBlue, denom, postBlue };
   },
   statement: (p) =>
-    `A city's cab fleet has ${p.blueCount} Blue cabs and ${p.greenCount} Green cabs. A witness to a hit-and-run says the cab was Blue. ` +
+    `A city's cab fleet has ${p.blueCount} Blue cabs and ${p.greenCount} Green cabs. A witness to a hit-and-run says the cab was Blue; the witness always names one of the two colors. ` +
     `Tested under similar conditions, the witness correctly calls a Blue cab "Blue" ${pc(p.accBlue)}% of the time, and correctly calls a Green cab "Green" ${pc(p.accGreen)}% of the time. ` +
     `Given the witness said Blue, what is the probability the cab actually was Blue?`,
   answerKey: "postBlue",

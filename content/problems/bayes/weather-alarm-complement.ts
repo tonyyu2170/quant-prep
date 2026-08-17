@@ -37,7 +37,7 @@ export const weatherAlarmComplement: ProblemTemplate = {
     { title: "Sanity check", body: `The alarm sounds far more on rainy days than on dry ones, so the posterior must exceed the raw $${p.pRain}$ prior — and $${fmtNum(d.postRain)} > ${p.pRain}$ holds.` },
   ],
   keyInsight: "The alarm's evidential value comes from the gap between its rainy-day and dry-day sounding rates, not either rate alone.",
-  commonTrap: "Reporting the alarm's rainy-day sounding rate as the answer — that's the reverse conditional, not the probability of rain given the alarm sounded.",
+  commonTrap: "Assuming a low dry-day sounding rate makes false alarms rare overall — dry days vastly outnumber rainy ones, so even a small per-day rate contributes more alarm volume than intuition suggests.",
   expectedPaceS: 55,
   verify: { method: "brute-force" },
   constants: [],
