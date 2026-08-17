@@ -17,7 +17,7 @@ describe("parseAnswer", () => {
     expect(parseAnswer("abc")).toBeNull();
     expect(parseAnswer("")).toBeNull();
     expect(parseAnswer("1/0")).toBeNull();
-    expect(parseAnswer("1/2/3")).toBeNull();
+    expect(parseAnswer("1/2/3")).toBeCloseTo(1 / 6, 12);
   });
   it("accepts hardened forms (leading/trailing dot, plus sign, unicode minus, spaced fraction)", () => {
     expect(parseAnswer(".5")).toBeCloseTo(0.5);
@@ -32,11 +32,31 @@ describe("parseAnswer", () => {
     expect(parseAnswer(".")).toBeNull();
     expect(parseAnswer("-")).toBeNull();
     expect(parseAnswer("1.2.3")).toBeNull();
-    expect(parseAnswer("--4")).toBeNull();
+    expect(parseAnswer("--4")).toBe(4);
     expect(parseAnswer("4-")).toBeNull();
     expect(parseAnswer("1 2")).toBeNull();
     expect(parseAnswer("1e3")).toBeNull();
     expect(parseAnswer("1//2")).toBeNull();
     expect(parseAnswer("/2")).toBeNull();
+  });
+  it("accepts percents", () => {
+    expect(parseAnswer("12.5%")).toBeCloseTo(0.125, 12);
+    expect(parseAnswer("(1/4)%")).toBeCloseTo(0.0025, 12);
+  });
+  it("accepts small arithmetic expressions", () => {
+    expect(parseAnswer("1/6 + 1/3")).toBeCloseTo(0.5, 12);
+    expect(parseAnswer("(3/8)*(1/2)")).toBeCloseTo(0.1875, 12);
+    expect(parseAnswer("2^10")).toBe(1024);
+    expect(parseAnswer("2^-2")).toBeCloseTo(0.25, 12);
+    expect(parseAnswer("-(1/4)")).toBeCloseTo(-0.25, 12);
+    expect(parseAnswer("1/6×3")).toBeCloseTo(0.5, 12);
+  });
+  it("rejects malformed expressions", () => {
+    expect(parseAnswer("1/0")).toBeNull();
+    expect(parseAnswer("((1)")).toBeNull();
+    expect(parseAnswer("2^")).toBeNull();
+    expect(parseAnswer("1e5")).toBeNull();
+    expect(parseAnswer("a+b")).toBeNull();
+    expect(parseAnswer("1".repeat(70))).toBeNull();
   });
 });
