@@ -12,12 +12,16 @@ export const repeatedLetters: ProblemTemplate = {
   firms: [{ firm: "sig", weight: 0.4 }, { firm: "akuna", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "classic anagram / multiset-permutation count with repeated indistinguishable items" },
   params: {
-    red: { range: { min: 2, max: 4, step: 1 } },
-    blue: { range: { min: 2, max: 3, step: 1 } },
-    green: { range: { min: 1, max: 3, step: 1 } },
+    red: { range: { min: 2, max: 6, step: 1 } },
+    blue: { range: { min: 1, max: 5, step: 1 } },
+    green: { range: { min: 1, max: 5, step: 1 } },
   },
   // Caps the mast at eight flags: the Python counterpart enumerates every ordering,
-  // and 8! orderings is the largest set worth walking through.
+  // and 8! orderings is the largest set worth walking through. That cap is the
+  // binding one, so the colour ranges are spread wide underneath it — the answer
+  // depends only on the multiset of colour counts, and a narrow spread collapses
+  // permutations of the same multiset onto identical answers. Red stays at two or
+  // more so the divide-out step never degenerates to dividing by one.
   constraint: (p) => p.red + p.blue + p.green <= 8,
   derived: (p) => {
     const fact = (m: number) => { let f = 1; for (let i = 2; i <= m; i++) f *= i; return f; };
