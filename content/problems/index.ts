@@ -46,6 +46,14 @@ import { atLeastKCommittee } from "./counting/at-least-k-committee";
 import { adjacencyRequiredBlock } from "./counting/adjacency-required-block";
 import { onePairReducedDeck } from "./counting/one-pair-reduced-deck";
 import { birthdayCollision } from "./counting/birthday-collision";
+import { specificArrangement } from "./counting/specific-arrangement";
+import { latticePathsGrid } from "./counting/lattice-paths-grid";
+import { smallDerangement } from "./counting/small-derangement";
+import { generalDerangements } from "./counting/general-derangements";
+import { surjectionsNoEmptyBin } from "./counting/surjections-no-empty-bin";
+import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-node";
+import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
+import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -95,6 +103,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   adjacencyRequiredBlock,
   onePairReducedDeck,
   birthdayCollision,
+  specificArrangement,
+  latticePathsGrid,
+  smallDerangement,
+  generalDerangements,
+  surjectionsNoEmptyBin,
+  latticePathsForbiddenNode,
+  pigeonholeExtremal,
+  twoPairVsFullHouse,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

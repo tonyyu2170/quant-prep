@@ -575,6 +575,316 @@ def birthday_collision_brute(p):
     return favourable / total
 
 
+
+def specific_arrangement_exact(p):
+    symbols, length = int(p["symbols"]), int(p["length"])
+    perm = 1
+    for i in range(length):
+        perm *= symbols - i
+    orders = _fact(length)
+    sets = Fraction(perm, orders)
+    return {
+        "perm": perm,
+        "orders": orders,
+        "sets": sets,
+        "prob": Fraction(1, perm),
+        "setProb": 1 / sets,
+        "lastFactor": symbols - length + 1,
+    }
+
+
+def specific_arrangement_brute(p):
+    """Walk every code the keypad accepts and count the one that opens the locker.
+    Both tallies come out of the same walk — no falling product is evaluated."""
+    symbols, length = int(p["symbols"]), int(p["length"])
+    target = tuple(range(length))
+    favourable = total = 0
+    for code in itertools.permutations(range(symbols), length):
+        total += 1
+        if code == target:
+            favourable += 1
+    return favourable / total
+
+
+def lattice_paths_grid_exact(p):
+    across, up = int(p["across"]), int(p["up"])
+    ca, cu = int(p["cornerAcross"]), int(p["cornerUp"])
+    steps = across + up
+    corner_steps = ca + cu
+    to_corner = _choose(corner_steps, ca)
+    rest_across, rest_up = across - ca, up - cu
+    from_corner = _choose(rest_across + rest_up, rest_across)
+    total = _choose(steps, across)
+    via_west = _choose(corner_steps - 1, ca - 1)
+    via_south = _choose(corner_steps - 1, ca)
+    return {
+        "steps": steps,
+        "total": total,
+        "cornerSteps": corner_steps,
+        "toCorner": to_corner,
+        "restAcross": rest_across,
+        "restUp": rest_up,
+        "restSteps": rest_across + rest_up,
+        "fromCorner": from_corner,
+        "through": to_corner * from_corner,
+        "prob": float(to_corner * from_corner / total),
+        "viaWest": via_west,
+        "viaSouth": via_south,
+        "entrySum": via_west + via_south,
+    }
+
+
+def lattice_paths_grid_brute(p):
+    """Walk the grid cell by cell, carrying two running counts per junction: routes
+    that reach it, and routes that reach it having already passed the marked
+    junction. Purely additive — no binomial and no product of legs."""
+    across, up = int(p["across"]), int(p["up"])
+    ca, cu = int(p["cornerAcross"]), int(p["cornerUp"])
+    reach = [[0] * (up + 1) for _ in range(across + 1)]
+    hit = [[0] * (up + 1) for _ in range(across + 1)]
+    reach[0][0] = 1
+    for i in range(across + 1):
+        for j in range(up + 1):
+            if i or j:
+                reach[i][j] = (reach[i - 1][j] if i else 0) + (reach[i][j - 1] if j else 0)
+                hit[i][j] = (hit[i - 1][j] if i else 0) + (hit[i][j - 1] if j else 0)
+            if i == ca and j == cu:
+                hit[i][j] = reach[i][j]
+    return hit[across][up] / reach[across][up]
+
+
+def small_derangement_exact(p):
+    letters, correct = int(p["letters"]), int(p["correct"])
+    rest = letters - correct
+    prev, cur = 1, 0
+    for j in range(2, rest + 1):
+        prev, cur = cur, (j - 1) * (cur + prev)
+    derange_rest = 1 if rest == 0 else cur
+    places = _choose(letters, correct)
+    favourable = places * derange_rest
+    total_arr = _fact(letters)
+    naive_count = places * _fact(rest)
+    return {
+        "rest": rest,
+        "places": places,
+        "derangeRest": derange_rest,
+        "favourable": favourable,
+        "totalArr": total_arr,
+        "prob": float(favourable / total_arr),
+        "restArr": _fact(rest),
+        "naiveCount": naive_count,
+        "naiveProb": float(naive_count / total_arr),
+    }
+
+
+def small_derangement_brute(p):
+    """Enumerate every stuffing and count those with exactly the requested number of
+    letters in the right envelope. No derangement recurrence and no binomial: the
+    fixed points are counted on each arrangement as it comes."""
+    letters, correct = int(p["letters"]), int(p["correct"])
+    favourable = total = 0
+    for arrangement in itertools.permutations(range(letters)):
+        total += 1
+        if sum(1 for i, v in enumerate(arrangement) if i == v) == correct:
+            favourable += 1
+    return favourable / total
+
+
+def general_derangements_exact(p):
+    questions, starred = int(p["questions"]), int(p["starred"])
+    out, ways = {}, 0
+    for i in range(starred + 1):
+        term = _choose(starred, i) * _fact(questions - i)
+        out[f"term{i}"] = term
+        ways += term if i % 2 == 0 else -term
+    prev, cur = 1, 0
+    for j in range(2, questions + 1):
+        prev, cur = cur, (j - 1) * (cur + prev)
+    out["totalArr"] = _fact(questions)
+    out["questionsLess1"] = questions - 1
+    out["questionsLess2"] = questions - 2
+    out["restArr1"] = _fact(questions - 1)
+    out["restArr2"] = _fact(questions - 2)
+    out["starredPairs"] = _choose(starred, 2)
+    out["ways"] = ways
+    out["fullDerange"] = cur
+    return out
+
+
+def general_derangements_brute(p):
+    """Recurrence on the starred set instead of an alternating sum. Writing f(n, k)
+    for the pairings of n questions in which none of k starred questions is right,
+    split the pairings counted by f(n, k-1) on whether the k-th starred question is
+    right: those that get it right pin one pairing and leave f(n-1, k-1), so
+    f(n, k) = f(n, k-1) - f(n-1, k-1), seeded by f(n, 0) = n!."""
+    questions, starred = int(p["questions"]), int(p["starred"])
+    row = [_fact(n) for n in range(questions + 1)]
+    for _ in range(starred):
+        row = [0] + [row[n] - row[n - 1] for n in range(1, questions + 1)]
+    return row[questions]
+
+
+def surjections_no_empty_bin_exact(p):
+    parcels, vans = int(p["parcels"]), int(p["vans"])
+    out, ways = {}, 0
+    for i in range(vans):
+        term = _choose(vans, i) * (vans - i) ** parcels
+        out[f"term{i}"] = term
+        ways += term if i % 2 == 0 else -term
+    row = [1]
+    for _ in range(parcels):
+        nxt = [0] * (vans + 1)
+        for b in range(1, vans + 1):
+            nxt[b] = b * (row[b] if b < len(row) else 0) + (row[b - 1] if b - 1 < len(row) else 0)
+        row = nxt
+    out["allMaps"] = vans ** parcels
+    out["barOne"] = (vans - 1) ** parcels
+    out["ways"] = ways
+    out["groupings"] = row[vans]
+    out["vanOrders"] = _fact(vans)
+    out["labelled"] = row[vans] * _fact(vans)
+    out["vansLess1"] = vans - 1
+    return out
+
+
+def surjections_no_empty_bin_brute(p):
+    """Assign the parcels one at a time, carrying the set of vans used so far as a
+    bit mask, and read off the assignments that finish with every van used. Nothing
+    is subtracted and no Stirling number is built."""
+    parcels, vans = int(p["parcels"]), int(p["vans"])
+    full = (1 << vans) - 1
+    state = {0: 1}
+    for _ in range(parcels):
+        nxt = {}
+        for mask, count in state.items():
+            for v in range(vans):
+                key = mask | (1 << v)
+                nxt[key] = nxt.get(key, 0) + count
+        state = nxt
+    return state.get(full, 0)
+
+
+def lattice_paths_forbidden_node_exact(p):
+    east, north = int(p["east"]), int(p["north"])
+    be, bn = int(p["blockEast"]), int(p["blockNorth"])
+    aisles = east + north
+    total = _choose(aisles, east)
+    to_block = _choose(be + bn, be)
+    rest_east, rest_north = east - be, north - bn
+    rest_aisles = rest_east + rest_north
+    from_block = _choose(rest_aisles, rest_east)
+    out_east = _choose(rest_aisles - 1, rest_east - 1)
+    out_north = _choose(rest_aisles - 1, rest_east)
+    return {
+        "aisles": aisles,
+        "total": total,
+        "blockAisles": be + bn,
+        "toBlock": to_block,
+        "restEast": rest_east,
+        "restNorth": rest_north,
+        "restAisles": rest_aisles,
+        "fromBlock": from_block,
+        "blocked": to_block * from_block,
+        "ways": total - to_block * from_block,
+        "outEast": out_east,
+        "outNorth": out_north,
+        "exitSum": out_east + out_north,
+    }
+
+
+def lattice_paths_forbidden_node_brute(p):
+    """Walk the aisle grid additively with the closed junction zeroed out, so routes
+    are never counted through it in the first place. No subtraction and no binomial."""
+    east, north = int(p["east"]), int(p["north"])
+    be, bn = int(p["blockEast"]), int(p["blockNorth"])
+    grid = [[0] * (north + 1) for _ in range(east + 1)]
+    grid[0][0] = 1
+    for i in range(east + 1):
+        for j in range(north + 1):
+            if i == be and j == bn:
+                grid[i][j] = 0
+                continue
+            if i or j:
+                grid[i][j] = (grid[i - 1][j] if i else 0) + (grid[i][j - 1] if j else 0)
+    return grid[east][north]
+
+
+def pigeonhole_extremal_exact(p):
+    colours, need, per_colour = int(p["colours"]), int(p["need"]), int(p["perColour"])
+    return {
+        "stock": colours * per_colour,
+        "needLess1": need - 1,
+        "needLess2": need - 2,
+        "worst": (need - 1) * colours,
+        "ways": (need - 1) * colours + 1,
+        "easier": (need - 2) * colours + 1,
+        "gap": colours,
+    }
+
+
+def pigeonhole_extremal_brute(p):
+    """Search upward through candidate hauls for the first size at which no failing
+    haul exists. Whether a haul of size t can fail is settled by a reachability walk
+    over the colours, taking between none and the per-colour shelf limit of each
+    while keeping every colour short of the target — no product is evaluated."""
+    colours, need, per_colour = int(p["colours"]), int(p["need"]), int(p["perColour"])
+    cap = min(per_colour, need - 1)
+    stock = colours * per_colour
+    for size in range(1, stock + 1):
+        reachable = {0}
+        for _ in range(colours):
+            reachable = {taken + take for taken in reachable for take in range(cap + 1)
+                         if taken + take <= size}
+        if size not in reachable:
+            return size
+    return stock
+
+
+def two_pair_vs_full_house_exact(p):
+    ranks, suits = int(p["ranks"]), int(p["suits"])
+    deck = ranks * suits
+    hands = _choose(deck, 5)
+    rank_pairs = _choose(ranks, 2)
+    pair_suits = _choose(suits, 2)
+    odd_ranks = ranks - 2
+    two_pair_count = rank_pairs * pair_suits * pair_suits * odd_ranks * suits
+    trip_suits = _choose(suits, 3)
+    full_count = ranks * trip_suits * (ranks - 1) * pair_suits
+    return {
+        "deck": deck,
+        "hands": hands,
+        "rankPairs": rank_pairs,
+        "pairSuits": pair_suits,
+        "suitsSquared": pair_suits * pair_suits,
+        "oddRanks": odd_ranks,
+        "oddCards": odd_ranks * suits,
+        "twoPairCount": two_pair_count,
+        "twoPairProb": float(two_pair_count / hands),
+        "tripSuits": trip_suits,
+        "ranksLess1": ranks - 1,
+        "fullCount": full_count,
+        "fullProb": float(full_count / hands),
+        "ratio": float(two_pair_count / full_count),
+    }
+
+
+def two_pair_vs_full_house_brute(p):
+    """Deal every hand the reduced deck allows and keep the ones whose rank pattern
+    is two ranks twice and one rank once. Numerator and denominator come from the
+    same walk; no hand-building product appears."""
+    ranks, suits = int(p["ranks"]), int(p["suits"])
+    deck = [(rank, suit) for rank in range(ranks) for suit in range(suits)]
+    favourable = total = 0
+    for hand in itertools.combinations(deck, 5):
+        total += 1
+        counts = {}
+        for rank, _suit in hand:
+            counts[rank] = counts.get(rank, 0) + 1
+        if sorted(counts.values()) == [1, 2, 2]:
+            favourable += 1
+    return favourable / total
+
+
 SOLVERS = {
     "counting/committee-selection": {
         "exact": committee_selection_exact,
@@ -643,5 +953,37 @@ SOLVERS = {
     "counting/birthday-collision": {
         "exact": birthday_collision_exact,
         "brute": birthday_collision_brute,
+    },
+    "counting/specific-arrangement": {
+        "exact": specific_arrangement_exact,
+        "brute": specific_arrangement_brute,
+    },
+    "counting/lattice-paths-grid": {
+        "exact": lattice_paths_grid_exact,
+        "brute": lattice_paths_grid_brute,
+    },
+    "counting/small-derangement": {
+        "exact": small_derangement_exact,
+        "brute": small_derangement_brute,
+    },
+    "counting/general-derangements": {
+        "exact": general_derangements_exact,
+        "brute": general_derangements_brute,
+    },
+    "counting/surjections-no-empty-bin": {
+        "exact": surjections_no_empty_bin_exact,
+        "brute": surjections_no_empty_bin_brute,
+    },
+    "counting/lattice-paths-forbidden-node": {
+        "exact": lattice_paths_forbidden_node_exact,
+        "brute": lattice_paths_forbidden_node_brute,
+    },
+    "counting/pigeonhole-extremal": {
+        "exact": pigeonhole_extremal_exact,
+        "brute": pigeonhole_extremal_brute,
+    },
+    "counting/two-pair-vs-full-house": {
+        "exact": two_pair_vs_full_house_exact,
+        "brute": two_pair_vs_full_house_brute,
     },
 }

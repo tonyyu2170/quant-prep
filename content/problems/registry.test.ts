@@ -30,6 +30,18 @@ describe("problem registry invariants", () => {
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
     expect(byId.get("counting/committee-selection")).toBeDefined();
   });
+  it("counting batch hits the 10/10/5 difficulty distribution", () => {
+    const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
+    expect(counting.length).toBe(25);
+    expect(counting.filter((t) => t.difficulty === 1).length).toBe(10);
+    expect(counting.filter((t) => t.difficulty === 2).length).toBe(10);
+    expect(counting.filter((t) => t.difficulty === 3).length).toBe(5);
+  });
+  it("counting batch splits 15 exact counts / 10 probabilities", () => {
+    const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
+    expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(15);
+    expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
+  });
   it("bayes batch hits the 12/12/6 difficulty distribution", () => {
     const bayes = PROBLEMS.filter((t) => t.id.startsWith("bayes/"));
     expect(bayes.length).toBe(30);
