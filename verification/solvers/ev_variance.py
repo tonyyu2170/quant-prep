@@ -10,13 +10,13 @@ from fractions import Fraction
 
 
 def two_outcome_bet_exact(p):
-    k, w, l = int(p["k"]), int(p["w"]), int(p["l"])
+    k, w, loss = int(p["k"]), int(p["w"]), int(p["l"])
     win_faces = 7 - k
     lose_faces = k - 1
     p_win = win_faces / 6
     p_lose = lose_faces / 6
     win_leg = p_win * w
-    lose_leg = p_lose * l
+    lose_leg = p_lose * loss
     return {
         "winFaces": win_faces,
         "loseFaces": lose_faces,
@@ -24,8 +24,8 @@ def two_outcome_bet_exact(p):
         "pLose": p_lose,
         "winLeg": win_leg,
         "loseLeg": lose_leg,
-        "fairWin": lose_leg / p_win,
-        "ev": win_leg - lose_leg,
+        "fairWin": lose_faces * loss / win_faces,
+        "ev": (win_faces * w - lose_faces * loss) / 6,
     }
 
 
@@ -33,10 +33,10 @@ def two_outcome_bet_brute(p):
     """Walk the six faces and average the profit. No probabilities are formed and
     nothing is multiplied by a weight — the template's p*payoff structure never
     appears here, which is what makes this a second derivation."""
-    k, w, l = int(p["k"]), int(p["w"]), int(p["l"])
+    k, w, loss = int(p["k"]), int(p["w"]), int(p["l"])
     total = Fraction(0)
     for face in range(1, 7):
-        total += Fraction(w) if face >= k else Fraction(-l)
+        total += Fraction(w) if face >= k else Fraction(-loss)
     return float(total / 6)
 
 
