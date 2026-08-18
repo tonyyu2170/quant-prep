@@ -29,6 +29,31 @@ import { insuranceRiskPoolMixture } from "./bayes/insurance-risk-pool-mixture";
 import { strategyEdgeStreak } from "./bayes/strategy-edge-streak";
 import { dataVendorWorstSource } from "./bayes/data-vendor-worst-source";
 import { twoUrnsWithoutReplacement } from "./bayes/two-urns-without-replacement";
+import { committeeSelection } from "./counting/committee-selection";
+import { distinctPermutations } from "./counting/distinct-permutations";
+import { repeatedLetters } from "./counting/repeated-letters";
+import { productRulePlates } from "./counting/product-rule-plates";
+import { forcedMemberCommittee } from "./counting/forced-member-committee";
+import { starsAndBarsBasic } from "./counting/stars-and-bars-basic";
+import { circularAdjacentPair } from "./counting/circular-adjacent-pair";
+import { allOneTypeDraw } from "./counting/all-one-type-draw";
+import { atLeastOneComplement } from "./counting/at-least-one-complement";
+import { inclusionExclusionTwoSets } from "./counting/inclusion-exclusion-two-sets";
+import { inclusionExclusionThreeSets } from "./counting/inclusion-exclusion-three-sets";
+import { adjacencyForbiddenGap } from "./counting/adjacency-forbidden-gap";
+import { starsAndBarsLowerBounds } from "./counting/stars-and-bars-lower-bounds";
+import { atLeastKCommittee } from "./counting/at-least-k-committee";
+import { adjacencyRequiredBlock } from "./counting/adjacency-required-block";
+import { onePairReducedDeck } from "./counting/one-pair-reduced-deck";
+import { birthdayCollision } from "./counting/birthday-collision";
+import { specificArrangement } from "./counting/specific-arrangement";
+import { latticePathsGrid } from "./counting/lattice-paths-grid";
+import { smallDerangement } from "./counting/small-derangement";
+import { generalDerangements } from "./counting/general-derangements";
+import { surjectionsNoEmptyBin } from "./counting/surjections-no-empty-bin";
+import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-node";
+import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
+import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -61,6 +86,31 @@ export const PROBLEMS: ProblemTemplate[] = [
   strategyEdgeStreak,
   dataVendorWorstSource,
   twoUrnsWithoutReplacement,
+  committeeSelection,
+  distinctPermutations,
+  repeatedLetters,
+  productRulePlates,
+  forcedMemberCommittee,
+  starsAndBarsBasic,
+  circularAdjacentPair,
+  allOneTypeDraw,
+  atLeastOneComplement,
+  inclusionExclusionTwoSets,
+  inclusionExclusionThreeSets,
+  adjacencyForbiddenGap,
+  starsAndBarsLowerBounds,
+  atLeastKCommittee,
+  adjacencyRequiredBlock,
+  onePairReducedDeck,
+  birthdayCollision,
+  specificArrangement,
+  latticePathsGrid,
+  smallDerangement,
+  generalDerangements,
+  surjectionsNoEmptyBin,
+  latticePathsForbiddenNode,
+  pigeonholeExtremal,
+  twoPairVsFullHouse,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

@@ -120,10 +120,12 @@ Each bullet is one problem. Surface contexts vary and are never reused at the sa
 17. hand probability: exactly one pair, reduced deck — *probability*
 18. birthday-style collision — *probability*
 19. lattice paths: probability a random monotone path passes a given corner — *probability*
-20. small derangement (nobody in their own seat) — *probability*
+20. exactly-k derangement (k letters in the right envelope, the rest all wrong) — *probability*
+    - **Shipped wider than first written.** "Nobody in their own seat" has a single parameter, and its answer is within a whisker of `1/e` for every `n` the enumeration ceiling allows: five distinct answers, four of them inside the `rel: 0.005` grading band. Asking for exactly `k` matches keeps the derangement (it is the `D(n-k)` factor) and spreads the answers across roughly 0.37 / 0.18 / 0.06 / 0.015.
 
 ### L3 — 5 problems (4 counts, 1 probability)
-21. general derangements — *count*
+21. partial derangement: no item of a marked subset in its own place — *count*
+    - **Shipped wider than first written**, for the same reason as item 20: `D(n)` alone yields eight distinct answers over the whole legal range of `n`. Marking a subset of size `k` adds the second dimension, and the count is still an inclusion–exclusion over which marked items land correctly.
 22. surjections / no-empty-bin distribution via inclusion–exclusion — *count*
 23. lattice paths with a forbidden node — *count*
 24. pigeonhole / extremal counting — *count*
