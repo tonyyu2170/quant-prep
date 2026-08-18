@@ -196,15 +196,25 @@ def circular_adjacent_pair_exact(p):
 
 
 def circular_adjacent_pair_brute(p):
-    """Enumerate every seating of the labelled circle — guest 0 is Ana, guest 1 is
-    Ben — and count adjacency. Numerator and denominator both come from the loop."""
-    chairs, guests = int(p["chairs"]), int(p["guests"])
+    """Enumerate every ordered pair of distinct chairs the two named guests could
+    occupy on the labelled circle and count the adjacent ones. Numerator and
+    denominator both come from the loop — nothing here evaluates 2/(chairs-1).
+
+    The remaining guests are absent from this loop on purpose: placing them is the
+    same number of ways for every (Ana, Ben) pair, so that factor cancels out of the
+    ratio. That cancellation is the lesson the problem teaches, and it was checked
+    empirically against a full-seating enumeration wherever that was small enough
+    to run."""
+    chairs = int(p["chairs"])
     favourable = total = 0
-    for seating in itertools.permutations(range(chairs), guests):
-        total += 1
-        gap = abs(seating[0] - seating[1])
-        if gap == 1 or gap == chairs - 1:
-            favourable += 1
+    for ana in range(chairs):
+        for ben in range(chairs):
+            if ana == ben:
+                continue
+            total += 1
+            gap = abs(ana - ben)
+            if gap == 1 or gap == chairs - 1:
+                favourable += 1
     return favourable / total
 
 

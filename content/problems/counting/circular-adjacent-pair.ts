@@ -12,13 +12,15 @@ export const circularAdjacentPair: ProblemTemplate = {
   firms: [{ firm: "jane-street", weight: 0.4 }, { firm: "de-shaw", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "classic round-table seating question: chance two named people sit side by side" },
   params: {
-    chairs: { range: { min: 6, max: 8, step: 1 } },
+    chairs: { range: { min: 6, max: 17, step: 1 } },
     guests: { range: { min: 3, max: 8, step: 1 } },
   },
   // Cannot seat more guests than chairs. At least three guests keeps the room from
   // collapsing to just the two people the question is about. Six chairs is the
   // floor because at five the non-neighbouring chairs number two as well, and the
   // Sanity check would restate the answer's own fraction instead of checking it.
+  // The answer moves with `chairs` alone, so its range carries the whole spread of
+  // distinct answers — twelve of them.
   constraint: (p) => p.guests <= p.chairs,
   derived: (p) => ({
     otherChairs: p.chairs - 1,

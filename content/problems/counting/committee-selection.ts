@@ -39,7 +39,12 @@ export const committeeSelection: ProblemTemplate = {
   accepted: { tolerance: { abs: 0 } },
   solution: (p, d) => [
     { title: "Setup", body: `Order does not matter: swapping two analysts between identical seats leaves the same committee. So this is a combination, not a permutation.` },
-    { title: "Count ordered picks first", body: `Pretend the seats are numbered and fill them one at a time: $${fmtNum(p.n)}\\times${fmtNum(d.nMinus1)}\\times\\cdots\\times${fmtNum(d.lastFactor)}=${fmtNum(d.ordered)}$ ordered picks.` },
+    // At k = 3 the falling product is written out in full: an ellipsis there would
+    // sit between two adjacent factors with nothing hidden between them.
+    { title: "Count ordered picks first", body: `Pretend the seats are numbered and fill them one at a time: $${
+      p.k === 3 ? `${fmtNum(p.n)}\\times${fmtNum(d.nMinus1)}\\times${fmtNum(d.lastFactor)}`
+      : `${fmtNum(p.n)}\\times${fmtNum(d.nMinus1)}\\times\\cdots\\times${fmtNum(d.lastFactor)}`
+    }=${fmtNum(d.ordered)}$ ordered picks.` },
     { title: "Divide out the ordering", body: `Each committee got counted once for every way to order its members, which is $${fmtNum(p.k)}!=${fmtNum(d.kFact)}$ times. So the number of distinct committees is $${fmtNum(d.ordered)}/${fmtNum(d.kFact)}=${fmtNum(d.ways)}$.` },
     { title: "Sanity check", body: `Choosing ${fmtNum(p.k)} analysts to include is the same act as choosing ${fmtNum(d.complement)} to leave out, so $\\binom{${fmtNum(p.n)}}{${fmtNum(p.k)}}=\\binom{${fmtNum(p.n)}}{${fmtNum(d.complement)}}$ must hold — and both count ${fmtNum(d.ways)}.` },
   ],
