@@ -275,6 +275,306 @@ def at_least_one_complement_brute(p):
     return favourable / total
 
 
+
+def inclusion_exclusion_two_sets_exact(p):
+    total, bike, train, both = int(p["total"]), int(p["bike"]), int(p["train"]), int(p["both"])
+    either = bike + train - both
+    return {
+        "bikeOnly": bike - both,
+        "trainOnly": train - both,
+        "either": either,
+        "neither": total - either,
+        "naiveSum": bike + train,
+    }
+
+
+def inclusion_exclusion_two_sets_brute(p):
+    """Build the workforce as a list of employees, tag each one with the modes they
+    use, and count the untagged. Membership is decided per employee — no union size
+    is ever added or subtracted."""
+    total, bike, train, both = int(p["total"]), int(p["bike"]), int(p["train"]), int(p["both"])
+    cyclists = set(range(bike))
+    start = bike - both
+    riders = set(range(start, start + train))
+    assert len(cyclists) == bike and len(riders) == train and len(cyclists & riders) == both
+    return sum(1 for e in range(total) if e not in cyclists and e not in riders)
+
+
+def inclusion_exclusion_three_sets_exact(p):
+    daily, evening, weekly = int(p["daily"]), int(p["evening"]), int(p["weekly"])
+    de, dw, ew = int(p["dailyEvening"]), int(p["dailyWeekly"]), int(p["eveningWeekly"])
+    all3 = int(p["allThree"])
+    single_sum = daily + evening + weekly
+    pair_sum = de + dw + ew
+    only_daily = daily - de - dw + all3
+    only_evening = evening - de - ew + all3
+    only_weekly = weekly - dw - ew + all3
+    just_de, just_dw, just_ew = de - all3, dw - all3, ew - all3
+    return {
+        "singleSum": single_sum,
+        "pairSum": pair_sum,
+        "afterPairs": single_sum - pair_sum,
+        "union": single_sum - pair_sum + all3,
+        "onlyDaily": only_daily,
+        "onlyEvening": only_evening,
+        "onlyWeekly": only_weekly,
+        "justDE": just_de,
+        "justDW": just_dw,
+        "justEW": just_ew,
+        "cornerSum": only_daily + only_evening + only_weekly,
+        "pairOnlySum": just_de + just_dw + just_ew,
+    }
+
+
+def inclusion_exclusion_three_sets_brute(p):
+    """Hand out reader ids region by region, rebuild the three subscription lists
+    from them, then walk the readers and count those on at least one list. The
+    alternating sum never appears; the reported list and overlap sizes are asserted
+    against the construction so the universe really is the one described."""
+    daily, evening, weekly = int(p["daily"]), int(p["evening"]), int(p["weekly"])
+    de, dw, ew = int(p["dailyEvening"]), int(p["dailyWeekly"]), int(p["eveningWeekly"])
+    all3 = int(p["allThree"])
+    regions = {
+        "d": daily - de - dw + all3,
+        "e": evening - de - ew + all3,
+        "w": weekly - dw - ew + all3,
+        "de": de - all3,
+        "dw": dw - all3,
+        "ew": ew - all3,
+        "dew": all3,
+    }
+    readers, next_id = {}, 0
+    for label, size in regions.items():
+        for _ in range(size):
+            readers[next_id] = label
+            next_id += 1
+    takes = {"daily": ("d", "de", "dw", "dew"),
+             "evening": ("e", "de", "ew", "dew"),
+             "weekly": ("w", "dw", "ew", "dew")}
+    on_daily = {r for r, lab in readers.items() if lab in takes["daily"]}
+    on_evening = {r for r, lab in readers.items() if lab in takes["evening"]}
+    on_weekly = {r for r, lab in readers.items() if lab in takes["weekly"]}
+    assert len(on_daily) == daily and len(on_evening) == evening and len(on_weekly) == weekly
+    assert len(on_daily & on_evening) == de and len(on_daily & on_weekly) == dw
+    assert len(on_evening & on_weekly) == ew and len(on_daily & on_evening & on_weekly) == all3
+    return sum(1 for r in readers if r in on_daily or r in on_evening or r in on_weekly)
+
+
+def adjacency_forbidden_gap_exact(p):
+    spaces, reserved = int(p["spaces"]), int(p["reserved"])
+    free_bays = spaces - reserved
+    tail_free = _choose(free_bays, reserved)
+    tail_used = _choose(free_bays, reserved - 1)
+    return {
+        "freeBays": free_bays,
+        "gaps": free_bays + 1,
+        "ways": _choose(free_bays + 1, reserved),
+        "allPlacements": _choose(spaces, reserved),
+        "tailFree": tail_free,
+        "tailUsed": tail_used,
+        "caseSum": tail_free + tail_used,
+        "reservedLess1": reserved - 1,
+    }
+
+
+def adjacency_forbidden_gap_brute(p):
+    """Walk every set of bays management could reserve and keep the ones with no two
+    bays side by side. Nothing here counts gaps or evaluates a binomial."""
+    spaces, reserved = int(p["spaces"]), int(p["reserved"])
+    legal = 0
+    for pick in itertools.combinations(range(spaces), reserved):
+        if all(pick[i + 1] - pick[i] > 1 for i in range(len(pick) - 1)):
+            legal += 1
+    return legal
+
+
+def stars_and_bars_lower_bounds_exact(p):
+    units, labs, min_each = int(p["units"]), int(p["labs"]), int(p["minEach"])
+    committed = labs * min_each
+    surplus = units - committed
+    bars = labs - 1
+    return {
+        "committed": committed,
+        "surplus": surplus,
+        "bars": bars,
+        "slots": surplus + bars,
+        "ways": _choose(surplus + bars, bars),
+        "freeSlots": units + bars,
+        "freeWays": _choose(units + bars, bars),
+    }
+
+
+def stars_and_bars_lower_bounds_brute(p):
+    """Dynamic program over the labs: ways[t] holds the number of ways to hand out t
+    units to the labs seen so far, with every lab taking at least its minimum. No
+    divider argument and no binomial — just repeated addition."""
+    units, labs, min_each = int(p["units"]), int(p["labs"]), int(p["minEach"])
+    ways = [1] + [0] * units
+    for _ in range(labs):
+        nxt = [0] * (units + 1)
+        for handed, count in enumerate(ways):
+            if count == 0:
+                continue
+            for take in range(min_each, units - handed + 1):
+                nxt[handed + take] += count
+        ways = nxt
+    return ways[units]
+
+
+def at_least_k_committee_exact(p):
+    partners, associates, team = int(p["partners"]), int(p["associates"]), int(p["team"])
+    staff = partners + associates
+    all_teams = _choose(staff, team)
+    no_partner = _choose(associates, team)
+    one_partner = partners * _choose(associates, team - 1)
+    pair_pick = _choose(partners, 2)
+    fill_rest = _choose(staff - 2, team - 2)
+    return {
+        "staff": staff,
+        "allTeams": all_teams,
+        "noPartner": no_partner,
+        "onePartner": one_partner,
+        "barred": no_partner + one_partner,
+        "ways": all_teams - no_partner - one_partner,
+        "teamLess1": team - 1,
+        "teamLess2": team - 2,
+        "staffLess2": staff - 2,
+        "pairPick": pair_pick,
+        "fillRest": fill_rest,
+        "shortcut": pair_pick * fill_rest,
+    }
+
+
+def at_least_k_committee_brute(p):
+    """Enumerate every team the firm could staff and keep the ones holding at least
+    two partners. Counted directly, with no complement and no binomial anywhere."""
+    partners, associates, team = int(p["partners"]), int(p["associates"]), int(p["team"])
+    people = ["partner"] * partners + ["associate"] * associates
+    legal = 0
+    for pick in itertools.combinations(range(len(people)), team):
+        if sum(1 for i in pick if people[i] == "partner") >= 2:
+            legal += 1
+    return legal
+
+
+def adjacency_required_block_exact(p):
+    books, series = int(p["books"]), int(p["series"])
+    items = books - series + 1
+    item_arr = _fact(items)
+    series_arr = _fact(series)
+    total_arr = _fact(books)
+    favourable = item_arr * series_arr
+    positions = _choose(books, series)
+    return {
+        "items": items,
+        "loose": books - series,
+        "itemArr": item_arr,
+        "seriesArr": series_arr,
+        "favourable": favourable,
+        "totalArr": total_arr,
+        "prob": float(Fraction(favourable, total_arr)),
+        "positions": positions,
+        "runs": items,
+        "probAlt": float(Fraction(items, 1) / positions),
+    }
+
+
+def adjacency_required_block_brute(p):
+    """Enumerate which shelf positions the series volumes occupy and count the sets
+    that form an unbroken run, tallying numerator and denominator in the same loop.
+
+    The other books never enter the loop on purpose: every position set admits the
+    same number of full shelvings, so that factor divides out of the ratio — which is
+    the cancellation the problem is teaching. No factorial is evaluated here."""
+    books, series = int(p["books"]), int(p["series"])
+    favourable = total = 0
+    for pick in itertools.combinations(range(books), series):
+        total += 1
+        if pick[-1] - pick[0] == series - 1:
+            favourable += 1
+    return favourable / total
+
+
+def one_pair_reduced_deck_exact(p):
+    ranks, suits = int(p["ranks"]), int(p["suits"])
+    deck = ranks * suits
+    hands = _choose(deck, 5)
+    pair_suits = _choose(suits, 2)
+    other_ranks = _choose(ranks - 1, 3)
+    suit_choices = suits ** 3
+    favourable = ranks * pair_suits * other_ranks * suit_choices
+    rank_sets = _choose(ranks, 5)
+    suit_five = suits ** 5
+    no_repeat = rank_sets * suit_five
+    prob = float(favourable / hands)
+    all_distinct = float(no_repeat / hands)
+    return {
+        "deck": deck,
+        "hands": hands,
+        "pairSuits": pair_suits,
+        "ranksLess1": ranks - 1,
+        "otherRanks": other_ranks,
+        "suitChoices": suit_choices,
+        "favourable": favourable,
+        "prob": prob,
+        "rankSets": rank_sets,
+        "suitFive": suit_five,
+        "noRepeat": no_repeat,
+        "allDistinct": all_distinct,
+        "pairOrDistinct": prob + all_distinct,
+    }
+
+
+def one_pair_reduced_deck_brute(p):
+    """Deal every hand the reduced deck can produce and classify it by its rank
+    pattern: exactly one rank appearing twice and three ranks appearing once. Both
+    tallies come from the same walk — no hand-building product is evaluated."""
+    ranks, suits = int(p["ranks"]), int(p["suits"])
+    deck = [(rank, suit) for rank in range(ranks) for suit in range(suits)]
+    favourable = total = 0
+    for hand in itertools.combinations(deck, 5):
+        total += 1
+        counts = {}
+        for rank, _suit in hand:
+            counts[rank] = counts.get(rank, 0) + 1
+        if sorted(counts.values()) == [1, 1, 1, 2]:
+            favourable += 1
+    return favourable / total
+
+
+def birthday_collision_exact(p):
+    slots, hires = int(p["slots"]), int(p["hires"])
+    outcomes = slots ** hires
+    distinct_ways = 1
+    for i in range(hires):
+        distinct_ways *= slots - i
+    all_distinct = distinct_ways / outcomes
+    pairs = hires * (hires - 1) // 2
+    return {
+        "outcomes": outcomes,
+        "distinctWays": distinct_ways,
+        "allDistinct": all_distinct,
+        "prob": 1 - all_distinct,
+        "lastFactor": slots - hires + 1,
+        "pairs": pairs,
+        "pairChance": 1 / slots,
+        "pairBound": pairs / slots,
+    }
+
+
+def birthday_collision_brute(p):
+    """Enumerate every assignment of analysts to sessions and count the ones where
+    some session is used twice — counted head on, not through the all-different
+    complement the template takes."""
+    slots, hires = int(p["slots"]), int(p["hires"])
+    favourable = total = 0
+    for assignment in itertools.product(range(slots), repeat=hires):
+        total += 1
+        if len(set(assignment)) < hires:
+            favourable += 1
+    return favourable / total
+
+
 SOLVERS = {
     "counting/committee-selection": {
         "exact": committee_selection_exact,
@@ -311,5 +611,37 @@ SOLVERS = {
     "counting/at-least-one-complement": {
         "exact": at_least_one_complement_exact,
         "brute": at_least_one_complement_brute,
+    },
+    "counting/inclusion-exclusion-two-sets": {
+        "exact": inclusion_exclusion_two_sets_exact,
+        "brute": inclusion_exclusion_two_sets_brute,
+    },
+    "counting/inclusion-exclusion-three-sets": {
+        "exact": inclusion_exclusion_three_sets_exact,
+        "brute": inclusion_exclusion_three_sets_brute,
+    },
+    "counting/adjacency-forbidden-gap": {
+        "exact": adjacency_forbidden_gap_exact,
+        "brute": adjacency_forbidden_gap_brute,
+    },
+    "counting/stars-and-bars-lower-bounds": {
+        "exact": stars_and_bars_lower_bounds_exact,
+        "brute": stars_and_bars_lower_bounds_brute,
+    },
+    "counting/at-least-k-committee": {
+        "exact": at_least_k_committee_exact,
+        "brute": at_least_k_committee_brute,
+    },
+    "counting/adjacency-required-block": {
+        "exact": adjacency_required_block_exact,
+        "brute": adjacency_required_block_brute,
+    },
+    "counting/one-pair-reduced-deck": {
+        "exact": one_pair_reduced_deck_exact,
+        "brute": one_pair_reduced_deck_brute,
+    },
+    "counting/birthday-collision": {
+        "exact": birthday_collision_exact,
+        "brute": birthday_collision_brute,
     },
 }

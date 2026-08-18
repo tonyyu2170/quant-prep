@@ -38,6 +38,14 @@ import { starsAndBarsBasic } from "./counting/stars-and-bars-basic";
 import { circularAdjacentPair } from "./counting/circular-adjacent-pair";
 import { allOneTypeDraw } from "./counting/all-one-type-draw";
 import { atLeastOneComplement } from "./counting/at-least-one-complement";
+import { inclusionExclusionTwoSets } from "./counting/inclusion-exclusion-two-sets";
+import { inclusionExclusionThreeSets } from "./counting/inclusion-exclusion-three-sets";
+import { adjacencyForbiddenGap } from "./counting/adjacency-forbidden-gap";
+import { starsAndBarsLowerBounds } from "./counting/stars-and-bars-lower-bounds";
+import { atLeastKCommittee } from "./counting/at-least-k-committee";
+import { adjacencyRequiredBlock } from "./counting/adjacency-required-block";
+import { onePairReducedDeck } from "./counting/one-pair-reduced-deck";
+import { birthdayCollision } from "./counting/birthday-collision";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -79,6 +87,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   circularAdjacentPair,
   allOneTypeDraw,
   atLeastOneComplement,
+  inclusionExclusionTwoSets,
+  inclusionExclusionThreeSets,
+  adjacencyForbiddenGap,
+  starsAndBarsLowerBounds,
+  atLeastKCommittee,
+  adjacencyRequiredBlock,
+  onePairReducedDeck,
+  birthdayCollision,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
