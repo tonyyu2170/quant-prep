@@ -1,8 +1,10 @@
 """Independent Python counterparts for content/problems/counting/*.
 exact(): re-derives every TS `derived` value with plain arithmetic (double-entry).
+It is MEANT to mirror the template's derivation — that mirroring is the check.
 brute(): recomputes the ANSWER by a path derivationally independent of the
-template's closed form — enumeration, DP, or a recurrence. Never re-call the
-same formula the template used; that is transcription, not verification."""
+template's closed form — enumeration, DP, or a recurrence. Only brute() carries
+the independence requirement: never re-call the formula the template used, as
+that is transcription, not verification."""
 
 
 def committee_selection_exact(p):

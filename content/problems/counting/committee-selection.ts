@@ -10,7 +10,7 @@ export const committeeSelection: ProblemTemplate = {
   topic: "probability/counting",
   difficulty: 1,
   firms: [{ firm: "jane-street", weight: 0.4 }, { firm: "sig", weight: 0.4 }],
-  source: { kind: "original", inspiration: "standard combinations opener" },
+  source: { kind: "textbook", inspiration: "classic combinations opener: choosing an unordered committee from a pool" },
   params: {
     n: { range: { min: 8, max: 16, step: 1 } },
     k: { range: { min: 3, max: 6, step: 1 } },
