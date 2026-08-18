@@ -46,10 +46,22 @@ export const twoOutcomeBet: ProblemTemplate = {
   solution: (p, d) => [
     { title: "Setup", body: `Expected profit weights each outcome by its probability. A roll below ${fmtNum(p.k)} loses, which is ${fmtNum(d.loseFaces)} of the 6 faces, so the lose probability is $${fmtNum(d.loseFaces)}/6=${fmtNum(d.pLose)}$; that leaves ${fmtNum(d.winFaces)} of the 6 faces to win, a win probability of $${fmtNum(d.winFaces)}/6=${fmtNum(d.pWin)}$.` },
     // Every chain below keeps the sixths as exact fractions. Multiplying the rounded
-    // decimals instead ($0.8333\times9$) drifts off the printed result.
-    { title: "Weight each branch", body: `The winning branch contributes $\\frac{${fmtNum(d.winFaces)}}{6}\\times${fmtNum(p.w)}=${fmtNum(d.winLeg)}$ dollars, and the losing branch takes away $\\frac{${fmtNum(d.loseFaces)}}{6}\\times${fmtNum(p.l)}=${fmtNum(d.loseLeg)}$ dollars.` },
-    { title: "Combine", body: `Expected profit is the winning contribution minus the losing one. Over a common denominator of 6 it stays exact: $\\frac{${fmtNum(d.winFaces)}\\times${fmtNum(p.w)}-${fmtNum(d.loseFaces)}\\times${fmtNum(p.l)}}{6}=${fmtNum(d.ev)}$ dollars per roll.` },
-    { title: "Sanity check", body: `Price the bet the other way round, counting faces rather than probabilities. To break even, the winning faces would have to return exactly what the losing faces take, so a fair payout is $\\frac{${fmtNum(d.loseFaces)}\\times${fmtNum(p.l)}}{${fmtNum(d.winFaces)}}=${fmtNum(d.fairWin)}$ dollars per winning face. The game offers only ${fmtNum(p.w)}, short of that, so the expected profit must come out negative — and it does.` },
+    // decimals instead ($0.8333\times9$) drifts off the printed result — and so does
+    // subtracting them, which is why Combine reduces to integers over 6 rather than
+    // differencing the two printed legs.
+    // The unit trails the math in these steps: leading with it would render "1 dollars"
+    // wherever a leg or the expectation lands on one.
+    { title: "Weight each branch", body: `Measured in dollars, the winning branch contributes $\\frac{${fmtNum(d.winFaces)}}{6}\\times${fmtNum(p.w)}=${fmtNum(d.winLeg)}$ and the losing branch takes away $\\frac{${fmtNum(d.loseFaces)}}{6}\\times${fmtNum(p.l)}=${fmtNum(d.loseLeg)}$.` },
+    { title: "Combine", body: `Subtract the losing contribution from the winning one. Over a common denominator of 6 the arithmetic stays exact, giving an expected profit per roll, in dollars, of $\\frac{${fmtNum(d.winFaces)}\\times${fmtNum(p.w)}-${fmtNum(d.loseFaces)}\\times${fmtNum(p.l)}}{6}=${fmtNum(d.ev)}$.` },
+    // At winFaces = 1 the division is a no-op, and \frac{·}{1} reads as a mistake rather
+    // than a step: the sole winning face simply has to return the whole losing total.
+    // winFaces = 3 keeps its fraction — there the cancellation IS the argument, since
+    // equally likely branches make the fair payout equal to the loss.
+    { title: "Sanity check", body: `Price the bet the other way round, counting faces rather than probabilities. To break even, the winning faces would have to return exactly what the losing faces take, so a fair payout per winning face is $${
+      d.winFaces === 1
+        ? `${fmtNum(d.loseFaces)}\\times${fmtNum(p.l)}=${fmtNum(d.fairWin)}`
+        : `\\frac{${fmtNum(d.loseFaces)}\\times${fmtNum(p.l)}}{${fmtNum(d.winFaces)}}=${fmtNum(d.fairWin)}`
+    }$ dollars. The game offers only ${fmtNum(p.w)}, short of that, so the expected profit must come out negative — and it does.` },
   ],
   keyInsight: "An expectation weights every outcome by how often it arrives, so a win and a loss only become comparable once each has been multiplied by its own probability — the raw sizes of the two payouts say nothing on their own about which way the bet leans.",
   commonTrap: "Subtracting the loss amount from the win amount and reporting that difference as the expected profit, which skips the step where each amount is scaled by the chance of actually landing on its branch.",
