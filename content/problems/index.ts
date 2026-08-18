@@ -30,6 +30,14 @@ import { strategyEdgeStreak } from "./bayes/strategy-edge-streak";
 import { dataVendorWorstSource } from "./bayes/data-vendor-worst-source";
 import { twoUrnsWithoutReplacement } from "./bayes/two-urns-without-replacement";
 import { committeeSelection } from "./counting/committee-selection";
+import { distinctPermutations } from "./counting/distinct-permutations";
+import { repeatedLetters } from "./counting/repeated-letters";
+import { productRulePlates } from "./counting/product-rule-plates";
+import { forcedMemberCommittee } from "./counting/forced-member-committee";
+import { starsAndBarsBasic } from "./counting/stars-and-bars-basic";
+import { circularAdjacentPair } from "./counting/circular-adjacent-pair";
+import { allOneTypeDraw } from "./counting/all-one-type-draw";
+import { atLeastOneComplement } from "./counting/at-least-one-complement";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -63,6 +71,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   dataVendorWorstSource,
   twoUrnsWithoutReplacement,
   committeeSelection,
+  distinctPermutations,
+  repeatedLetters,
+  productRulePlates,
+  forcedMemberCommittee,
+  starsAndBarsBasic,
+  circularAdjacentPair,
+  allOneTypeDraw,
+  atLeastOneComplement,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
