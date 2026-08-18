@@ -21,9 +21,14 @@ describe("problem registry invariants", () => {
     }
   });
   it("filters by topic and difficulty", () => {
-    expect(problemsFor("probability/bayes").length).toBe(PROBLEMS.length);
+    const bayes = problemsFor("probability/bayes").length;
+    const counting = problemsFor("probability/counting").length;
+    expect(bayes).toBe(30);
+    expect(bayes + counting).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
+    expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
+    expect(byId.get("counting/committee-selection")).toBeDefined();
   });
   it("bayes batch hits the 12/12/6 difficulty distribution", () => {
     const bayes = PROBLEMS.filter((t) => t.id.startsWith("bayes/"));

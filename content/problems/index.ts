@@ -29,6 +29,7 @@ import { insuranceRiskPoolMixture } from "./bayes/insurance-risk-pool-mixture";
 import { strategyEdgeStreak } from "./bayes/strategy-edge-streak";
 import { dataVendorWorstSource } from "./bayes/data-vendor-worst-source";
 import { twoUrnsWithoutReplacement } from "./bayes/two-urns-without-replacement";
+import { committeeSelection } from "./counting/committee-selection";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -61,6 +62,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   strategyEdgeStreak,
   dataVendorWorstSource,
   twoUrnsWithoutReplacement,
+  committeeSelection,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
