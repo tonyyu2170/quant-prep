@@ -47,8 +47,14 @@ for (const t of PROBLEMS) {
         fail.push(`${t.id} seed ${seed}: value ${v} outside fmtNum decimal-safe window`);
     const allowed = new Set<string>();
     for (const v of [...Object.values(p), ...Object.values(d), ...(t.constants ?? [])]) {
+      const a = Math.abs(v);
+      // The audit's tokenizer is sign-blind — a minus sign is never part of a token — so a
+      // negative value has to be traceable by its magnitude. Sign errors in prose are caught
+      // by the Python double-entry on derived values, not here; this audit only proves that
+      // every number in the text came from the params.
       allowed.add(fmtNum(v));
-      if (v > 0 && v < 1) allowed.add(fmtNum(Math.round(100 * v * 1e8) / 1e8)); // percent renderings
+      allowed.add(fmtNum(a));
+      if (a > 0 && a < 1) allowed.add(fmtNum(Math.round(100 * a * 1e8) / 1e8)); // percent renderings
     }
     auditText(t, t.statement(p, d), allowed, seed);
     for (const step of t.solution(p, d)) auditText(t, `${step.title} ${step.body}`, allowed, seed);

@@ -23,8 +23,10 @@ describe("problem registry invariants", () => {
   it("filters by topic and difficulty", () => {
     const bayes = problemsFor("probability/bayes").length;
     const counting = problemsFor("probability/counting").length;
+    const ev = problemsFor("probability/ev-variance").length;
     expect(bayes).toBe(30);
-    expect(bayes + counting).toBe(PROBLEMS.length);
+    expect(counting).toBe(25);
+    expect(bayes + counting + ev).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

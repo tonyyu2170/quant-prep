@@ -54,6 +54,7 @@ import { surjectionsNoEmptyBin } from "./counting/surjections-no-empty-bin";
 import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-node";
 import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
 import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
+import { twoOutcomeBet } from "./ev-variance/two-outcome-bet";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -111,6 +112,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   latticePathsForbiddenNode,
   pigeonholeExtremal,
   twoPairVsFullHouse,
+  twoOutcomeBet,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
