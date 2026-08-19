@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fmtNum, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
-import { PROBLEMS } from "./index";
+import { fmtNum, normalCdf, normalQuantile, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
+import { PROBLEMS, byId } from "./index";
 import { forEachLegalDraw } from "./draw-space.test";
 
 // Every claim the ev-variance prose makes that no other gate covers.
@@ -28,6 +28,20 @@ const P = (x: number) => Number(fmtNum(x));
 /** Two printed quantities render to the same string. */
 const same = (a: number, b: number) => fmtNum(a) === fmtNum(b);
 const EPS = 1e-9;
+/** Shared C(n,k), for distributions claims that recompute a binomial/Poisson term fresh from
+ *  params rather than trusting the template's own derived value. */
+const comb = (n: number, k: number): number => {
+  if (k < 0 || k > n) return 0;
+  const kk = Math.min(k, n - k);
+  let r = 1;
+  for (let i = 0; i < kk; i++) r = (r * (n - i)) / (i + 1);
+  return r;
+};
+const poissonPmf = (lam: number, k: number): number => {
+  let r = Math.exp(-lam);
+  for (let i = 1; i <= k; i++) r = (r * lam) / i;
+  return r;
+};
 
 interface Claim {
   /** the sentence in the template this predicate is checking */
@@ -43,7 +57,7 @@ interface Claim {
 }
 
 const CLAIMS: Record<string, Claim[]> = {
-  "two-outcome-bet": [
+  "ev-variance/two-outcome-bet": [
     { says: "Sanity: the game offers less than the fair payout, so the expectation is negative",
       holds: (p, d) => P(p.w) < P(d.fairWin) && P(d.ev) < 0,
       breaks: (p, d) => ({ ...d, fairWin: p.w / 2 }) },
@@ -64,7 +78,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => Math.abs(d.winLeg - d.loseLeg - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "die-payoff-table": [
+  "ev-variance/die-payoff-table": [
     { says: "Sanity: the equal-weight shortcut lands on the stated side of the expectation",
       holds: (p, d) => (p.mid > p.lo ? P(d.plainAvg) < P(d.ev) : P(d.plainAvg) > P(d.ev)),
       breaks: (_p, d) => ({ ...d, plainAvg: d.ev }) },
@@ -79,7 +93,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.plainAvg) !== P(d.ev),
       breaks: (_p, d) => ({ ...d, plainAvg: d.ev }) },
   ],
-  "raffle-fair-price": [
+  "ev-variance/raffle-fair-price": [
     { says: "Sanity: the price sits between the grand-prize-only value and the per-winner share",
       holds: (_p, d) => P(d.legGrand) < P(d.price) && P(d.price) < P(d.perWinner),
       breaks: (_p, d) => ({ ...d, price: d.legGrand / 2 }) },
@@ -91,7 +105,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(d.price - d.legGrand - d.runnersVoucher / p.tickets) < EPS,
       breaks: (_p, d) => ({ ...d, legGrand: d.price }) },
   ],
-  "sum-of-two-draws": [
+  "ev-variance/sum-of-two-draws": [
     { says: "Sanity: the midpoint of the total's range is the mean total the dice gave",
       holds: (_p, d) => Math.abs((2 + d.maxTotal) / 2 - d.meanTotal) < EPS
         && Math.abs(d.meanRed + d.meanBlue - d.meanTotal) < EPS,
@@ -104,7 +118,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && P(p.rate * (p.red / 2 + p.blue / 2)) !== P(d.ev),
       breaks: (p, d) => ({ ...d, meanRed: p.red / 2 }) },
   ],
-  "labeled-tickets-draw": [
+  "ev-variance/labeled-tickets-draw": [
     { says: "Sanity: totalling every label the long way and dividing gives the same mean",
       holds: (p, d) => d.total === p.n * p.first + d.sumIncr && Math.abs(d.total / p.n - d.mean) < EPS,
       breaks: (p, d) => ({ ...d, total: d.total + p.n }) },
@@ -116,7 +130,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && (p.first + (p.first + p.gap * p.n)) / 2 > d.mean,
       breaks: (p, d) => ({ ...d, steps: p.n, last: p.first + p.gap * p.n }) },
   ],
-  "profit-net-of-cost": [
+  "ev-variance/profit-net-of-cost": [
     { says: "Sanity: the dealer's price sits on the stated side of the expected contents",
       holds: (p, d) => (d.ev > 0 ? P(p.cost) < P(d.payoutLeg) : P(p.cost) > P(d.payoutLeg)),
       breaks: (p, d) => ({ ...d, payoutLeg: p.cost }) },
@@ -128,7 +142,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => (p.winners * (p.prize - p.cost)) / p.slots > d.ev + EPS,
       breaks: (p, d) => ({ ...d, ev: (p.winners * (p.prize - p.cost)) / p.slots }) },
   ],
-  "binomial-mean": [
+  "ev-variance/binomial-mean": [
     { says: "Sanity: a fill rate off half puts the expected count on the same side of half the bids",
       holds: (p, d) => (p.fillPct > 50 ? P(d.ev) > P(d.half) : P(d.ev) < P(d.half)),
       breaks: (_p, d) => ({ ...d, ev: d.half }) },
@@ -139,7 +153,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => !Number.isInteger(d.ev) && Math.abs(Math.round(d.ev) - d.ev) > EPS,
       breaks: (_p, d) => ({ ...d, ev: Math.round(d.ev) }) },
   ],
-  "indicator-match-count": [
+  "ev-variance/indicator-match-count": [
     { says: "Sanity: counting orderings reaches the same kitty as the indicator argument",
       holds: (p, d) => Math.abs((p.bounty * p.friends * d.waysFixed) / d.waysAll - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, waysAll: d.waysAll * 2 }) },
@@ -150,7 +164,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(d.ev / p.bounty - p.friends / p.guests) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 2 }) },
   ],
-  "two-outcome-variance": [
+  "ev-variance/two-outcome-variance": [
     { says: "Sanity and commonTrap: the variance comes in under the even-match ceiling of a quarter of the squared gap",
       holds: (_p, d) => P(d.varProfit) < P(d.capVar),
       breaks: (_p, d) => ({ ...d, varProfit: d.capVar }) },
@@ -163,7 +177,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(P(p.w) - P(d.mean), P(d.devWin)) && same(P(d.mean) + P(p.l), P(d.devLose)),
       breaks: (_p, d) => ({ ...d, devWin: d.devWin + 0.5 }) },
   ],
-  "spinner-pmf-variance": [
+  "ev-variance/spinner-pmf-variance": [
     { says: "Sanity: the pairwise-distance identity reaches the same variance",
       holds: (_p, d) => Math.abs((d.tA * d.tB * d.dAB * d.dAB + d.tA * d.tC * d.dAC * d.dAC
         + d.tB * d.tC * d.dBC * d.dBC) / 100 - d.varPay) < EPS,
@@ -175,7 +189,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.varPay) !== 0 && same(P(d.meanSq) - P(d.mean) * P(d.mean), d.varPay),
       breaks: (_p, d) => ({ ...d, varPay: 0 }) },
   ],
-  "affine-scaling-sd": [
+  "ev-variance/affine-scaling-sd": [
     { says: "Sanity: the answer sits between a quarter and a half of the payout range",
       holds: (_p, d) => P(d.quarterSpread) < P(d.sd) && P(d.sd) < P(d.halfSpread),
       breaks: (_p, d) => ({ ...d, sd: d.halfSpread * 2 }) },
@@ -195,7 +209,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && P(d.sd + p.bonus) !== P(d.sd),
       breaks: (p, d) => ({ ...d, sd: d.sd + p.bonus }) },
   ],
-  "push-branch-bet": [
+  "ev-variance/push-branch-bet": [
     { says: "Sanity: the offered payout sits on the stated side of the break-even payout",
       holds: (p, d) => (d.ev > 0 ? P(p.payout) > P(d.fairPayout) : P(p.payout) < P(d.fairPayout)),
       breaks: (p, d) => ({ ...d, fairPayout: p.payout }) },
@@ -210,7 +224,7 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (_p, d) => ({ ...d, ev: d.ev * 3 }) },
   ],
-  "sum-of-bets-variance": [
+  "ev-variance/sum-of-bets-variance": [
     { says: "Sanity and commonTrap: the combined spread is strictly under the sum of the two spreads",
       holds: (_p, d) => P(d.sdTotal) < P(d.sdSum),
       breaks: (_p, d) => ({ ...d, sdTotal: d.sdSum }) },
@@ -222,7 +236,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.sdSum * d.sdSum > d.varTotal + EPS,
       breaks: (_p, d) => ({ ...d, sdSum: d.sdTotal }) },
   ],
-  "urn-choice-total-expectation": [
+  "ev-variance/urn-choice-total-expectation": [
     { says: "Sanity: the answer lands strictly between the two box values",
       holds: (_p, d) => P(d.ev) > Math.min(P(d.evA), P(d.evB)) && P(d.ev) < Math.max(P(d.evA), P(d.evB)),
       breaks: (_p, d) => ({ ...d, ev: d.evA }) },
@@ -243,7 +257,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.boxPct * d.evA + d.otherPct * d.evB) / 100 - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "max-of-two-dice": [
+  "ev-variance/max-of-two-dice": [
     { says: "Sanity: the higher and lower dice's point totals add to the whole, in integers",
       holds: (p, d) => d.topNumer + d.lowNumer === (p.faces + 1) * p.faces * p.faces,
       breaks: (_p, d) => ({ ...d, lowNumer: d.lowNumer + 1 }) },
@@ -257,7 +271,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.rate * d.topNumer) / (p.faces * p.faces) - p.fee - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "one-optional-reroll": [
+  "ev-variance/one-optional-reroll": [
     { says: "Sanity: pricing the rule as an option reaches the same points average",
       holds: (p, d) => Math.abs(d.freshMean + (d.tossCount * d.standCount) / (2 * p.faces) - d.points) < EPS,
       breaks: (_p, d) => ({ ...d, points: d.points * 1.1 }) },
@@ -271,7 +285,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.rate * d.pointsNumer) / (2 * p.faces) - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "geometric-waiting-time": [
+  "ev-variance/geometric-waiting-time": [
     { says: "Sanity: one more ending face would cost strictly less than the answer",
       holds: (_p, d) => P(d.evEasier) < P(d.spend),
       breaks: (_p, d) => ({ ...d, evEasier: d.spend }) },
@@ -288,7 +302,7 @@ const CLAIMS: Record<string, Claim[]> = {
       nonVacuous: (_p, d) => d.winFaces === 1, // the longest wait, where the reciprocal bites hardest
       breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
   ],
-  "hypergeometric-mean": [
+  "ev-variance/hypergeometric-mean": [
     { says: "Sanity: the winners and the blanks drawn account for every ticket pulled",
       holds: (p, d) => Math.abs(d.meanWin + d.meanPlain - p.draws) < EPS && d.plain === p.pool - p.special,
       breaks: (_p, d) => ({ ...d, meanPlain: d.meanPlain + 1 }) },
@@ -303,7 +317,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(p.rate * d.perDraw) < P(d.ev) && Math.abs(p.draws * p.rate * d.perDraw - d.ev) < EPS,
       breaks: (p, d) => ({ ...d, ev: p.rate * d.perDraw }) },
   ],
-  "capped-payoff": [
+  "ev-variance/capped-payoff": [
     { says: "Sanity: the cap can only take money away from the uncapped average",
       holds: (_p, d) => P(d.ev) < P(d.evUncapped),
       breaks: (_p, d) => ({ ...d, ev: d.evUncapped }) },
@@ -320,7 +334,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs((d.lowTotal + d.highTotal) / p.faces - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "insurance-break-even-premium": [
+  "ev-variance/insurance-break-even-premium": [
     // The ledger is an integer identity on both sides, so it is asserted exactly rather than on
     // printed values: every leg is a whole dollar by construction of the param steps.
     { says: "Sanity: the hundred-policy ledger balances to the dollar",
@@ -342,7 +356,7 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, minorLeg: d.minorLeg + 1 }) },
   ],
 
-  "distinct-types-collected": [
+  "ev-variance/distinct-types-collected": [
     { says: "Sanity: the designs held and the designs missing account for the whole set",
       holds: (p, d) => Math.abs(d.distinct + d.missing - p.types) < EPS
         && d.allNumer === p.types ** p.draws && d.missNumer === (p.types - 1) ** p.draws,
@@ -361,7 +375,7 @@ const CLAIMS: Record<string, Claim[]> = {
       nonVacuous: (p) => p.draws > p.types, // more packs than designs, where the trap is not even possible
       breaks: (p, d) => ({ ...d, ev: p.rate * p.draws }) },
   ],
-  "binomial-variance": [
+  "ev-variance/binomial-variance": [
     { says: "Sanity: the spread comes in strictly under the even-odds ceiling",
       holds: (_p, d) => P(d.varCount) < P(d.capVar),
       breaks: (_p, d) => ({ ...d, varCount: d.capVar }) },
@@ -380,7 +394,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.mean) !== P(d.varCount),
       breaks: (_p, d) => ({ ...d, varCount: d.mean }) },
   ],
-  "equal-ev-sd-comparison": [
+  "ev-variance/equal-ev-sd-comparison": [
     { says: "Setup: the two games really do pay the same on average, in whole dollars",
       holds: (p, d) => same(d.coinPay / 2, p.m) && same((p.k * d.prize) / p.faces, p.m) && Number.isInteger(d.prize),
       breaks: (_p, d) => ({ ...d, prize: d.prize + 1 }) },
@@ -405,7 +419,7 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, sdDie: d.sdDie * 1.02 }) },
   ],
 
-  "conditional-expectation-given-event": [
+  "ev-variance/conditional-expectation-given-event": [
     // The bracket is checked as printed and from both sides. A one-sided version was dropped
     // in review: the natural companion — putting the forbidden points back to recover the
     // plain average — is an identity by construction here, since totalGood is defined as
@@ -427,7 +441,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs((p.rate * d.totalGood) / d.goodPairs - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "matching-indicators-variance": [
+  "ev-variance/matching-indicators-variance": [
     { says: "Sanity: the mean-of-squares route rebuilds the same count variance",
       holds: (p, d) => p.party * p.diners * (p.diners - 1) + d.pairs * p.diners
           - p.party * p.party * (p.diners - 1) === d.numer
@@ -446,7 +460,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(p.rate * p.rate * d.varCount - d.varPay) < EPS,
       breaks: (_p, d) => ({ ...d, varPay: d.varPay * 1.02 }) },
   ],
-  "pattern-waiting-hh-ht": [
+  "ev-variance/pattern-waiting-hh-ht": [
     { says: "Sanity: the bill clears the price of the two runs the pair takes at minimum",
       holds: (p, d) => d.twoRuns === 2 * p.cost && P(d.twoRuns) < P(d.spend),
       breaks: (_p, d) => ({ ...d, spend: d.twoRuns }) },
@@ -467,7 +481,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.cost * d.flips - d.spend) < EPS,
       breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
   ],
-  "two-reroll-stopping-value": [
+  "ev-variance/two-reroll-stopping-value": [
     { says: "Sanity: the two-spin game is worth strictly less, an option you may decline cannot hurt",
       holds: (p, d) => same((p.rate * d.midNumer) / (2 * p.sectors), d.evMid) && P(d.evMid) < P(d.ev),
       breaks: (_p, d) => ({ ...d, evMid: d.ev }) },
@@ -495,7 +509,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.rate * d.topValue - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "truncated-doubling-game": [
+  "ev-variance/truncated-doubling-game": [
     { says: "Sanity: capping one round shorter is worth exactly half a stake less, as printed",
       holds: (p, d) => Math.abs(d.evShorter - ((p.rounds + 1) * p.stake) / 2) < EPS
         && same(d.evShorter + p.stake / 2, d.ev),
@@ -514,7 +528,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.maxPay === p.stake * d.potMult,
       breaks: (_p, d) => ({ ...d, potMult: d.potMult * 2 }) },
   ],
-  "wald-random-sum": [
+  "ev-variance/wald-random-sum": [
     { says: "Sanity: the midpoint of the one-box and full-load values is the answer, as printed",
       holds: (p, d) => same((p.rate * (p.items + 1)) / 2, d.lowTotal)
         && same((p.rate * p.boxes * (p.items + 1)) / 2, d.highTotal)
@@ -539,7 +553,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.rate * d.meanTotalItems - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "sampling-without-replacement-variance": [
+  "ev-variance/sampling-without-replacement-variance": [
     { says: "Sanity: the pairwise rebuild reaches the same variance, in integers",
       holds: (p, d) => d.pairsDrawn === p.draws * (p.draws - 1)
         && p.draws * p.faulty * d.sound * (p.pool - 1) - d.pairsDrawn * p.faulty * d.sound
@@ -576,10 +590,360 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.01 }) },
   ],
+
+  "distributions/binomial-exact-count": [
+    { says: "Sanity: for k=0 the exact-count and at-least-one-failure probabilities are complements summing to 1; for k>=1 the exact-count probability sits at or below at-least-one-failure",
+      holds: (p, d) => p.k === 0
+        ? Math.abs(P(d.pmf) + P(d.atLeastOne) - 1) < 1e-4 // printed-precision sum, not raw floats — measured worst gap 5e-5 across the legal space
+        : P(d.pmf) <= P(d.atLeastOne),
+      breaks: (_p, d) => ({ ...d, atLeastOne: 0 }) },
+    { says: "Combine: the answer is the arrangement count times one arrangement's probability, exactly",
+      holds: (p, d) => Math.abs(d.combNK * (d.prob ** p.k) * (d.q ** d.nMinusK) - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the per-board fail rate alone, or that rate times the trial count, is not the exact-count probability",
+      holds: (p, d) => P(d.pmf) !== P(p.n * d.prob) && P(d.pmf) !== P(d.prob),
+      breaks: (p, d) => ({ ...d, pmf: p.n * d.prob }) },
+  ],
+
+  "distributions/binomial-at-most": [
+    { says: "Sanity: the cumulative probability up to k and the tail probability above k partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.cdf) + P(d.tailProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, tailProb: 0 }) },
+    { says: "Combine: the cumulative probability is the sum of the PMF over every count from 0 through k, exactly",
+      holds: (p, d) => {
+        let s = 0;
+        for (let i = 0; i <= p.k; i++) s += comb(p.n, i) * d.prob ** i * d.q ** (p.n - i);
+        return Math.abs(s - d.cdf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, cdf: d.cdf * 1.5 }) },
+    { says: "commonTrap: the cumulative probability is never less than the single PMF term at k alone",
+      holds: (p, d) => d.cdf >= comb(p.n, p.k) * d.prob ** p.k * d.q ** (p.n - p.k) - EPS,
+      breaks: (_p, d) => ({ ...d, cdf: 0 }) },
+  ],
+
+  "distributions/binomial-at-least-one": [
+    { says: "Sanity: the zero-failure event and the at-least-one event partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.zeroFails) + P(d.atLeastOne) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, zeroFails: 0 }) },
+    { says: "Combine: the at-least-one probability equals one minus the all-succeed probability, exactly",
+      holds: (p, d) => Math.abs(1 - (1 - d.prob) ** p.n - d.atLeastOne) < 1e-9,
+      breaks: (_p, d) => ({ ...d, atLeastOne: d.atLeastOne * 1.5 }) },
+    { says: "commonTrap: the at-least-one probability is not the per-trial rate times the trial count",
+      holds: (p, d) => P(d.atLeastOne) !== P(p.n * d.prob) && P(d.atLeastOne) !== P(d.prob),
+      breaks: (p, d) => ({ ...d, atLeastOne: p.n * d.prob }) },
+  ],
+
+  "distributions/binomial-fit-then-pmf": [
+    { says: "Sanity: the fitted p reproduces the stated zero-event probability c",
+      holds: (p, d) => Math.abs(P(d.q ** p.n) - P(p.c)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, q: d.q * 1.02 }) },
+    { says: "Combine: P(X=1) is n times the fitted p times q to the n-1, exactly",
+      holds: (p, d) => Math.abs(p.n * d.fittedP * d.q ** d.nMinus1 - d.pmf1) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf1: d.pmf1 * 1.5 }) },
+    { says: "commonTrap: P(X=1) is not the stated zero-event probability, nor the fitted rate alone",
+      holds: (p, d) => P(d.pmf1) !== P(p.c) && P(d.pmf1) !== P(d.fittedP),
+      breaks: (p, d) => ({ ...d, pmf1: p.c }) },
+  ],
+
+  "distributions/poisson-exact-count": [
+    { says: "Sanity: the PMF at k equals the PMF at k-1 times lambda over k, the Poisson recurrence",
+      holds: (p, d) => Math.abs(d.pPrev * (p.lam / p.k) - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pPrev: d.pPrev * 1.5 }) },
+    { says: "Combine: the PMF equals the direct closed form e^-lambda times lambda^k over k!, exactly",
+      holds: (p, d) => {
+        let fact = 1;
+        for (let i = 2; i <= p.k; i++) fact *= i;
+        return Math.abs((Math.exp(-p.lam) * p.lam ** p.k) / fact - d.pmf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the rate itself, nor the bare exponential decay factor",
+      // At lambda=1, k=1, the PMF (lambda*e^-lambda) IS algebraically identical to e^-lambda —
+      // a real mathematical coincidence at that single point, not a floating-point artefact.
+      holds: (p, d) => P(d.pmf) !== P(p.lam) && P(d.pmf) !== P(Math.exp(-p.lam)),
+      exceptions: 1,
+      breaks: (p, d) => ({ ...d, pmf: p.lam }) },
+  ],
+
+  "distributions/poisson-at-most": [
+    { says: "Sanity: the cumulative probability equals the running sum through the previous count plus this count's own term",
+      holds: (p, d) => Math.abs(d.cdfPrev + d.pmfAtK - d.cdf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmfAtK: 0 }) },
+    { says: "Combine: the cumulative probability equals the direct sum of the closed-form PMF over every count from 0 through k",
+      holds: (p, d) => {
+        let s = 0;
+        for (let i = 0; i <= p.k; i++) {
+          let fact = 1;
+          for (let j = 2; j <= i; j++) fact *= j;
+          s += (Math.exp(-p.lam) * p.lam ** i) / fact;
+        }
+        return Math.abs(s - d.cdf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, cdf: d.cdf * 1.5 }) },
+    { says: "commonTrap: the cumulative probability is never less than the single PMF term at k alone",
+      holds: (p, d) => d.cdf >= d.pmfAtK - EPS,
+      breaks: (_p, d) => ({ ...d, cdf: 0 }) },
+  ],
+
+  "distributions/poisson-rescaled-at-least-one": [
+    { says: "Sanity: the zero-event probability and the at-least-one probability partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.zeroEvents) + P(d.atLeastOne) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, zeroEvents: 0 }) },
+    { says: "Combine: the at-least-one probability equals one minus e to the negative rescaled rate, exactly",
+      holds: (p, d) => Math.abs(1 - Math.exp((-p.lam0 * p.w1) / p.w0) - d.atLeastOne) < 1e-9,
+      breaks: (_p, d) => ({ ...d, atLeastOne: d.atLeastOne * 1.5 }) },
+    { says: "commonTrap: the at-least-one probability is not the unrescaled rate itself, nor the bare window ratio",
+      holds: (p, d) => P(d.atLeastOne) !== P(p.lam0) && P(d.atLeastOne) !== P(p.w1 / p.w0),
+      breaks: (p, d) => ({ ...d, atLeastOne: p.lam0 }) },
+  ],
+
+  "distributions/poisson-fit-then-tail": [
+    { says: "Sanity: zero, exactly one, and at least two events partition every outcome and sum to 1",
+      // Three independently-printed 4-sig-fig terms occasionally drift a hair past 1e-4 —
+      // measured max 1.0000000000021e-4 across the full legal space — so the bound allows a
+      // little headroom rather than chasing the exact float boundary.
+      holds: (p, d) => Math.abs(P(d.pZero) + P(d.pOne) + P(d.atLeastTwo) - 1) < 2e-4,
+      breaks: (_p, d) => ({ ...d, pZero: 0 }) },
+    { says: "Combine: the at-least-two probability equals one minus the zero- and one-event probabilities, recomputed fresh from the fitted rate",
+      holds: (p, d) => {
+        const lam = -Math.log(p.c) / p.t;
+        const lamP = lam * p.t2;
+        return Math.abs(1 - Math.exp(-lamP) * (1 + lamP) - d.atLeastTwo) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, atLeastTwo: d.atLeastTwo * 1.5 }) },
+    { says: "commonTrap: the at-least-two probability is not the stated zero-event probability, nor the fitted rate alone",
+      holds: (p, d) => P(d.atLeastTwo) !== P(p.c) && P(d.atLeastTwo) !== P(d.lam),
+      breaks: (p, d) => ({ ...d, atLeastTwo: p.c }) },
+  ],
+
+  "distributions/geometric-exact-trial": [
+    { says: "Sanity: no-conversion-in-k-1-calls splits into converting on call k and still no conversion after k, which recombine to the same total",
+      holds: (p, d) => Math.abs(d.pmf + d.tailAtK - d.tailAtKMinus1) < 1e-9,
+      breaks: (_p, d) => ({ ...d, tailAtK: 0 }) },
+    { says: "Combine: the PMF equals q to the k-1 times p, exactly",
+      holds: (p, d) => Math.abs(d.q ** d.kMinus1 * d.prob - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the success rate alone",
+      holds: (p, d) => P(d.pmf) !== P(d.prob),
+      breaks: (_p, d) => ({ ...d, pmf: d.prob }) },
+  ],
+
+  "distributions/geometric-more-than-k": [
+    { says: "Sanity: the tail probability never exceeds q itself, since each additional required tick multiplies by another factor of q",
+      holds: (p, d) => d.tailProb <= d.q + EPS,
+      breaks: (_p, d) => ({ ...d, tailProb: d.tailProb * 1.5 + 1 }) },
+    { says: "Combine: the tail probability equals q to the k, exactly",
+      holds: (p, d) => Math.abs(d.q ** p.k - d.tailProb) < 1e-9,
+      breaks: (_p, d) => ({ ...d, tailProb: d.tailProb * 1.5 }) },
+    { says: "commonTrap: for k>1 the tail probability is strictly below q — at k=1 the two are algebraically identical",
+      holds: (p, d) => p.k === 1 ? P(d.tailProb) === P(d.q) : d.tailProb < d.q - 1e-9,
+      breaks: (p, d) => ({ ...d, tailProb: p.k === 1 ? d.tailProb * 0.5 : d.q }) },
+  ],
+
+  "distributions/geometric-conditional-memoryless": [
+    { says: "Combine: the answer equals q to the k, recomputed fresh — the elapsed wait j never enters the formula",
+      holds: (p, d) => Math.abs(d.q ** p.k - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "Sanity: the answer is NOT the unconditional tail measured from the very start (q to the j+k), the memoryless-violating shortcut",
+      holds: (p, d) => p.j === 0 || P(d.answer) !== P(d.q ** (p.j + p.k)),
+      breaks: (p, d) => ({ ...d, answer: d.q ** (p.j + p.k) }) },
+    { says: "commonTrap: the answer never exceeds q, since each additional further-tick requirement multiplies by another factor of q — equality only at k=1",
+      holds: (p, d) => d.answer <= d.q + EPS,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 + 1 }) },
+  ],
+
+  "distributions/negbinom-exact-trial": [
+    { says: "Sanity: the negative-binomial PMF equals r/k times the plain binomial PMF at the same (k,r) — a known combinatorial identity, checked via an independently-computed C(k,r)",
+      holds: (p, d) => {
+        const combKfullR = comb(p.k, p.r);
+        const binomPmf = combKfullR * d.prob ** p.r * d.q ** d.kMinusR;
+        return Math.abs((p.r / p.k) * binomPmf - d.pmf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "Combine: the PMF equals C(k-1,r-1) times p^r times q^(k-r), exactly",
+      holds: (p, d) => Math.abs(d.combKR * d.prob ** p.r * d.q ** d.kMinusR - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the plain binomial PMF for r successes in k trials, which allows the r-th success to land anywhere rather than exactly on trial k",
+      // p.k > p.r is enforced by the constraint (the k=r boundary is negbinom-fit-p's own
+      // territory, where the two formulas are algebraically identical), so this comparison is
+      // never vacuous.
+      holds: (p, d) => {
+        const binomPmf = comb(p.k, p.r) * d.prob ** p.r * d.q ** (p.k - p.r);
+        return P(d.pmf) !== P(binomPmf);
+      },
+      breaks: (p, d) => ({ ...d, pmf: comb(p.k, p.r) * d.prob ** p.r * d.q ** (p.k - p.r) }) },
+  ],
+
+  "distributions/negbinom-fit-p": [
+    { says: "Sanity: the fitted p raised to the r reproduces the stated c",
+      holds: (p, d) => Math.abs(P(d.fittedP ** p.r) - P(p.c)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, fittedP: d.fittedP * 1.02 }) },
+    { says: "Combine: the fitted p equals c to the 1/r, exactly",
+      holds: (p, d) => Math.abs(p.c ** (1 / p.r) - d.fittedP) < 1e-9,
+      breaks: (_p, d) => ({ ...d, fittedP: d.fittedP * 1.5 }) },
+    { says: "commonTrap: the fitted p is not the stated c itself",
+      holds: (p, d) => P(d.fittedP) !== P(p.c),
+      breaks: (p, d) => ({ ...d, fittedP: p.c }) },
+  ],
+
+  "distributions/hypergeom-exact-draw": [
+    { says: "Sanity: the favorable count never exceeds the total count",
+      holds: (p, d) => d.combKk * d.combRest <= d.combTotal + EPS,
+      breaks: (_p, d) => ({ ...d, combTotal: 1 }) },
+    { says: "Combine: the PMF equals C(K,k) times C(N-K,n-k) over C(N,n), exactly",
+      holds: (p, d) => Math.abs((d.combKk * d.combRest) / d.combTotal - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the with-replacement binomial approximation at rate K/N",
+      // A handful of (N,K,n,k) combos make the hypergeometric and with-replacement-binomial
+      // values coincide at printed precision by chance, not by any formula relationship —
+      // measured 2 of 1912 legal draws.
+      holds: (p, d) => {
+        const rate = p.K / p.N;
+        const approx = comb(p.n, p.k) * rate ** p.k * (1 - rate) ** (p.n - p.k);
+        return P(d.pmf) !== P(approx);
+      },
+      exceptions: 2,
+      breaks: (p, d) => {
+        const rate = p.K / p.N;
+        return { ...d, pmf: comb(p.n, p.k) * rate ** p.k * (1 - rate) ** (p.n - p.k) };
+      } },
+  ],
+
+  "distributions/hypergeom-zero-successes": [
+    { says: "Sanity: the all-unqualified count never exceeds the total count",
+      holds: (p, d) => d.combZero <= d.combTotal + EPS,
+      breaks: (_p, d) => ({ ...d, combTotal: 1 }) },
+    { says: "Combine: the PMF equals C(N-K,n) over C(N,n), exactly",
+      holds: (p, d) => Math.abs(d.combZero / d.combTotal - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the with-replacement binomial approximation (1-K/N)^n",
+      holds: (p, d) => {
+        const approx = (1 - p.K / p.N) ** p.n;
+        return P(d.pmf) !== P(approx);
+      },
+      breaks: (p, d) => ({ ...d, pmf: (1 - p.K / p.N) ** p.n }) },
+  ],
+
+  "distributions/duniform-subrange": [
+    { says: "Sanity: the favorable count never exceeds the total range",
+      holds: (p, d) => d.subrangeSize <= p.N + EPS,
+      breaks: (p, d) => ({ ...d, subrangeSize: d.subrangeSize * 2 + p.N }) },
+    { says: "Combine: the probability equals d-c+1 over N, exactly",
+      holds: (p, d) => Math.abs((p.d - p.c + 1) / p.N - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the probability is not d-c over N, the off-by-one omission of the inclusive endpoint",
+      holds: (p, d) => P(d.answer) !== P((p.d - p.c) / p.N),
+      breaks: (p, d) => ({ ...d, answer: (p.d - p.c) / p.N }) },
+  ],
+
+  "distributions/duniform-fit-range": [
+    { says: "Sanity: the fitted N times the stated ratio c reproduces M",
+      holds: (p, d) => Math.abs(P(d.answer * d.c) - P(p.M)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, c: d.c * 1.02 }) },
+    { says: "Combine: N equals M over c, exactly",
+      holds: (p, d) => Math.abs(p.M / d.c - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: N is not the stated ratio c itself",
+      holds: (p, d) => P(d.answer) !== P(d.c),
+      breaks: (_p, d) => ({ ...d, answer: d.c }) },
+  ],
+
+  "distributions/cuniform-below-threshold": [
+    { says: "Sanity: the probability lands strictly between 0 and 1, since the threshold sits strictly inside the span by construction",
+      holds: (p, d) => d.answer > 0 && d.answer < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1.5 }) },
+    { says: "Combine: the probability equals (t-a) over (b-a), exactly",
+      holds: (p, d) => Math.abs((p.t - p.a) / d.range - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the probability is not the threshold's raw distance from zero over the span, which ignores the lower endpoint a",
+      holds: (p, d) => P(d.answer) !== P(p.t / d.range),
+      breaks: (p, d) => ({ ...d, answer: p.t / d.range }) },
+  ],
+
+  "distributions/exponential-cdf-threshold": [
+    { says: "Sanity: the survival probability and the arrival probability are complements and sum to 1",
+      holds: (p, d) => Math.abs(P(d.survival) + P(d.answer) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, survival: 0 }) },
+    { says: "Combine: the probability equals one minus e to the negative rate times threshold, exactly",
+      holds: (p, d) => Math.abs(1 - Math.exp(-p.lam * p.t) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the arrival probability is not the survival probability itself",
+      holds: (p, d) => P(d.answer) !== P(d.survival),
+      breaks: (_p, d) => ({ ...d, answer: d.survival }) },
+  ],
+
+  "distributions/exponential-fit-rate": [
+    { says: "Sanity: the survival share is the complement of the stated arrival probability",
+      holds: (p, d) => Math.abs(P(d.survival) + P(p.c) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, survival: d.survival * 1.02 }) },
+    { says: "Combine: the fitted rate equals negative log of the survival share over t, exactly",
+      holds: (p, d) => Math.abs(-Math.log(d.survival) / p.t - d.fittedLam) < 1e-9,
+      breaks: (_p, d) => ({ ...d, fittedLam: d.fittedLam * 1.5 }) },
+    { says: "commonTrap: the fitted rate is not negative log of the stated probability c itself, which skips taking its complement first",
+      holds: (p, d) => P(d.fittedLam) !== P(-Math.log(p.c) / p.t),
+      breaks: (p, d) => ({ ...d, fittedLam: -Math.log(p.c) / p.t }) },
+  ],
+
+  "distributions/exponential-memoryless": [
+    { says: "Combine: the answer equals e to the negative rate times t, recomputed fresh — the elapsed wait s never enters the formula",
+      holds: (p, d) => Math.abs(Math.exp(-p.lam * p.t) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "Sanity: the answer is NOT the unconditional survival probability measured from the very start (e to the negative rate times s+t), the memoryless-violating shortcut",
+      holds: (p, d) => p.s === 0 || P(d.answer) !== P(Math.exp(-p.lam * (p.s + p.t))),
+      breaks: (p, d) => ({ ...d, answer: Math.exp(-p.lam * (p.s + p.t)) }) },
+    { says: "commonTrap: the answer is not the elapsed-wait survival probability alone, which conflates the already-observed wait with the further wait actually being asked about",
+      holds: (p, d) => P(d.answer) !== P(Math.exp(-p.lam * p.s)),
+      breaks: (p, d) => ({ ...d, answer: Math.exp(-p.lam * p.s) }) },
+  ],
+
+  "distributions/normal-below": [
+    { says: "Sanity: the answer sits at or above one half exactly when the threshold sits at or above the mean",
+      holds: (p, d) => (d.z >= 0) === (d.answer >= 0.5),
+      breaks: (_p, d) => ({ ...d, answer: d.z >= 0 ? 0.1 : 0.9 }) },
+    { says: "Combine: the answer equals the standard normal CDF at the standardized z-score, exactly",
+      holds: (p, d) => Math.abs(normalCdf(p.x, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the z-score itself",
+      holds: (p, d) => P(d.answer) !== P(d.z),
+      breaks: (_p, d) => ({ ...d, answer: d.z }) },
+  ],
+
+  "distributions/normal-above": [
+    { says: "Sanity: the below-threshold and above-threshold probabilities partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.below) + P(d.answer) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, below: 0 }) },
+    { says: "Combine: the answer equals one minus the standard normal CDF at the standardized z-score, exactly",
+      holds: (p, d) => Math.abs(1 - normalCdf(p.x, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the below-threshold CDF itself",
+      holds: (p, d) => P(d.answer) !== P(d.below),
+      breaks: (_p, d) => ({ ...d, answer: d.below }) },
+  ],
+
+  "distributions/normal-between": [
+    { says: "Sanity: the lower endpoint's CDF never exceeds the upper endpoint's, since a<b",
+      holds: (p, d) => d.cdfA <= d.cdfB + EPS,
+      breaks: (_p, d) => ({ ...d, cdfA: d.cdfB + 0.05 }) },
+    { says: "Combine: the answer equals the difference of the two endpoint CDFs, exactly",
+      holds: (p, d) => Math.abs(normalCdf(p.b, p.mu, p.sigma) - normalCdf(p.a, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the upper endpoint's CDF alone, which forgets to subtract the lower endpoint's CDF",
+      holds: (p, d) => P(d.answer) !== P(d.cdfB),
+      breaks: (_p, d) => ({ ...d, answer: d.cdfB }) },
+  ],
+
+  "distributions/normal-quantile-then-range": [
+    { says: "Sanity: the threshold found in stage one matches the quantile function's own independent computation",
+      holds: (p, d) => Math.abs(normalQuantile(1 - p.c, p.mu, p.sigma) - d.x) < 1e-6,
+      breaks: (_p, d) => ({ ...d, x: d.x * 1.05 }) },
+    { says: "Combine: the answer equals the difference of the two stage-two endpoint CDFs, exactly",
+      holds: (p, d) => Math.abs(normalCdf(d.x + p.d, p.mu, p.sigma) - normalCdf(d.x - p.d, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the first-stage tail probability c reused directly",
+      holds: (p, d) => P(d.answer) !== P(p.c),
+      breaks: (p, d) => ({ ...d, answer: p.c }) },
+  ],
 };
 
-const templateFor = (slug: string) =>
-  PROBLEMS.find((t) => t.id === `ev-variance/${slug}`) as ProblemTemplate;
 const firstLegalDraw = (t: ProblemTemplate) => {
   let first: Params | null = null;
   forEachLegalDraw(t, (p) => { first ??= p; });
@@ -589,7 +953,7 @@ const firstLegalDraw = (t: ProblemTemplate) => {
 describe("prose claims hold on every legal draw", () => {
   for (const [slug, claims] of Object.entries(CLAIMS)) {
     it(`${slug} — ${claims.length} claims`, () => {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       expect(t, `no template registered for ${slug}`).toBeDefined();
       const failed = claims.map(() => 0);
       const covered = claims.map(() => 0);
@@ -614,7 +978,7 @@ describe("prose claims hold on every legal draw", () => {
 describe("the prose-claim predicates fail when they should", () => {
   it("every claim's own falsifier makes it false, and the sound draw makes it true", () => {
     for (const [slug, claims] of Object.entries(CLAIMS)) {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       const p = firstLegalDraw(t);
       const d = t.derived(p);
       for (const c of claims) {
@@ -630,7 +994,7 @@ describe("the prose-claim predicates fail when they should", () => {
     // claims that never touch what it is actually asked for.
     const undetected: string[] = [];
     for (const [slug, claims] of Object.entries(CLAIMS)) {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       const p = firstLegalDraw(t);
       const d = t.derived(p);
       const bent = { ...d, [t.answerKey]: d[t.answerKey] * 1.02 };
@@ -639,9 +1003,9 @@ describe("the prose-claim predicates fail when they should", () => {
     expect(undetected, "a 2% wrong answer passes every claim on these templates").toEqual([]);
   });
 
-  it("covers every ev-variance template, with no claim left unstated", () => {
-    const shipped = PROBLEMS.filter((t) => t.topic === "probability/ev-variance")
-      .map((t) => t.id.replace("ev-variance/", "")).sort();
+  it("covers every ev-variance/distributions template, with no claim left unstated", () => {
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions"];
+    const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
       expect(claims.length, `${slug} has too few claims to cover its prose`).toBeGreaterThanOrEqual(3);

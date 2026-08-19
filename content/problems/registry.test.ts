@@ -26,14 +26,30 @@ describe("problem registry invariants", () => {
     const bayes = problemsFor("probability/bayes").length;
     const counting = problemsFor("probability/counting").length;
     const ev = problemsFor("probability/ev-variance").length;
+    const distributions = problemsFor("probability/distributions").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(25);
     expect(ev).toBe(30);
-    expect(bayes + counting + ev).toBe(PROBLEMS.length);
+    expect(distributions).toBe(25);
+    expect(bayes + counting + ev + distributions).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
     expect(byId.get("counting/committee-selection")).toBeDefined();
+  });
+  it("distributions batch hits the 10/10/5 difficulty distribution", () => {
+    const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
+    expect(dist.length).toBe(25);
+    expect(dist.filter((t) => t.difficulty === 1).length).toBe(10);
+    expect(dist.filter((t) => t.difficulty === 2).length).toBe(10);
+    expect(dist.filter((t) => t.difficulty === 3).length).toBe(5);
+  });
+  it("every distributions problem grades on rel 0.005 — never abs", () => {
+    const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
+    for (const t of dist) {
+      expect(t.accepted.tolerance.rel).toBe(0.005);
+      expect(t.accepted.tolerance.abs).toBeUndefined();
+    }
   });
   it("counting batch hits the 10/10/5 difficulty distribution", () => {
     const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));

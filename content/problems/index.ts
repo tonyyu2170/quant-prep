@@ -84,6 +84,31 @@ import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value"
 import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
 import { waldRandomSum } from "./ev-variance/wald-random-sum";
 import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
+import { binomialExactCount } from "./distributions/binomial-exact-count";
+import { binomialAtMost } from "./distributions/binomial-at-most";
+import { binomialAtLeastOne } from "./distributions/binomial-at-least-one";
+import { binomialFitThenPmf } from "./distributions/binomial-fit-then-pmf";
+import { poissonExactCount } from "./distributions/poisson-exact-count";
+import { poissonAtMost } from "./distributions/poisson-at-most";
+import { poissonRescaledAtLeastOne } from "./distributions/poisson-rescaled-at-least-one";
+import { poissonFitThenTail } from "./distributions/poisson-fit-then-tail";
+import { geometricExactTrial } from "./distributions/geometric-exact-trial";
+import { geometricMoreThanK } from "./distributions/geometric-more-than-k";
+import { geometricConditionalMemoryless } from "./distributions/geometric-conditional-memoryless";
+import { negbinomExactTrial } from "./distributions/negbinom-exact-trial";
+import { negbinomFitP } from "./distributions/negbinom-fit-p";
+import { hypergeomExactDraw } from "./distributions/hypergeom-exact-draw";
+import { hypergeomZeroSuccesses } from "./distributions/hypergeom-zero-successes";
+import { duniformSubrange } from "./distributions/duniform-subrange";
+import { duniformFitRange } from "./distributions/duniform-fit-range";
+import { cuniformBelowThreshold } from "./distributions/cuniform-below-threshold";
+import { exponentialCdfThreshold } from "./distributions/exponential-cdf-threshold";
+import { exponentialFitRate } from "./distributions/exponential-fit-rate";
+import { exponentialMemoryless } from "./distributions/exponential-memoryless";
+import { normalBelow } from "./distributions/normal-below";
+import { normalAbove } from "./distributions/normal-above";
+import { normalBetween } from "./distributions/normal-between";
+import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -171,6 +196,31 @@ export const PROBLEMS: ProblemTemplate[] = [
   truncatedDoublingGame,
   waldRandomSum,
   samplingWithoutReplacementVariance,
+  binomialExactCount,
+  binomialAtMost,
+  binomialAtLeastOne,
+  binomialFitThenPmf,
+  poissonExactCount,
+  poissonAtMost,
+  poissonRescaledAtLeastOne,
+  poissonFitThenTail,
+  geometricExactTrial,
+  geometricMoreThanK,
+  geometricConditionalMemoryless,
+  negbinomExactTrial,
+  negbinomFitP,
+  hypergeomExactDraw,
+  hypergeomZeroSuccesses,
+  duniformSubrange,
+  duniformFitRange,
+  cuniformBelowThreshold,
+  exponentialCdfThreshold,
+  exponentialFitRate,
+  exponentialMemoryless,
+  normalBelow,
+  normalAbove,
+  normalBetween,
+  normalQuantileThenRange,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

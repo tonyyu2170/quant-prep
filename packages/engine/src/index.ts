@@ -7,3 +7,4 @@ export * from "./presets";
 export * from "./stats";
 export * from "./problem";
 export * from "./format";
+export * from "./erf";
