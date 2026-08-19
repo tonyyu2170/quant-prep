@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (it holds the Python
 // counterpart's sequence enumeration under 10^5) and never asks the expectation, so a helper
 // would be a second copy of the answer formula for nothing. Constraint 2's floor cannot bind —
-// the smallest legal haul pays over three dollars.
+// measured over the legal space |answer| runs [3.333, 55.34].
 // The coupon-collector count, done by indicators on what is MISSING: a design is absent only
 // when every pack misses it, which independence turns into a plain power. Everything is kept
 // as an integer power over the pack count, so the rate folds into the same fraction and the
@@ -36,6 +36,7 @@ export const distinctTypesCollected: ProblemTemplate = {
       pMiss: missNumer / allNumer,
       distinct,
       missing: (p.types * missNumer) / allNumer,
+      mostHeld: Math.min(p.types, p.draws),   // designs are capped by the smaller of set and packs
       capPay: p.rate * Math.min(p.types, p.draws),
       ev: (p.rate * p.types * (allNumer - missNumer)) / allNumer,
     };
@@ -53,7 +54,7 @@ export const distinctTypesCollected: ProblemTemplate = {
     // fraction; multiplying the printed average by the rate would drift off the printed answer.
     { title: "Add one indicator per design", body: `Every design has that same chance of being missed, so each contributes the complementary chance of being held, and expectations add whether or not the designs' fates are linked. The expected haul is $\\frac{${fmtNum(p.types)}\\times(${fmtNum(d.allNumer)}-${fmtNum(d.missNumer)})}{${fmtNum(d.allNumer)}}=${fmtNum(d.distinct)}$ designs.` },
     { title: "Price the haul", body: `At ${fmtNum(p.rate)} dollars a design, the expected payout in dollars is $\\frac{${fmtNum(p.rate)}\\times${fmtNum(p.types)}\\times(${fmtNum(d.allNumer)}-${fmtNum(d.missNumer)})}{${fmtNum(d.allNumer)}}=${fmtNum(d.ev)}$.` },
-    { title: "Sanity check", body: `Count the designs you are missing by the same argument: $\\frac{${fmtNum(p.types)}\\times${fmtNum(d.missNumer)}}{${fmtNum(d.allNumer)}}=${fmtNum(d.missing)}$ of them on average. Held and missing have to account for the whole set, and over a common denominator they do: $\\frac{${fmtNum(p.types)}\\times(${fmtNum(d.allNumer)}-${fmtNum(d.missNumer)})+${fmtNum(p.types)}\\times${fmtNum(d.missNumer)}}{${fmtNum(d.allNumer)}}=${fmtNum(p.types)}$. The payout is also short of the $${fmtNum(p.rate)}\\times${fmtNum(Math.min(p.types, p.draws))}=${fmtNum(d.capPay)}$ dollars it would take to hold ${
+    { title: "Sanity check", body: `Count the designs you are missing by the same argument: $\\frac{${fmtNum(p.types)}\\times${fmtNum(d.missNumer)}}{${fmtNum(d.allNumer)}}=${fmtNum(d.missing)}$ of them on average. Held and missing have to account for the whole set, and over a common denominator they do: $\\frac{${fmtNum(p.types)}\\times(${fmtNum(d.allNumer)}-${fmtNum(d.missNumer)})+${fmtNum(p.types)}\\times${fmtNum(d.missNumer)}}{${fmtNum(d.allNumer)}}=${fmtNum(p.types)}$. The payout is also short of the $${fmtNum(p.rate)}\\times${fmtNum(d.mostHeld)}=${fmtNum(d.capPay)}$ dollars it would take to hold ${
       p.draws <= p.types ? "a different design in every pack" : "the whole set"
     }, which is the most the promotion can ever pay.` },
   ],

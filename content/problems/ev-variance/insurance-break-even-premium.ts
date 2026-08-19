@@ -3,8 +3,8 @@ import { fmtNum } from "../util";
 
 // No module-local answer helper: `constraint` is a structural rejection (a total loss has to
 // cost materially more than a minor claim) and never asks the price, so a helper would be a
-// second copy of the answer formula for nothing. Constraint 2's floor cannot bind — the
-// cheapest legal premium is five dollars.
+// second copy of the answer formula for nothing. Constraint 2's floor cannot bind — measured
+// over the legal space |answer| runs [5, 200].
 // A fair price rather than a fair game's expectation, per constraint 3. Percentages are
 // multiples of five against payouts that are multiples of twenty, and the total-loss figure is
 // a multiple of a hundred, so every weighted leg lands on a whole dollar and nothing printed

@@ -348,7 +348,8 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.allNumer === p.types ** p.draws && d.missNumer === (p.types - 1) ** p.draws,
       breaks: (_p, d) => ({ ...d, missing: d.missing + 1 }) },
     { says: "Sanity: the payout falls short of the most the promotion can ever pay",
-      holds: (_p, d) => P(d.ev) < P(d.capPay),
+      holds: (p, d) => P(d.ev) < P(d.capPay)
+        && d.mostHeld === Math.min(p.types, p.draws) && d.capPay === p.rate * d.mostHeld,
       breaks: (_p, d) => ({ ...d, ev: d.capPay }) },
     { says: "keyInsight: a design is missed only when every pack misses it, and the haul adds one indicator per design",
       holds: (p, d) => Math.abs(d.pMiss - d.missNumer / d.allNumer) < EPS

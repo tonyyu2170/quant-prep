@@ -4,8 +4,8 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (even odds are
 // excluded, because at even odds the count sits exactly ON the ceiling the Sanity check
 // compares it against) and never asks the answer, so a helper would be a second copy of the
-// variance formula for nothing. Constraint 2's floor cannot bind — the thinnest legal spread
-// measures 0.475.
+// variance formula for nothing. Constraint 2's floor cannot bind — measured over the legal
+// space |answer| runs [0.475, 7.425].
 // The variance of a count of independent yes/no trials, built from one trial's spread and
 // multiplied up rather than quoted as a formula. Percentages are integers over a hundred
 // throughout, so every chain has exact operands; the mean lands on at most four significant

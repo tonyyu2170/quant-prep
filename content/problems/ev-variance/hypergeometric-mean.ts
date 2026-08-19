@@ -3,8 +3,8 @@ import { fmtNum } from "../util";
 
 // No module-local answer helper: `constraint` is a structural rejection (the box has to hold
 // at least two plain tickets) and never asks the expectation, so a helper would be a second
-// copy of the answer formula for nothing. Constraint 2's floor cannot bind — the smallest
-// legal draw pays a whole dollar.
+// copy of the answer formula for nothing. Constraint 2's floor cannot bind — measured over the
+// legal space |answer| runs [0.4444, 44.44], the floor sitting two orders of magnitude below.
 // Sampling without replacement, whose mean is the one thing the dependence between draws does
 // not touch. Everything is kept as an integer numerator over the pool so the rate can be
 // folded into the same fraction. The Sanity check counts the plain tickets by the same route

@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 // No module-local answer helper here. Constraint 2 licenses one only where `constraint` has to
 // re-ask the answer to pin its floor; this template's `constraint` is a structural rejection
 // (the threshold has to sit inside the die) and the floor cannot bind — every game pays for at
-// least one roll and the cheapest roll costs two dollars, so |answer| >= 2.
+// least one roll: measured over the legal space |answer| runs [2.105, 240].
 // The first-step equation, priced by the roll. The losing side is written as a strict
 // inequality so the sentence reads at both ends of the threshold range: "a roll below 2" and
 // "a roll below 20" are both English, while "a roll of 20 or higher" on a twenty-sided die is

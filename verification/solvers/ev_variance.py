@@ -604,6 +604,7 @@ def distinct_types_collected_exact(p):
         "pMiss": miss_numer / all_numer,
         "distinct": (types * (all_numer - miss_numer)) / all_numer,
         "missing": (types * miss_numer) / all_numer,
+        "mostHeld": min(types, draws),
         "capPay": rate * min(types, draws),
         "ev": (rate * types * (all_numer - miss_numer)) / all_numer,
     }

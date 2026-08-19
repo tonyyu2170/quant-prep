@@ -4,7 +4,8 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (the cap has to bite
 // somewhere strictly inside the die) and never asks the expectation, so a helper would be a
 // second copy of the answer formula for nothing. Constraint 2's floor cannot bind — the
-// cheapest game pays two dollars on its lowest face.
+// cheapest game pays two dollars on its lowest face, and measured over the legal space
+// |answer| runs [3.5, 104.5].
 // A payoff cap, which is Jensen in miniature: the cap has to be applied inside each face's own
 // payout, never to the average. The statement prints only the cap in dollars, so locating the
 // face at which it starts to bite is the first step of the work rather than a given. Both the

@@ -4,8 +4,8 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (the die's prize has
 // to come out a whole number of dollars, and its winning faces have to be few enough that it
 // really is the riskier game) and never asks the spread, so a helper would be a second copy of
-// the answer formula for nothing. Constraint 2's floor cannot bind — the narrowest legal
-// spread measures 3.464.
+// the answer formula for nothing. Constraint 2's floor cannot bind — measured over the legal
+// space |answer| runs [2.828, 87.18], the narrowest at six faces paying on two of them.
 // Two games matched on expected payout and not on risk. The die's prize is chosen so both
 // games pay the same on average, which the first step verifies rather than asserts. Every
 // operand is a whole number of dollars — the prize is an integer by construction — so the
