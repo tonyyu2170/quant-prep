@@ -326,8 +326,10 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "Sanity: the hundred-policy ledger balances to the dollar",
       holds: (_p, d) => d.collect100 === d.payOut100 && Math.abs(d.collect100 - 100 * d.premium) < EPS,
       breaks: (_p, d) => ({ ...d, payOut100: d.payOut100 + 100 }) },
-    { says: "Sanity: the price lands below a single total loss and above the paperwork",
-      holds: (p, d) => P(d.premium) < P(p.total) && P(d.premium) > P(p.admin),
+    { says: "Sanity and keyInsight: the price lands far below a single total loss and above the paperwork",
+      // "far below" is the keyInsight's word, so it is pinned as the half-bound it actually
+      // holds to rather than left as an unenumerated universal.
+      holds: (p, d) => P(d.premium) < P(p.total) / 2 && P(d.premium) > P(p.admin),
       breaks: (p, d) => ({ ...d, premium: p.admin }) },
     { says: "commonTrap: charging only the paperwork understates the premium by the expected claims",
       holds: (p, d) => d.expPayout > EPS && Math.abs(d.premium - p.admin - d.expPayout) < EPS,
@@ -388,6 +390,12 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => d.blankFaces === p.faces - p.k
         && Math.abs((p.k * (d.prize - p.m) * (d.prize - p.m) + d.blankFaces * p.m * p.m) / p.faces - d.varDie) < EPS,
       breaks: (_p, d) => ({ ...d, varDie: d.varDie * 1.02 }) },
+    // The blanks-stay-put half of that sentence is pinned by the decomposition claim above,
+    // whose `blankFaces * m * m` term IS the assertion that a blank sits m from the mean in
+    // both games. What needs its own predicate is the half that could be false.
+    { says: "Sanity and keyInsight: only the paying side moves out — the die throws it past the coin's winning side",
+      holds: (_p, d) => d.prize > d.coinPay + EPS,
+      breaks: (_p, d) => ({ ...d, prize: d.coinPay }) },
     { says: "Spread of the die: the answer is the root of the mean square less the squared mean",
       holds: (p, d) => Math.abs(d.meanSqDie - (p.k * d.prize * d.prize) / p.faces) < EPS
         && Math.abs(d.varCoin - p.m * p.m) < EPS
