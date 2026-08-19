@@ -10,43 +10,120 @@ import { PROBLEMS } from "./index";
 // during this batch: the floats reconciled exactly while the rendered decimals did not, on
 // a quarter of that template's draws, and a float-based sweep reported all-green.
 //
-// Scope is deliberately ev-variance. The 55 bayes and counting problems predate this rule;
-// widening the scope is a decision to take on its own evidence, not a side effect of this
-// file. The helpers are exported so the same checker can be pointed at another topic as a
-// diagnostic without being reimplemented (a second implementation is a second thing to be
-// wrong) — from another test file, since vitest is imported at module top level here.
-const TOPIC = "probability/ev-variance";
+// Scope is every shipped topic. The helpers are exported so the same checker can be pointed
+// at a subset as a diagnostic without being reimplemented (a second implementation is a
+// second thing to be wrong) — from another test file, since vitest is imported at module
+// top level here.
+const TOPICS = ["probability/ev-variance"];
 const SEEDS = 200;
+const MIN_CHECKED_PER_TOPIC = 1000; // a silent drop to zero chains in ONE topic must not pass
 
 const factorial = (n: number) => { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; };
+const choose = (n: number, k: number) => {
+  if (k < 0 || k > n) return 0;
+  let r = 1;
+  for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1);
+  return Math.round(r);
+};
 
-/** Evaluate one side of a printed chain from its printed literals. `null` = not evaluable. */
-export function evalTex(expr: string): number | null {
-  let e = expr.trim();
-  // "1+2+\cdots+N" is the only elided form in the corpus: the Nth triangular number.
-  const tri = e.match(/^1\+2\+\\cdots\+(\d+)$/);
-  if (tri) { const n = Number(tri[1]); return (n * (n + 1)) / 2; }
-  if (e.includes("\\cdots")) return null;
-  // \frac and \sqrt are expanded in ONE interleaved loop, innermost-first. Running them as two
-  // sequential loops instead resolves a fraction under a root but NOT a root under a fraction:
-  // the outer \frac's [^{}]* group cannot span the inner \sqrt's braces, so the fraction is
-  // still unexpanded by the time the \sqrt pass ends and the segment reports unevaluable.
-  // \sqrt is written as **0.5 rather than Math.sqrt so the expression stays inside the
-  // digits-and-operators character class below — letters are what mark an unrecognised form.
-  let prev = "";
-  while (e !== prev) {
-    prev = e;
-    e = e
-      .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "(($1)/($2))")
-      .replace(/\\sqrt\{([^{}]*)\}/g, "(($1)**0.5)");
-  }
-  e = e.replace(/\\times/g, "*").replace(/\\left|\\right/g, "");
-  e = e.replace(/(\d+)!/g, (_m, n: string) => String(factorial(Number(n))));
-  if (/[^\d\s+\-*/().]/.test(e)) return null; // an unrecognised form is a coverage hole, not a pass
+/** Arithmetic left after every recognised construct has been expanded to digits and operators. */
+const ARITHMETIC_ONLY = /^[\d\s+\-*/().]*$/;
+
+function evalArith(e: string): number | null {
+  if (!ARITHMETIC_ONLY.test(e)) return null;
   try {
     const v = Function(`"use strict";return (${e});`)() as number;
     return Number.isFinite(v) ? v : null;
   } catch { return null; }
+}
+
+/** Evaluate one side of a printed chain from its printed literals. `null` = not evaluable. */
+export function evalTex(expr: string): number | null {
+  let e = expr.trim();
+  // "1+2+\cdots+N" is one of two elided forms in the corpus: the Nth triangular number.
+  const tri = e.match(/^1\+2\+\\cdots\+(\d+)$/);
+  if (tri) { const n = Number(tri[1]); return (n * (n + 1)) / 2; }
+  // "n x (n-1) x \\cdots x m" — a falling product, the other elided form. The middle factor is
+  // required to be n-1 so a run that does not actually descend by one is left unreadable.
+  const fall = e.match(/^(\d+)\\times(\d+)\\times\\cdots\\times(\d+)$/);
+  if (fall) {
+    const [n, mid, m] = fall.slice(1).map(Number);
+    if (mid === n - 1 && m <= mid) { let r = 1; for (let i = m; i <= n; i++) r *= i; return r; }
+    return null;
+  }
+  if (e.includes("\\cdots")) return null;
+  // \frac, \binom, \sqrt and ^ are expanded in ONE interleaved loop, innermost-first. Running
+  // them as sequential passes instead resolves a fraction under a root but NOT a root under a
+  // fraction: the outer \frac's [^{}]* group cannot span the inner \sqrt's braces, so the
+  // fraction is still unexpanded by the time the \sqrt pass ends and the segment reports
+  // unevaluable. \sqrt and ^ are written as ** rather than Math.pow so the expression stays
+  // inside ARITHMETIC_ONLY — letters are what mark an unrecognised form.
+  let prev = "";
+  while (e !== prev) {
+    prev = e;
+    e = e
+      .replace(/\\(?:dfrac|frac)\{([^{}]*)\}\{([^{}]*)\}/g, "(($1)/($2))")
+      .replace(/\\sqrt\{([^{}]*)\}/g, "(($1)**0.5)")
+      // \binom is folded to its integer value rather than to an operator expression, so both
+      // arguments must already be whole numbers; a symbolic \binom{n}{k} is left standing and
+      // is then read as notation, not silently dropped.
+      .replace(/\\binom\{([^{}]*)\}\{([^{}]*)\}/g, (m, a: string, b: string) => {
+        const n = evalArith(a), k = evalArith(b);
+        if (n === null || k === null || !Number.isInteger(n) || !Number.isInteger(k)) return m;
+        return `(${choose(n, k)})`;
+      })
+      .replace(/\^\{([^{}]*)\}/g, "**($1)")
+      .replace(/\^(\d)/g, "**($1)");
+  }
+  e = e.replace(/\\times/g, "*").replace(/\\left|\\right/g, "");
+  e = e.replace(/(\d+)!/g, (_m, n: string) => String(factorial(Number(n))));
+  return evalArith(e); // an unrecognised form is a coverage hole, not a pass
+}
+
+// The LaTeX commands this corpus uses, and only those. A side that still carries a command
+// outside this set is reported unevaluable rather than assumed inert: an unfamiliar command
+// could be wrapping arithmetic the reader never saw. Adding one here is a deliberate act.
+const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|text|bar|cap|max|geq|sigma|,)/g;
+
+/**
+ * True when a side names a quantity instead of printing one — "P(D\mid +)", "\text{odds}(S)",
+ * "\dfrac{P(+\mid D)\,P(D)}{P(+)}". Such a side asserts no arithmetic over printed literals, so
+ * there is nothing for a learner to recompute and nothing for this gate to reconcile.
+ *
+ * The test is a surviving letter, not an absence of digits: "\binom{52}{5}" reduces to braces
+ * and digits and so is NOT a label (it is arithmetic the reader must actually read), while
+ * "\binom{n}{k}" keeps its letters and is. Any unrecognised command disqualifies the side
+ * outright, whatever letters it holds.
+ */
+export function isLabel(side: string): boolean {
+  const rest = side.replace(RECOGNISED_CMD, " ");
+  if (rest.includes("\\")) return false;
+  return /[A-Za-z]/.test(rest);
+}
+
+/**
+ * Split a segment at the relations that assert equality of value, ignoring any inside a brace
+ * or paren group: the "=" in "P(\max=3\mid\ldots)" names an event, it does not join two
+ * expressions, and splitting there tears the notation into two unreadable halves. `null`
+ * means the delimiters do not balance, which is reported rather than guessed at.
+ */
+export function splitClaim(seg: string): string[] | null {
+  const out: string[] = [];
+  let depth = 0, start = 0;
+  for (let i = 0; i < seg.length; i++) {
+    const c = seg[i];
+    if (c === "{" || c === "(") depth++;
+    else if (c === "}" || c === ")") { depth--; if (depth < 0) return null; }
+    else if (depth === 0 && c === "=") { out.push(seg.slice(start, i)); start = i + 1; }
+    else if (depth === 0 && seg.startsWith("\\propto", i)) {
+      // "\propto" relates the same two values up to a shared factor, so the arithmetic
+      // printed on either side of it still has to reconcile.
+      out.push(seg.slice(start, i)); i += "\\propto".length - 1; start = i + 1;
+    }
+  }
+  if (depth !== 0) return null;
+  out.push(seg.slice(start));
+  return out;
 }
 
 export interface ChainAudit {
@@ -54,7 +131,7 @@ export interface ChainAudit {
   mismatches: string[];
   /** a chain the evaluator could not read: never counts as a pass, always reported */
   unevaluable: string[];
-  /** segments carrying no "=" assert no arithmetic, so there is nothing to reconcile */
+  /** segments asserting no arithmetic over printed literals, so there is nothing to reconcile */
   claimFree: number;
   checked: number;
   segments: number;
@@ -67,11 +144,22 @@ export function auditChains(texts: string[], label: string): ChainAudit {
     for (let i = 1; i < parts.length; i += 2) {
       const seg = parts[i];
       out.segments++;
-      if (!seg.includes("=")) { out.claimFree++; continue; }
-      const sides = seg.split("=").map(evalTex);
-      if (sides.some((v) => v === null)) { out.unevaluable.push(`${label}: $${seg}$`); continue; }
+      const sides = splitClaim(seg);
+      if (sides === null) { out.unevaluable.push(`${label}: $${seg}$ — unbalanced delimiters`); continue; }
+      if (sides.length < 2) { out.claimFree++; continue; }
+      const values: number[] = [];
+      let unreadable = false;
+      for (const side of sides) {
+        if (side.trim() === "") continue; // a leading "=" prints no operand of its own
+        const v = evalTex(side);
+        if (v !== null) values.push(v);
+        else if (!isLabel(side)) unreadable = true;
+      }
+      if (unreadable) { out.unevaluable.push(`${label}: $${seg}$`); continue; }
+      // One value and some labels is a definition, not a chain: nothing was recomputed.
+      if (values.length < 2) { out.claimFree++; continue; }
       out.checked++;
-      const shown = sides.map((v) => fmtNum(v as number));
+      const shown = values.map((v) => fmtNum(v));
       if (new Set(shown).size !== 1) out.mismatches.push(`${label}: $${seg}$ renders ${shown.join(" vs ")}`);
     }
   }
@@ -96,12 +184,12 @@ function auditTopic(topic: string): ChainAudit {
   return total;
 }
 
-describe("printed-precision gate (ev-variance)", () => {
-  const audit = auditTopic(TOPIC);
+describe.each(TOPICS)("printed-precision gate (%s)", (topic) => {
+  const audit = auditTopic(topic);
 
   it("every printed chain reconciles at displayed precision", () => {
     expect(audit.mismatches).toEqual([]);
-    expect(audit.checked).toBeGreaterThan(1000); // a silent drop to zero chains must not pass
+    expect(audit.checked).toBeGreaterThan(MIN_CHECKED_PER_TOPIC);
   });
 
   it("no printed chain is unevaluable — an unreadable form is a coverage hole, not a pass", () => {
@@ -109,8 +197,9 @@ describe("printed-precision gate (ev-variance)", () => {
   });
 
   it("accounts for every rendered segment exactly once", () => {
-    // Segments without "=" make no arithmetic claim, so they are deliberately not checked.
-    // Asserting the partition is what stops a parser bug from quietly shrinking coverage.
+    // Claim-free segments assert no arithmetic over printed literals, so they are deliberately
+    // not checked. Asserting the partition is what stops a parser bug from quietly shrinking
+    // coverage.
     expect(audit.checked + audit.unevaluable.length + audit.claimFree).toBe(audit.segments);
     expect(audit.claimFree).toBeGreaterThan(0);
   });
@@ -121,23 +210,76 @@ describe("the printed-precision checker fails when it should", () => {
   const cases: [string, boolean][] = [
     ["\\frac{16}{6}=2.667", false],   // correctly rounded
     ["\\frac{16}{6}=2.668", true],    // off by one in the last printed digit
+    ["\\dfrac{16}{6}=2.667", false],  // \dfrac is the same fraction, not an unreadable form
+    ["\\dfrac{16}{6}=2.668", true],
     ["3\\times8=24", false],
     ["3\\times8=25", true],
     ["7!=5040", false],
     ["7!=5041", true],
-    ["1+2+\\cdots+5=15", false],      // the elided form is evaluated, not skipped
+    ["1+2+\\cdots+5=15", false],      // the elided forms are evaluated, not skipped
     ["1+2+\\cdots+5=16", true],
+    ["7\\times6\\times\\cdots\\times3=2520", false], // the falling product, the other elided form
+    ["7\\times6\\times\\cdots\\times3=2521", true],
     ["\\frac{2\\times20-10\\times3}{10}=1", false],
     ["\\frac{2\\times20-10\\times3}{10}=1.1", true],
     ["\\sqrt{\\frac{25\\times(11\\times11-1)}{12}}=15.81", false], // a radicand over a fraction
     ["\\sqrt{\\frac{25\\times(11\\times11-1)}{12}}=15.82", true],
     ["\\frac{\\sqrt{144}}{4}=3", false],   // and a root INSIDE a fraction, the other nesting
     ["\\frac{\\sqrt{144}}{4}=3.1", true],
+    ["5^3=125", false],               // a bare exponent
+    ["5^3=126", true],
+    ["0.6^{3}=0.216", false],         // and a braced one
+    ["0.6^{3}=0.217", true],
+    ["0.5\\times0.6^{3}=0.108", false], // precedence: the power binds before the product
+    ["0.5\\times0.6^{3}=0.15", true],
+    ["\\binom{52}{5}=2598960", false], // a binomial is folded to its integer value
+    ["\\binom{52}{5}=2598961", true],
+    ["\\binom{6}{2}\\times\\binom{5}{3}=150", false],
+    ["\\binom{6}{2}\\times\\binom{5}{3}=151", true],
+    // A label on one side must not excuse the arithmetic on the other two.
+    ["P(F\\mid A)=0.1391\\times0.85=0.1182", false],
+    ["P(F\\mid A)=0.1391\\times0.85=0.1183", true],
+    // An "=" inside a paren group names an event; splitting there would tear the notation.
+    ["P(\\max=3\\mid\\text{at least one}\\geq2)=5/35=0.1429", false],
+    ["P(\\max=3\\mid\\text{at least one}\\geq2)=5/35=0.143", true],
+    // "\propto" asserts equality up to a shared factor, so it is a relation, not notation.
+    ["P(\\bar G,M)\\propto1999\\times0.0001=0.1999", false],
+    ["P(\\bar G,M)\\propto1999\\times0.0001=0.1998", true],
   ];
   // No literal "$" in the title: vitest reads $<digit> as a positional case reference.
   it.each(cases)("%s -> flags: %s", (seg, shouldFlag) => {
     const a = auditChains([`$${seg}$`], "mutation");
     expect(a.unevaluable).toEqual([]); // every case must be readable, or it proves nothing
     expect(a.mismatches.length > 0).toBe(shouldFlag);
+  });
+
+  // Recognising notation is what keeps the unevaluable count honest; it must not become a
+  // catch-all that swallows arithmetic. These carry no reconcilable claim at all.
+  const claimFree: string[] = [
+    "P(D\\mid +)=0.9",                       // a labelled value: one number, nothing recomputed
+    "\\text{odds}(S)=P(S)/P(\\bar S)",       // a formula over named quantities
+    "\\binom{n}{k}=\\binom{n}{n-k}",         // symbolic, so the reader leaves it standing
+    "P(\\text{shows }4\\mid \\text{sum}=5)", // the only "=" is inside the event description
+  ];
+  it.each(claimFree)("%s -> carries no claim", (seg) => {
+    const a = auditChains([`$${seg}$`], "mutation");
+    expect(a.unevaluable).toEqual([]);
+    expect(a.mismatches).toEqual([]);
+    expect([a.claimFree, a.checked]).toEqual([1, 0]);
+  });
+
+  // The property that makes the gate mean anything: a form the reader cannot read is reported,
+  // never counted as a pass and never quietly reclassified as notation.
+  const unreadable: string[] = [
+    "\\sum_{i=1}^{3}=6",      // an unrecognised command, even though it has letters
+    "\\log(100)=2",
+    "2+3+\\cdots+9=44",       // an elided sum that is not the triangular form
+    "7\\times5\\times\\cdots\\times3=105", // a run that does not descend by one
+    "\\binom{4.5}{2}=6",      // a binomial the reader declines to fold
+  ];
+  it.each(unreadable)("%s -> is reported unreadable", (seg) => {
+    const a = auditChains([`$${seg}$`], "mutation");
+    expect(a.unevaluable.length).toBe(1);
+    expect([a.checked, a.claimFree]).toEqual([0, 0]);
   });
 });
