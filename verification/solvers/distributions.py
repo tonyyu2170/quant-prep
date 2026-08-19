@@ -5,7 +5,7 @@ brute()/simulate(): recompute the ANSWER by an independent path per spec §5's t
 re-calling the template's closed form."""
 
 import itertools
-from math import comb
+from math import comb, exp, log
 
 
 def binomial_exact_count_exact(p):
@@ -355,6 +355,141 @@ def hypergeom_zero_successes_brute(p):
     return favorable / total
 
 
+def duniform_subrange_exact(p):
+    N, c, d = int(p["N"]), int(p["c"]), int(p["d"])
+    subrange_size = d - c + 1
+    answer = subrange_size / N
+    return {"subrangeSize": subrange_size, "answer": answer}
+
+
+def duniform_subrange_brute(p):
+    """Count integers 1..N landing in [c,d] directly via a loop — never uses d-c+1."""
+    N, c, d = int(p["N"]), int(p["c"]), int(p["d"])
+    favorable = sum(1 for x in range(1, N + 1) if c <= x <= d)
+    return favorable / N
+
+
+def duniform_fit_range_exact(p):
+    M, N = p["M"], p["N"]
+    c = M / N
+    answer = M / c
+    return {"c": c, "answer": answer}
+
+
+def duniform_fit_range_brute(p):
+    """Bounded search over the same integer grid N is drawn from (6..80), confirming by direct
+    counting that the candidate N reproduces M/N=c — never computes M/c directly. c itself is
+    recomputed fresh from the raw params here, since brute() only receives params, not derived."""
+    M, N = p["M"], p["N"]
+    c = M / N
+    best_n, best_err = None, None
+    for candidate in range(6, 81):
+        favorable = sum(1 for x in range(1, candidate + 1) if x <= M)
+        est_c = favorable / candidate
+        err = abs(est_c - c)
+        if best_err is None or err < best_err:
+            best_err, best_n = err, candidate
+    return best_n
+
+
+def cuniform_below_threshold_exact(p):
+    a, b, t = p["a"], p["b"], p["t"]
+    rng_span = b - a
+    answer = (t - a) / rng_span
+    return {"range": rng_span, "answer": answer}
+
+
+def cuniform_below_threshold_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    a, b, t = p["a"], p["b"], p["t"]
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.uniform(a, b, n)
+        hits += int((draws < t).sum())
+        done += n
+    est = hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
+def exponential_cdf_threshold_exact(p):
+    lam, t = p["lam"], p["t"]
+    survival = exp(-lam * t)
+    answer = 1 - survival
+    return {"survival": survival, "answer": answer}
+
+
+def exponential_cdf_threshold_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    lam, t = p["lam"], p["t"]
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.exponential(1 / lam, n)
+        hits += int((draws < t).sum())
+        done += n
+    est = hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
+def exponential_fit_rate_exact(p):
+    t, c = p["t"], p["c"]
+    survival = 1 - c
+    fitted_lam = -log(survival) / t
+    return {"survival": survival, "fittedLam": fitted_lam}
+
+
+def exponential_fit_rate_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    """Simulate directly at the fitted lambda and confirm it reproduces c, then invert the
+    resulting noisy probability estimate back through the same closed form to get a lambda
+    estimate with a propagated standard error — verify.py compares this against the answer
+    (fittedLam), so simulate() must estimate the SAME quantity as the answer, not c itself."""
+    t, c = p["t"], p["c"]
+    fitted_lam = -log(1 - c) / t
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.exponential(1 / fitted_lam, n)
+        hits += int((draws < t).sum())
+        done += n
+    c_est = hits / trials
+    se_c = (c_est * (1 - c_est) / trials) ** 0.5
+    lam_est = -log(1 - c_est) / t
+    se_lam = se_c / ((1 - c_est) * t)
+    return lam_est, se_lam
+
+
+def exponential_memoryless_exact(p):
+    lam, t = p["lam"], p["t"]
+    answer = exp(-lam * t)
+    return {"answer": answer}
+
+
+def exponential_memoryless_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    """Rejection sampling: draw full waits, keep only those exceeding s, and estimate the
+    conditional probability of exceeding s+t among the survivors — never uses e^{-lambda t}
+    directly, which is the template's own memoryless shortcut."""
+    lam, s, t = p["lam"], p["s"], p["t"]
+    survivors = 0
+    hits = 0
+    done = 0
+    while survivors < trials:
+        n = min(chunk, trials)
+        draws = rng.exponential(1 / lam, n)
+        surviving = draws[draws > s]
+        survivors += len(surviving)
+        hits += int((surviving > s + t).sum())
+        done += n
+        if done > trials * 50:
+            break  # safety valve if s*lam's cap still yields a very low survival rate
+    est = hits / survivors
+    se = (est * (1 - est) / survivors) ** 0.5
+    return est, se
+
+
 SOLVERS = {
     "distributions/binomial-exact-count": {"exact": binomial_exact_count_exact, "brute": binomial_exact_count_brute},
     "distributions/binomial-at-most": {"exact": binomial_at_most_exact, "brute": binomial_at_most_brute},
@@ -371,4 +506,10 @@ SOLVERS = {
     "distributions/negbinom-fit-p": {"exact": negbinom_fit_p_exact, "brute": negbinom_fit_p_brute},
     "distributions/hypergeom-exact-draw": {"exact": hypergeom_exact_draw_exact, "brute": hypergeom_exact_draw_brute},
     "distributions/hypergeom-zero-successes": {"exact": hypergeom_zero_successes_exact, "brute": hypergeom_zero_successes_brute},
+    "distributions/duniform-subrange": {"exact": duniform_subrange_exact, "brute": duniform_subrange_brute},
+    "distributions/duniform-fit-range": {"exact": duniform_fit_range_exact, "brute": duniform_fit_range_brute},
+    "distributions/cuniform-below-threshold": {"exact": cuniform_below_threshold_exact, "simulate": cuniform_below_threshold_sim},
+    "distributions/exponential-cdf-threshold": {"exact": exponential_cdf_threshold_exact, "simulate": exponential_cdf_threshold_sim},
+    "distributions/exponential-fit-rate": {"exact": exponential_fit_rate_exact, "simulate": exponential_fit_rate_sim},
+    "distributions/exponential-memoryless": {"exact": exponential_memoryless_exact, "simulate": exponential_memoryless_sim},
 }

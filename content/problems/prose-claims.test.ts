@@ -822,6 +822,78 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (p, d) => ({ ...d, pmf: (1 - p.K / p.N) ** p.n }) },
   ],
+
+  "distributions/duniform-subrange": [
+    { says: "Sanity: the favorable count never exceeds the total range",
+      holds: (p, d) => d.subrangeSize <= p.N + EPS,
+      breaks: (p, d) => ({ ...d, subrangeSize: d.subrangeSize * 2 + p.N }) },
+    { says: "Combine: the probability equals d-c+1 over N, exactly",
+      holds: (p, d) => Math.abs((p.d - p.c + 1) / p.N - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the probability is not d-c over N, the off-by-one omission of the inclusive endpoint",
+      holds: (p, d) => P(d.answer) !== P((p.d - p.c) / p.N),
+      breaks: (p, d) => ({ ...d, answer: (p.d - p.c) / p.N }) },
+  ],
+
+  "distributions/duniform-fit-range": [
+    { says: "Sanity: the fitted N times the stated ratio c reproduces M",
+      holds: (p, d) => Math.abs(P(d.answer * d.c) - P(p.M)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, c: d.c * 1.02 }) },
+    { says: "Combine: N equals M over c, exactly",
+      holds: (p, d) => Math.abs(p.M / d.c - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: N is not the stated ratio c itself",
+      holds: (p, d) => P(d.answer) !== P(d.c),
+      breaks: (_p, d) => ({ ...d, answer: d.c }) },
+  ],
+
+  "distributions/cuniform-below-threshold": [
+    { says: "Sanity: the probability lands strictly between 0 and 1, since the threshold sits strictly inside the span by construction",
+      holds: (p, d) => d.answer > 0 && d.answer < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1.5 }) },
+    { says: "Combine: the probability equals (t-a) over (b-a), exactly",
+      holds: (p, d) => Math.abs((p.t - p.a) / d.range - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the probability is not the threshold's raw distance from zero over the span, which ignores the lower endpoint a",
+      holds: (p, d) => P(d.answer) !== P(p.t / d.range),
+      breaks: (p, d) => ({ ...d, answer: p.t / d.range }) },
+  ],
+
+  "distributions/exponential-cdf-threshold": [
+    { says: "Sanity: the survival probability and the arrival probability are complements and sum to 1",
+      holds: (p, d) => Math.abs(P(d.survival) + P(d.answer) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, survival: 0 }) },
+    { says: "Combine: the probability equals one minus e to the negative rate times threshold, exactly",
+      holds: (p, d) => Math.abs(1 - Math.exp(-p.lam * p.t) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the arrival probability is not the survival probability itself",
+      holds: (p, d) => P(d.answer) !== P(d.survival),
+      breaks: (_p, d) => ({ ...d, answer: d.survival }) },
+  ],
+
+  "distributions/exponential-fit-rate": [
+    { says: "Sanity: the survival share is the complement of the stated arrival probability",
+      holds: (p, d) => Math.abs(P(d.survival) + P(p.c) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, survival: d.survival * 1.02 }) },
+    { says: "Combine: the fitted rate equals negative log of the survival share over t, exactly",
+      holds: (p, d) => Math.abs(-Math.log(d.survival) / p.t - d.fittedLam) < 1e-9,
+      breaks: (_p, d) => ({ ...d, fittedLam: d.fittedLam * 1.5 }) },
+    { says: "commonTrap: the fitted rate is not negative log of the stated probability c itself, which skips taking its complement first",
+      holds: (p, d) => P(d.fittedLam) !== P(-Math.log(p.c) / p.t),
+      breaks: (p, d) => ({ ...d, fittedLam: -Math.log(p.c) / p.t }) },
+  ],
+
+  "distributions/exponential-memoryless": [
+    { says: "Combine: the answer equals e to the negative rate times t, recomputed fresh — the elapsed wait s never enters the formula",
+      holds: (p, d) => Math.abs(Math.exp(-p.lam * p.t) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "Sanity: the answer is NOT the unconditional survival probability measured from the very start (e to the negative rate times s+t), the memoryless-violating shortcut",
+      holds: (p, d) => p.s === 0 || P(d.answer) !== P(Math.exp(-p.lam * (p.s + p.t))),
+      breaks: (p, d) => ({ ...d, answer: Math.exp(-p.lam * (p.s + p.t)) }) },
+    { says: "commonTrap: the answer is not the elapsed-wait survival probability alone, which conflates the already-observed wait with the further wait actually being asked about",
+      holds: (p, d) => P(d.answer) !== P(Math.exp(-p.lam * p.s)),
+      breaks: (p, d) => ({ ...d, answer: Math.exp(-p.lam * p.s) }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

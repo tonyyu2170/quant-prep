@@ -99,6 +99,12 @@ import { negbinomExactTrial } from "./distributions/negbinom-exact-trial";
 import { negbinomFitP } from "./distributions/negbinom-fit-p";
 import { hypergeomExactDraw } from "./distributions/hypergeom-exact-draw";
 import { hypergeomZeroSuccesses } from "./distributions/hypergeom-zero-successes";
+import { duniformSubrange } from "./distributions/duniform-subrange";
+import { duniformFitRange } from "./distributions/duniform-fit-range";
+import { cuniformBelowThreshold } from "./distributions/cuniform-below-threshold";
+import { exponentialCdfThreshold } from "./distributions/exponential-cdf-threshold";
+import { exponentialFitRate } from "./distributions/exponential-fit-rate";
+import { exponentialMemoryless } from "./distributions/exponential-memoryless";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -201,6 +207,12 @@ export const PROBLEMS: ProblemTemplate[] = [
   negbinomFitP,
   hypergeomExactDraw,
   hypergeomZeroSuccesses,
+  duniformSubrange,
+  duniformFitRange,
+  cuniformBelowThreshold,
+  exponentialCdfThreshold,
+  exponentialFitRate,
+  exponentialMemoryless,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
