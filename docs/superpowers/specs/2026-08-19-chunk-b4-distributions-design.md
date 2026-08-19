@@ -46,7 +46,9 @@ export function normalQuantile(p: number, mu = 0, sigma = 1): number { ... }  //
 
 **Unit tests** (`packages/engine/test/erf.test.ts`) pin known values — `Φ(0) = 0.5`, `Φ(1) ≈ 0.8413`, `Φ(1.96) ≈ 0.975`, `Φ(-2) ≈ 0.0228` — and assert the round trip `normalQuantile(normalCdf(x)) ≈ x` to `1e-8`.
 
-This is the batch's only infrastructure delta. The parser, grader, drill UI, and all four content gates (printed-precision, draw-space, prose-claims, registry) are unchanged and apply to this topic automatically, the same way they already cover bayes/counting/ev-variance.
+This is the batch's only *numerical* infrastructure delta — §8 item 14 carries a separate, still-open authoring risk (closed-form availability, not numerics; flagged there). The parser, grader, and drill UI are unchanged.
+
+Of the four content gates, only `registry.test.ts` is topic-generic by construction. The other three each key off an explicit per-topic allowlist and silently check *nothing* for a topic left out of it — no assertion fails, coverage just drops to zero for the new content: `printed-precision.test.ts:13` hardcodes a `TOPICS` array, `draw-space.test.ts:22` hardcodes `const TOPIC = "probability/ev-variance"` for the describe block that enforces §6's floors, and `prose-claims.test.ts` iterates a hand-authored `CLAIMS` dict keyed by slug. None of these extend automatically. Closing this is not optional cleanup — it's §7 items 6–8.
 
 ## 3. Small probabilities are the hazard of this batch
 
@@ -109,7 +111,10 @@ The B2/B3 rule is unchanged: **≥ 12 distinct answers over the full legal draw 
 2. **`verification/solvers/__init__.py`** — aggregate `distributions.SOLVERS` alongside the existing three.
 3. **`content/problems/index.ts`** — import and register all 25.
 4. **`TOPIC_LABELS`** needs no change — `"probability/distributions": "distributions"` was already seeded in B1 (confirmed present at `content/problems/index.ts:186`, unused until now).
-5. **`verification/emit.ts`** — no delta expected. Unlike B3, no answer in this batch goes negative (probabilities, fitted parameters, and quantiles here are all non-negative by construction), so the sign-blind audit issue B3 fixed does not recur. This is confirmed, not assumed, when sub-batch 1 lands and gates run.
+5. **`verification/emit.ts`** — no delta expected. Unlike B3, no answer in this batch goes negative (probabilities, fitted parameters, and quantiles here are all non-negative by construction), so the sign-blind audit issue B3 fixed does not recur. This is confirmed, not assumed, when **sub-batch 4** lands and gates run — sub-batch 1 (binomial + Poisson) contains no family capable of producing a negative value, so it cannot test this claim. The Normal family (§8 #17, #19, #20, #25) is the first place a raw endpoint or threshold can legitimately be negative (e.g. `x < μ` when `x` sits left of the mean); that's where this actually gets watched, not assumed from earlier sub-batches passing.
+6. **`content/problems/printed-precision.test.ts`** — add `"probability/distributions"` to the hardcoded `TOPICS` array (line 13). Omitting this does not fail CI; `describe.each(TOPICS)` just never generates a block for the new topic, so its printed-precision chains go unchecked while every other gate reports green.
+7. **`content/problems/draw-space.test.ts`** — the ≥12-distinct-answer / ≥70-distinct-text / ≤4-repeat floors (§6) live in a describe block scoped to the hardcoded `const TOPIC = "probability/ev-variance"` (line 22). The file's own top comment notes scope was deliberately left at ev-variance and that widening it is "a decision to take on its own evidence, not a side effect of this file" — so this batch has to make that decision explicitly (widen `TOPIC` to a list, or duplicate the block for `probability/distributions`), not inherit coverage by assumption.
+8. **`content/problems/prose-claims.test.ts`** — each of the 25 problems needs its own entry in the hand-authored `CLAIMS` dict (keyed by slug) before its claims are checked at all; an unregistered slug produces zero test cases, not a failure. This belongs in the authoring contract (§9 item 9) as a per-problem deliverable, not just a one-time file edit here.
 
 ## 8. Coverage
 
@@ -131,13 +136,15 @@ Each bullet is one problem. Surface contexts vary per problem and are never reus
 11. binomial — probability of at least one success in `n` trials — *complement*
 12. Poisson — probability of at least one event over a *different* time window than the one the rate was stated for — *rescale + complement*
 13. geometric — probability more than `k` trials are needed for the first success — *tail, `(1-p)^k`*
-14. negative binomial — find `p` given a stated probability that the `r`-th success lands by trial `k` — *parameter fit*
+14. negative binomial — find `p` given a stated probability that the `r`-th success lands by trial `k` — *parameter fit* ⚠ open question, see note below
 15. hypergeometric — probability of drawing zero successes (all failures) — *complement/boundary case*
 16. discrete uniform — find the range size such that a stated sub-range probability holds — *parameter fit*
 17. Normal — probability a normal variable falls strictly between two stated raw values — *standardize both endpoints, subtract CDFs*
 18. exponential — find the rate `λ` such that a stated tail probability holds — *parameter fit*
 19. Normal — probability a normal variable falls below a stated raw value, given `μ, σ` — *standardize + CDF lookup*
 20. Normal — probability a normal variable exceeds a stated raw value — *standardize + complement*
+
+**Open question on #14, blocking sub-batch 2:** inverting for `p` from a stated CDF or PMF value is solving a degree-`k` polynomial in `p` for general `r`, with no closed algebraic form. There's no numeric escape hatch on the Python side either — `scipy.stats.nbinom` has no inverse-in-`p`, so `verify.py`'s independent `exact()` (§5) would need something like `brentq`, and nothing resembling a root-finder exists anywhere in this codebase today. Three ways out, to be settled at sub-batch-2 authoring time, not by this spec: pin `k = r` (single term, `p^r = c`, closed form, but removes one degree of freedom from the draw space — check §6's ≥12-distinct-answer floor still clears); let #14 collapse to `r = 1` (closed form via the geometric CDF, but then it duplicates #13's fit instead of testing anything negative-binomial-specific); or add a bisection helper to §2's infra delta and accept numeric inversion on both the TS and Python sides. Not resolved here.
 
 ### L3 — 5 problems (two genuinely dependent stages, not one harder formula)
 21. binomial — given `P(X=0)` for `n` trials, find `p`, then use it to compute `P(X=1)` — *parameter fit, then PMF*
@@ -151,23 +158,23 @@ Each bullet is one problem. Surface contexts vary per problem and are never reus
 Inherited from B1 Task 10, B2 §8, and B3 §9 verbatim except where marked ▲:
 
 1. `id` = `distributions/<slug>`, `topic: "probability/distributions"`, `version: 1`; params yield ≥ 12 distinct answers **counted at the grading tolerance** (§6); `constraint` guards degenerate draws.
-2. `constraint` also guarantees `0.01 <= |answer| <= 1e4` on every legal draw (§3, §4) — same floor/ceiling as B3, now guarding a small-probability collapse instead of a near-zero EV.
+2. `constraint` also guarantees `0.01 <= |answer| <= 1e4` on every legal draw (§3, §4) — same floor/ceiling as B3, now guarding a small-probability collapse instead of a near-zero EV. This floor is about the *answer* specifically; `emit.ts`'s audit (line 46) separately floors **every** `params`/`derived` value at `1e-6` regardless of tolerance or `answerKey`. Don't put a raw PMF term, a truncation-tail mass, or any other sub-1e-6 quantity into `derived` even when it isn't the answer — in particular, §5's `<1e-12` truncation-tail bound must never itself be stored in `derived`; only the enumeration *cap* (an integer, per item 4 below) belongs there.
 3. Every intermediate number lives in `derived`; the answer is one `answerKey`; tolerance is `{ rel: 0.005 }` — never `abs` (§4).
 4. ▲ **Unbounded discrete families (Poisson, geometric, negative binomial) declare their enumeration cap as a `derived` value**, so both the TS emit-side reasoning and the Python truncated-sum check can be inspected against the same number rather than each hard-coding its own cap.
 5. ▲ **Normal-family templates route every printed probability through `normalCdf`/`normalQuantile` (§2), never a hand-rolled approximation** — the whole point of the infra delta is one precise, tested implementation shared by every Normal template.
 6. Never write a literal `$` for currency (B3 §9 item 6 — this batch is unlikely to need currency at all, but the rule stands if any problem frames a parameter-fit in dollar terms).
 7. Statement in plain prose, numbers via `fmtNum`/`pc` only. Solution 3–6 steps ending in a **Sanity check**. `keyInsight` and `commonTrap` number-free. `firms` and `expectedPaceS` set. `source` records kind honestly, tagged **at authoring time** — closing B3's unresolved `source.kind` review item rather than repeating it.
 8. Python counterpart in the same sub-batch: `exact()` is a from-scratch reimplementation (§5), not a call into the same helper the template itself effectively uses; the second check (`brute`/`simulate`) takes the independent path from §5's table.
-9. Registered in `index.ts` `PROBLEMS` and in `solvers/distributions.py` `SOLVERS`.
+9. Registered in `index.ts` `PROBLEMS`, in `solvers/distributions.py` `SOLVERS`, **and** in `prose-claims.test.ts`'s `CLAIMS` dict under its slug (§7 item 8) — omitting the last one ships the problem with that gate silently not looking at it.
 
 ## 10. Cadence and gates
 
 Four sub-batches, matching B3's cadence, each committed only when `npm run typecheck && npm run test && npm run verify:emit && python3 verification/verify.py` is green:
 
-- **Sub-batch 1 (8)** — carries the §2 `erf.ts` infra delta and its unit tests, the `index.ts`/`__init__.py` registrations, the `registry.test.ts` sum fix, and binomial (4) + Poisson (4).
-- **Sub-batch 2 (7)** — geometric (3) + negative binomial (2) + hypergeometric (2).
-- **Sub-batch 3 (6)** — uniform (3) + exponential (3).
-- **Sub-batch 4 (4)** — Normal (4), plus the distributions 10/10/5 difficulty pin and tolerance-species re-check in `registry.test.ts`.
+- **Sub-batch 1 (8)** — carries the §2 `erf.ts` infra delta and its unit tests, the `index.ts`/`__init__.py` registrations, the `registry.test.ts` sum fix, the `printed-precision.test.ts` `TOPICS` addition and the `draw-space.test.ts` scope-widening decision (§7 items 6–7 — both land now, since every later sub-batch depends on these gates actually running against this topic), `CLAIMS` entries for its own 8 problems (§7 item 8, §9 item 9), and binomial (4) + Poisson (4).
+- **Sub-batch 2 (7)** — geometric (3) + negative binomial (2) + hypergeometric (2), plus their `CLAIMS` entries. Blocked on resolving #14's open closed-form question (§8) before authoring starts.
+- **Sub-batch 3 (6)** — uniform (3) + exponential (3), plus their `CLAIMS` entries.
+- **Sub-batch 4 (4)** — Normal (4), plus their `CLAIMS` entries, the distributions 10/10/5 difficulty pin and tolerance-species re-check in `registry.test.ts`, and the §7 item 5 sign-blind-audit confirmation (this is the first sub-batch capable of producing a negative endpoint, so it's the one that actually tests that claim).
 
 Ship gate: identical to B3's — `npm run typecheck && npm run test && npm run e2e && npm run verify:emit && python3 verification/verify.py` all green, merge `--no-ff`, push, confirm CI logs show both `Emitted <n>` and `Verified <n>` (not just a green checkmark), then prod smoke on `quant-prep-gold.vercel.app` (the only public origin — the project alias sits behind Vercel deployment protection).
 
