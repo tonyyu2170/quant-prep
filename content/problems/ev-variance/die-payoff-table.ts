@@ -58,5 +58,10 @@ export const diePayoffTable: ProblemTemplate = {
   commonTrap: "Averaging the figures in the table as though its rows were equally likely, which ignores that one row covers a single face while another covers three, and lands on a different number entirely.",
   expectedPaceS: 40,
   verify: { method: "brute-force" },
+  // The widest constants list in the corpus, and checked rather than assumed: every one is
+  // genuinely reachable — 1, 2, 3, 4, 5 and 6 are face labels in the statement, 3 and 2 are
+  // also the row multipliers, and 6 is the denominator. The cost of that reach is that any
+  // digit from 1 to 6 in this template's prose passes the emitter's traceability audit, so
+  // prose numbers here get read by eye rather than left to the gate.
   constants: [1, 2, 3, 4, 5, 6],
 };
