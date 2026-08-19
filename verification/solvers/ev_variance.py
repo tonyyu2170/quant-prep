@@ -690,6 +690,126 @@ def equal_ev_sd_comparison_brute(p):
     return float(max(var_coin, var_die)) ** 0.5
 
 
+def conditional_expectation_given_event_exact(p):
+    faces, k, rate = int(p["faces"]), int(p["k"]), int(p["rate"])
+    low_faces = k - 1
+    pairs = faces * faces
+    low_pairs = low_faces * low_faces
+    total_all = pairs * (faces + 1)
+    total_low = low_pairs * k
+    good_pairs = pairs - low_pairs
+    total_good = total_all - total_low
+    return {
+        "lowFaces": low_faces,
+        "pairs": pairs,
+        "lowPairs": low_pairs,
+        "goodPairs": good_pairs,
+        "totalAll": total_all,
+        "totalLow": total_low,
+        "totalGood": total_good,
+        "plainPoints": faces + 1,
+        "meanGiven": total_good / good_pairs,
+        "evPlain": rate * (faces + 1),
+        "ev": (rate * total_good) / good_pairs,
+    }
+
+
+def conditional_expectation_given_event_brute(p):
+    """Walk the grid of both dice, discard every combination the news forbids, and average the
+    payout over the ones left, one at a time. Nothing is counted by complement, no pooled total
+    is assembled and the unconditional average never appears — the template's entire route."""
+    faces, k, rate = int(p["faces"]), int(p["k"]), int(p["rate"])
+    kept = [rate * (x + y)
+            for x in range(1, faces + 1)
+            for y in range(1, faces + 1)
+            if x >= k or y >= k]
+    return float(Fraction(sum(kept), len(kept)))
+
+
+def matching_indicators_variance_exact(p):
+    diners, party, rate = int(p["diners"]), int(p["party"]), int(p["rate"])
+    pairs = party * (party - 1)
+    numer = party * (diners - 1) * (diners - 1) + pairs
+    denom = diners * diners * (diners - 1)
+    var_count = numer / denom
+    indep_count = (party * (diners - 1)) / (diners * diners)
+    return {
+        "pairs": pairs,
+        "numer": numer,
+        "denom": denom,
+        "pSelf": 1 / diners,
+        "pNext": 1 / (diners - 1),
+        "oneVar": (diners - 1) / (diners * diners),
+        "pBoth": 1 / (diners * (diners - 1)),
+        "cov": 1 / (diners * diners * (diners - 1)),
+        "varCount": var_count,
+        "indepPay": rate * rate * indep_count,
+        "varPay": rate * rate * var_count,
+    }
+
+
+def matching_indicators_variance_brute(p):
+    """Deal every delivery the runner could make — all permutations of the meals — count the
+    party members who get their own inside each one, and take the spread of those payments
+    straight from the definition, as the average squared distance from their own average. No
+    indicator is isolated, no per-diner chance is formed and no covariance term is ever named,
+    so neither the template's decomposition nor the Sanity check's mean-of-squares appears."""
+    diners, party, rate = int(p["diners"]), int(p["party"]), int(p["rate"])
+    hist = [0] * (party + 1)
+    for perm in permutations(range(diners)):
+        hist[sum(1 for i in range(party) if perm[i] == i)] += 1
+    n = sum(hist)
+    mean = Fraction(sum(rate * c * w for c, w in enumerate(hist)), n)
+    return float(sum(w * (rate * c - mean) ** 2 for c, w in enumerate(hist)) / n)
+
+
+def pattern_waiting_hh_ht_exact(p):
+    clean_pct, repeat_dirty, cost = int(p["cleanPct"]), int(p["repeatDirty"]), int(p["cost"])
+    dirty_pct = 100 - clean_pct
+    r_pct = dirty_pct if repeat_dirty == 1 else clean_pct
+    o_pct = 100 - r_pct
+    flips = (100 * (r_pct + 100)) / (r_pct * r_pct)
+    mix_flips = 10000 / (r_pct * o_pct)
+    return {
+        "dirtyPct": dirty_pct,
+        "rPct": r_pct,
+        "oPct": o_pct,
+        "firstWait": 100 / r_pct,
+        "flips": flips,
+        "mixFlips": mix_flips,
+        "mixSpend": cost * mix_flips,
+        "twoRuns": 2 * cost,
+        "spend": cost * flips,
+    }
+
+
+def pattern_waiting_hh_ht_brute(p):
+    """Solve the rig's state graph instead of quoting a wait. The two states — nothing on the
+    board, one target run on the board — give two equations in two unknowns, solved generically
+    in exact rationals by Cramer's rule, so no rearranged closed form is typed anywhere. The
+    same figure is then rebuilt a second way with no algebra in it at all: walk the state
+    distribution forward run by run and add up the chance the rig is still going, which is the
+    expected number of runs. The template's (1+r)/r^2 appears in neither."""
+    clean_pct, repeat_dirty, cost = int(p["cleanPct"]), int(p["repeatDirty"]), int(p["cost"])
+    r = Fraction(100 - clean_pct if repeat_dirty == 1 else clean_pct, 100)
+    s = 1 - r
+    # E0 = 1 + s*E0 + r*E1 ; E1 = 1 + s*E0 + r*0  ->  [[1-s, -r], [-s, 1]] x = [1, 1]
+    a, b, c, d = 1 - s, -r, -s, Fraction(1)
+    det = a * d - b * c
+    e0 = (1 * d - b * 1) / det
+    # Forward walk: sum over runs of the chance the rig has not yet shut down.
+    v0, v1, total = 1.0, 0.0, 0.0
+    rf = float(r)
+    for _ in range(20000):
+        alive = v0 + v1
+        if alive < 1e-18:
+            break
+        total += alive
+        v0, v1 = (1 - rf) * (v0 + v1), rf * v0
+    assert abs(total - float(e0)) < 1e-9, (total, float(e0))
+    return float(cost * e0)
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -714,4 +834,7 @@ SOLVERS = {
     "ev-variance/distinct-types-collected": {"exact": distinct_types_collected_exact, "brute": distinct_types_collected_brute},
     "ev-variance/binomial-variance": {"exact": binomial_variance_exact, "brute": binomial_variance_brute},
     "ev-variance/equal-ev-sd-comparison": {"exact": equal_ev_sd_comparison_exact, "brute": equal_ev_sd_comparison_brute},
+    "ev-variance/conditional-expectation-given-event": {"exact": conditional_expectation_given_event_exact, "brute": conditional_expectation_given_event_brute},
+    "ev-variance/matching-indicators-variance": {"exact": matching_indicators_variance_exact, "brute": matching_indicators_variance_brute},
+    "ev-variance/pattern-waiting-hh-ht": {"exact": pattern_waiting_hh_ht_exact, "brute": pattern_waiting_hh_ht_brute},
 }

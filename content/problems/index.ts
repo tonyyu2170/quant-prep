@@ -77,6 +77,9 @@ import { insuranceBreakEvenPremium } from "./ev-variance/insurance-break-even-pr
 import { distinctTypesCollected } from "./ev-variance/distinct-types-collected";
 import { binomialVariance } from "./ev-variance/binomial-variance";
 import { equalEvSdComparison } from "./ev-variance/equal-ev-sd-comparison";
+import { conditionalExpectationGivenEvent } from "./ev-variance/conditional-expectation-given-event";
+import { matchingIndicatorsVariance } from "./ev-variance/matching-indicators-variance";
+import { patternWaitingHhHt } from "./ev-variance/pattern-waiting-hh-ht";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -157,6 +160,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   distinctTypesCollected,
   binomialVariance,
   equalEvSdComparison,
+  conditionalExpectationGivenEvent,
+  matchingIndicatorsVariance,
+  patternWaitingHhHt,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

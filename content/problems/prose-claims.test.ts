@@ -404,6 +404,65 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(d.sdDie * d.sdDie - d.varDie) < EPS,
       breaks: (_p, d) => ({ ...d, sdDie: d.sdDie * 1.02 }) },
   ],
+
+  "conditional-expectation-given-event": [
+    { says: "Sanity: putting the forbidden combinations back recovers the untouched pair average",
+      holds: (p, d) => d.totalLow + d.totalGood === d.totalAll && d.plainPoints === p.faces + 1
+        && Math.abs((d.totalLow + d.totalGood) / d.pairs - d.plainPoints) < EPS,
+      breaks: (_p, d) => ({ ...d, totalGood: d.totalGood + d.pairs }) },
+    { says: "Sanity: the payout can only have moved up from the untouched figure, as printed",
+      holds: (p, d) => same(p.rate * (p.faces + 1), d.evPlain) && P(d.evPlain) < P(d.ev),
+      breaks: (_p, d) => ({ ...d, ev: d.evPlain }) },
+    { says: "Pool the points: the forbidden group averages the threshold, which is below the untouched average",
+      holds: (p, d) => d.totalLow === d.lowPairs * p.k && p.k < d.plainPoints && P(d.meanGiven) > P(d.plainPoints),
+      breaks: (_p, d) => ({ ...d, totalLow: 0 }) },
+    // The three above pin only the direction the news moves the payout, so a wrong magnitude
+    // would pass all of them; this one pins the answer against the surviving pool itself.
+    { says: "keyInsight: the answer is the surviving points spread over the surviving combinations, priced",
+      holds: (p, d) => d.lowPairs === (p.k - 1) * (p.k - 1) && d.goodPairs === d.pairs - d.lowPairs
+        && Math.abs((p.rate * d.totalGood) / d.goodPairs - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+  ],
+  "matching-indicators-variance": [
+    { says: "Sanity: the mean-of-squares route rebuilds the same count variance",
+      holds: (p, d) => p.party * p.diners * (p.diners - 1) + d.pairs * p.diners
+          - p.party * p.party * (p.diners - 1) === d.numer
+        && Math.abs(d.numer / d.denom - d.varCount) < EPS,
+      breaks: (_p, d) => ({ ...d, numer: d.numer + 1 }) },
+    { says: "Sanity: dropping every covariance leaves strictly less than the answer, as printed",
+      holds: (p, d) => same((p.rate * p.rate * p.party * (p.diners - 1)) / (p.diners * p.diners), d.indepPay)
+        && P(d.indepPay) < P(d.varPay),
+      breaks: (_p, d) => ({ ...d, indepPay: d.varPay }) },
+    { says: "keyInsight: the covariance is positive, and the count is the individual spreads plus one per ordered pair",
+      holds: (p, d) => d.cov > 0 && Math.abs(d.pBoth - d.pSelf * d.pSelf - d.cov) < EPS
+        && d.pairs === p.party * (p.party - 1)
+        && Math.abs(p.party * d.oneVar + d.pairs * d.cov - d.varCount) < EPS,
+      breaks: (_p, d) => ({ ...d, cov: 0 }) },
+    { says: "Price the count: the rate enters the variance squared",
+      holds: (p, d) => Math.abs(p.rate * p.rate * d.varCount - d.varPay) < EPS,
+      breaks: (_p, d) => ({ ...d, varPay: d.varPay * 1.02 }) },
+  ],
+  "pattern-waiting-hh-ht": [
+    { says: "Sanity: the bill clears the price of the two runs the pair takes at minimum",
+      holds: (p, d) => d.twoRuns === 2 * p.cost && P(d.twoRuns) < P(d.spend),
+      breaks: (_p, d) => ({ ...d, spend: d.twoRuns }) },
+    // The prose reads its own comparison off the two figures, so what needs pinning is that the
+    // comparison is decidable at printed precision and says the same thing the floats do.
+    { says: "Sanity: the mixed pair's bill sits on the side of the answer the prose reports",
+      holds: (_p, d) => P(d.mixSpend) !== P(d.spend)
+        && Math.sign(d.mixSpend - d.spend) === Math.sign(P(d.mixSpend) - P(d.spend)),
+      nonVacuous: (_p, d) => d.mixSpend > d.spend, // the draws where the repeated pair is the CHEAPER wait
+      breaks: (_p, d) => ({ ...d, mixSpend: d.spend }) },
+    { says: "keyInsight and commonTrap: the reciprocal of the pair's own chance understates the repeated wait, and is exact for the mixed one",
+      holds: (_p, d) => 10000 / (d.rPct * d.rPct) < d.flips - EPS
+        && Math.abs(d.mixFlips - 10000 / (d.rPct * d.oPct)) < EPS,
+      breaks: (_p, d) => ({ ...d, flips: 10000 / (d.rPct * d.rPct) }) },
+    { says: "Wait for the first one, then price the runs: the wait inverts the chance and the bill is that wait charged",
+      holds: (p, d) => Math.abs(d.firstWait * d.rPct - 100) < EPS
+        && Math.abs(d.flips - (100 * (d.rPct + 100)) / (d.rPct * d.rPct)) < EPS
+        && Math.abs(p.cost * d.flips - d.spend) < EPS,
+      breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
+  ],
 };
 
 const templateFor = (slug: string) =>
