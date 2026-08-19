@@ -32,8 +32,8 @@ export const twoUrns: ProblemTemplate = {
   solution: (p, d) => [
     { title: "Setup", body: `Let $A$ = chose urn A, $R$ = drew red. The fair coin gives $P(A)=P(B)=0.5$.` },
     { title: "Likelihoods", body: `$P(R\\mid A)=${p.aRed}/${d.aTotal}=${fmtNum(d.pRedA)}$ and $P(R\\mid B)=${p.bRed}/${d.bTotal}=${fmtNum(d.pRedB)}$.` },
-    { title: "Total red probability", body: `$P(R)=0.5\\times${fmtNum(d.pRedA)}+0.5\\times${fmtNum(d.pRedB)}=${fmtNum(d.pRed)}$.` },
-    { title: "Posterior", body: `$P(A\\mid R)=\\dfrac{0.5\\times${fmtNum(d.pRedA)}}{${fmtNum(d.pRed)}}=${fmtNum(d.postA)}$.` },
+    { title: "Total red probability", body: `$P(R)=0.5\\times\\frac{${p.aRed}}{${d.aTotal}}+0.5\\times\\frac{${p.bRed}}{${d.bTotal}}=${fmtNum(d.pRed)}$.` },
+    { title: "Posterior", body: `Both branches carry the same $0.5$, so it cancels out of the ratio and the two red fractions decide it between them: $P(A\\mid R)=\\dfrac{${p.aRed}/${d.aTotal}}{${p.aRed}/${d.aTotal}+${p.bRed}/${d.bTotal}}=${fmtNum(d.postA)}$.` },
     { title: "Sanity check", body: `Urn B is the red-heavy urn, so seeing red should pull the posterior below 0.5 — and $${fmtNum(d.postA)} < 0.5$ holds.` },
   ],
   keyInsight: "Posterior odds are prior odds times the likelihood ratio — with a fair coin, the red-fractions alone decide it.",

@@ -30,8 +30,8 @@ export const coinIdentificationStreak: ProblemTemplate = {
   solution: (p, d) => [
     { title: "Setup", body: `Let $B$ = biased coin drawn, $F$ = fair coin drawn, each with prior $0.5$ from the hat. Let $H_${p.k}$ = ${p.k} heads in a row.` },
     { title: "Likelihood under each hypothesis", body: `Flips are independent given the coin, so $P(H_${p.k}\\mid B)=${p.pBiased}^{${p.k}}=${fmtNum(d.pBiasedK)}$ and $P(H_${p.k}\\mid F)=0.5^{${p.k}}=${fmtNum(d.pFairK)}$.` },
-    { title: "Joint masses", body: `$0.5\\times${fmtNum(d.pBiasedK)}=${fmtNum(d.numBiased)}$ for the biased branch, $0.5\\times${fmtNum(d.pFairK)}=${fmtNum(d.numFair)}$ for the fair branch.` },
-    { title: "Normalize", body: `$P(H_${p.k})=${fmtNum(d.numBiased)}+${fmtNum(d.numFair)}=${fmtNum(d.denom)}$, so $P(B\\mid H_${p.k})=${fmtNum(d.numBiased)}/${fmtNum(d.denom)}=${fmtNum(d.postBiased)}$.` },
+    { title: "Joint masses", body: `$0.5\\times${p.pBiased}^{${p.k}}=${fmtNum(d.numBiased)}$ for the biased branch, $0.5\\times0.5^{${p.k}}=${fmtNum(d.numFair)}$ for the fair branch.` },
+    { title: "Normalize", body: `$P(H_${p.k})=0.5\\times${p.pBiased}^{${p.k}}+0.5\\times0.5^{${p.k}}=${fmtNum(d.denom)}$. The hat's $0.5$ sits on both branches and cancels, so $P(B\\mid H_${p.k})=\\dfrac{${p.pBiased}^{${p.k}}}{${p.pBiased}^{${p.k}}+0.5^{${p.k}}}=${fmtNum(d.postBiased)}$.` },
     { title: "Sanity check", body: `The biased coin favors heads more than a fair coin at every flip, so its streak likelihood exceeds the fair coin's at any streak length, pushing the posterior above the $0.5$ prior — and $${fmtNum(d.postBiased)} > 0.5$ holds.` },
   ],
   keyInsight: "A run of k identical outcomes is strong evidence precisely because the likelihood ratio compounds multiplicatively with each additional flip — longer streaks make the biased hypothesis dominate much faster than the streak length alone suggests.",

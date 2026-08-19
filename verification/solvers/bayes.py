@@ -781,8 +781,14 @@ def two_urns_without_replacement_exact(p):
     massB = 0.5 * pTwoRedB
     denom = massA + massB
     postA = massA / denom
+    # Whole-number branch weights: each urn's favourable ordered pairs scaled by the OTHER
+    # urn's ordered-pair count, so the walkthrough can print the posterior from exact
+    # integers instead of from two rounded masses.
+    crossA = p["aRed"] * (p["aRed"] - 1) * bTotal * (bTotal - 1)
+    crossB = p["bRed"] * (p["bRed"] - 1) * aTotal * (aTotal - 1)
     return {"aTotal": aTotal, "bTotal": bTotal, "pTwoRedA": pTwoRedA, "pTwoRedB": pTwoRedB,
-            "massA": massA, "massB": massB, "denom": denom, "postA": postA}
+            "massA": massA, "massB": massB, "denom": denom, "postA": postA,
+            "crossA": crossA, "crossB": crossB}
 
 
 def two_urns_without_replacement_brute(p):
