@@ -29,6 +29,11 @@ export function evalTex(expr: string): number | null {
   if (e.includes("\\cdots")) return null;
   let prev = "";
   while (e !== prev) { prev = e; e = e.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "(($1)/($2))"); }
+  // \sqrt runs after \frac so a radicand containing a fraction has already lost its braces.
+  // Written as **0.5 rather than Math.sqrt so the expression stays inside the digits-and-
+  // operators character class below — letters are what mark an unrecognised form.
+  prev = "";
+  while (e !== prev) { prev = e; e = e.replace(/\\sqrt\{([^{}]*)\}/g, "(($1)**0.5)"); }
   e = e.replace(/\\times/g, "*").replace(/\\left|\\right/g, "");
   e = e.replace(/(\d+)!/g, (_m, n: string) => String(factorial(Number(n))));
   if (/[^\d\s+\-*/().]/.test(e)) return null; // an unrecognised form is a coverage hole, not a pass
@@ -118,6 +123,8 @@ describe("the printed-precision checker fails when it should", () => {
     ["1+2+\\cdots+5=16", true],
     ["\\frac{2\\times20-10\\times3}{10}=1", false],
     ["\\frac{2\\times20-10\\times3}{10}=1.1", true],
+    ["\\sqrt{\\frac{25\\times(11\\times11-1)}{12}}=15.81", false], // a radicand over a fraction
+    ["\\sqrt{\\frac{25\\times(11\\times11-1)}{12}}=15.82", true],
   ];
   // No literal "$" in the title: vitest reads $<digit> as a positional case reference.
   it.each(cases)("%s -> flags: %s", (seg, shouldFlag) => {

@@ -216,6 +216,247 @@ def indicator_match_count_brute(p):
     return float(Fraction(kitty, orderings))
 
 
+
+
+def two_outcome_variance_exact(p):
+    win_pct, w, loss = int(p["winPct"]), int(p["w"]), int(p["l"])
+    lose_pct = 100 - win_pct
+    gap = w + loss
+    return {
+        "losePct": lose_pct,
+        "gap": gap,
+        "mean": (win_pct * w - lose_pct * loss) / 100,
+        "devWin": (lose_pct * gap) / 100,
+        "devLose": (win_pct * gap) / 100,
+        "capVar": (gap * gap) / 4,
+        "varProfit": (win_pct * lose_pct * gap * gap) / 10000,
+    }
+
+
+def two_outcome_variance_brute(p):
+    """Take the two branches as an outcome list, find the mean by averaging it, then average
+    the squared distances from that mean. The template's route — locating each branch's
+    distance from the mean algebraically as a share of the gap — is never used, and neither
+    is any p(1-p)(w+l) squared shortcut; the gap between the two outcomes is never formed."""
+    win_pct, w, loss = int(p["winPct"]), int(p["w"]), int(p["l"])
+    branches = [(Fraction(win_pct, 100), Fraction(w)), (Fraction(100 - win_pct, 100), Fraction(-loss))]
+    assert sum(prob for prob, _ in branches) == 1
+    mean = sum(prob * val for prob, val in branches)
+    return float(sum(prob * (val - mean) ** 2 for prob, val in branches))
+
+
+def spinner_pmf_variance_exact(p):
+    pct_a, pct_b = int(p["pctA"]), int(p["pctB"])
+    v_a, v_b, v_c = int(p["vA"]), int(p["vB"]), int(p["vC"])
+    pct_c = 100 - pct_a - pct_b
+    t_a, t_b, t_c = pct_a / 10, pct_b / 10, pct_c / 10
+    mean = (t_a * v_a + t_b * v_b + t_c * v_c) / 10
+    mean_sq = (t_a * v_a * v_a + t_b * v_b * v_b + t_c * v_c * v_c) / 10
+    return {
+        "pctC": pct_c,
+        "tA": t_a,
+        "tB": t_b,
+        "tC": t_c,
+        "mean": mean,
+        "meanSq": mean_sq,
+        "dAB": abs(v_a - v_b),
+        "dAC": abs(v_a - v_c),
+        "dBC": abs(v_b - v_c),
+        "varPay": mean_sq - mean * mean,
+    }
+
+
+def spinner_pmf_variance_brute(p):
+    """Lay the rim out as its ten equal slices, one entry per slice carrying that slice's
+    payout, and average the squared distances from the mean of the list. Neither the
+    computational formula the template uses nor the pairwise identity its Sanity check uses
+    appears here — this is the definition, walked over the sectors."""
+    pct_a, pct_b = int(p["pctA"]), int(p["pctB"])
+    v_a, v_b, v_c = int(p["vA"]), int(p["vB"]), int(p["vC"])
+    pct_c = 100 - pct_a - pct_b
+    slices = [v_a] * (pct_a // 10) + [v_b] * (pct_b // 10) + [v_c] * (pct_c // 10)
+    assert len(slices) == 10
+    mean = sum(Fraction(v) for v in slices) / 10
+    return float(sum((Fraction(v) - mean) ** 2 for v in slices) / 10)
+
+
+def affine_scaling_sd_exact(p):
+    n, scale = int(p["n"]), int(p["scale"])
+    spread = scale * (n - 1)
+    return {
+        "varDraw": (n * n - 1) / 12,
+        "varPay": (scale * scale * (n * n - 1)) / 12,
+        "spread": spread,
+        "halfSpread": spread / 2,
+        "quarterSpread": spread / 4,
+        "sd": ((scale * scale * (n * n - 1)) / 12) ** 0.5,
+    }
+
+
+def affine_scaling_sd_brute(p):
+    """Transform every ball into its payout first, then measure the spread of the transformed
+    list from scratch. Neither the uniform-variance formula nor the scale-squared rule is used:
+    the flat add-on is genuinely carried through every outcome, so if it did move the spread
+    this would show it."""
+    n, scale, bonus = int(p["n"]), int(p["scale"]), int(p["bonus"])
+    payouts = [Fraction(scale * k + bonus) for k in range(1, n + 1)]
+    mean = sum(payouts) / n
+    var = sum((x - mean) ** 2 for x in payouts) / n
+    return float(var) ** 0.5
+
+
+def push_branch_bet_exact(p):
+    win_pct, draw_pct = int(p["winPct"]), int(p["drawPct"])
+    payout, stake = int(p["payout"]), int(p["stake"])
+    loss_pct = 100 - win_pct - draw_pct
+    return {
+        "lossPct": loss_pct,
+        "winLegNum": win_pct * payout,
+        "lossLegNum": loss_pct * stake,
+        "fairPayout": (loss_pct * stake) / win_pct,
+        "ev": (win_pct * payout - loss_pct * stake) / 100,
+    }
+
+
+def push_branch_bet_brute(p):
+    """Lay the match out as a hundred equally likely hundredths, each carrying the profit of
+    whichever branch it belongs to — including the refunded ones, which carry a profit of zero
+    and are counted rather than dropped — and average across the hundred. No probability is
+    formed and no branch is weighted."""
+    win_pct, draw_pct = int(p["winPct"]), int(p["drawPct"])
+    payout, stake = int(p["payout"]), int(p["stake"])
+    outcomes = [Fraction(payout)] * win_pct + [Fraction(0)] * draw_pct
+    outcomes += [Fraction(-stake)] * (100 - win_pct - draw_pct)
+    assert len(outcomes) == 100
+    return float(sum(outcomes) / 100)
+
+
+def sum_of_bets_variance_exact(p):
+    pct1, pct2 = int(p["pct1"]), int(p["pct2"])
+    w1, l1, w2, l2 = int(p["w1"]), int(p["l1"]), int(p["w2"]), int(p["l2"])
+    gap1, gap2 = w1 + l1, w2 + l2
+    var1 = (pct1 * (100 - pct1) * gap1 * gap1) / 10000
+    var2 = (pct2 * (100 - pct2) * gap2 * gap2) / 10000
+    return {
+        "q1": 100 - pct1,
+        "q2": 100 - pct2,
+        "gap1": gap1,
+        "gap2": gap2,
+        "var1": var1,
+        "var2": var2,
+        "sd1": var1 ** 0.5,
+        "sd2": var2 ** 0.5,
+        "sdSum": var1 ** 0.5 + var2 ** 0.5,
+        "sdTotal": (var1 + var2) ** 0.5,
+        "varTotal": var1 + var2,
+    }
+
+
+def sum_of_bets_variance_brute(p):
+    """Enumerate the four joint outcomes of the two bets, form the total profit in each, and
+    read the variance off as the mean of the squared total less the square of the mean total.
+    Neither bet's own variance is ever computed, so the additivity the template rests on is
+    never invoked."""
+    pct1, pct2 = int(p["pct1"]), int(p["pct2"])
+    w1, l1, w2, l2 = int(p["w1"]), int(p["l1"]), int(p["w2"]), int(p["l2"])
+    cells = []
+    for prob_a, val_a in ((Fraction(pct1, 100), w1), (Fraction(100 - pct1, 100), -l1)):
+        for prob_b, val_b in ((Fraction(pct2, 100), w2), (Fraction(100 - pct2, 100), -l2)):
+            cells.append((prob_a * prob_b, Fraction(val_a + val_b)))
+    assert sum(prob for prob, _ in cells) == 1
+    mean = sum(prob * tot for prob, tot in cells)
+    mean_sq = sum(prob * tot * tot for prob, tot in cells)
+    return float(mean_sq - mean * mean)
+
+
+def urn_choice_total_expectation_exact(p):
+    box_pct, red_a, red_b, prize = int(p["boxPct"]), int(p["redA"]), int(p["redB"]), int(p["prize"])
+    other_pct = 100 - box_pct
+    ev_a = (red_a * prize) / 10
+    ev_b = (red_b * prize) / 10
+    return {
+        "otherPct": other_pct,
+        "evA": ev_a,
+        "evB": ev_b,
+        "plainAvg": (ev_a + ev_b) / 2,
+        "ev": (box_pct * ev_a + other_pct * ev_b) / 100,
+    }
+
+
+def urn_choice_total_expectation_brute(p):
+    """Flatten the tree: one entry per (box, chip) path carrying that path's own probability
+    and payout, then take a single expectation across the twenty of them. No box is valued on
+    its own, so the conditioning step the template turns on never happens here."""
+    box_pct, red_a, red_b, prize = int(p["boxPct"]), int(p["redA"]), int(p["redB"]), int(p["prize"])
+    paths = []
+    for pct, reds in ((box_pct, red_a), (100 - box_pct, red_b)):
+        for chip in range(10):
+            paths.append((Fraction(pct, 100) * Fraction(1, 10), Fraction(prize if chip < reds else 0)))
+    assert len(paths) == 20 and sum(prob for prob, _ in paths) == 1
+    return float(sum(prob * pay for prob, pay in paths))
+
+
+def max_of_two_dice_brute(p):
+    """Walk all the ordered pairs, take the larger face in each, pay the rate on it and charge
+    the fee inside the pair, then average. Nothing is counted by level and no closed form for
+    the sum of squares appears — the counting argument the template runs on is never used."""
+    faces, rate, fee = int(p["faces"]), int(p["rate"]), int(p["fee"])
+    total = Fraction(0)
+    for i in range(1, faces + 1):
+        for j in range(1, faces + 1):
+            total += Fraction(rate * max(i, j) - fee)
+    return float(total / (faces * faces))
+
+
+def max_of_two_dice_exact(p):
+    faces, rate, fee = int(p["faces"]), int(p["rate"]), int(p["fee"])
+    sq_below = ((faces - 1) * faces * (2 * faces - 1)) / 6
+    top_numer = faces * faces * faces - sq_below
+    pairs = faces * faces
+    return {
+        "sqBelow": sq_below,
+        "topNumer": top_numer,
+        "lowNumer": (faces + 1) * pairs - top_numer,
+        "topMean": top_numer / pairs,
+        "lowMean": ((faces + 1) * pairs - top_numer) / pairs,
+        "singleMean": (faces + 1) / 2,
+        "evSingle": (rate * (faces + 1)) / 2 - fee,
+        "ev": (rate * top_numer) / pairs - fee,
+    }
+
+
+def one_optional_reroll_exact(p):
+    faces, floor_, rate = int(p["faces"]), int(p["floor"]), int(p["rate"])
+    stand_count = faces - floor_ + 1
+    toss_count = floor_ - 1
+    points_numer = stand_count * (floor_ + faces) + toss_count * (faces + 1)
+    return {
+        "standCount": stand_count,
+        "tossCount": toss_count,
+        "standMean": (floor_ + faces) / 2,
+        "freshMean": (faces + 1) / 2,
+        "pointsNumer": points_numer,
+        "points": points_numer / (2 * faces),
+        "evNoRule": (rate * (faces + 1)) / 2,
+        "ev": (rate * points_numer) / (2 * faces),
+    }
+
+
+def one_optional_reroll_brute(p):
+    """Walk the whole outcome tree the rule creates — every first roll, and for the ones it
+    throws out every second roll underneath — and average the payout over the leaves. Neither
+    branch is averaged on its own and no conditional midpoint is formed, which is exactly the
+    step the template's derivation depends on."""
+    faces, floor_, rate = int(p["faces"]), int(p["floor"]), int(p["rate"])
+    total = Fraction(0)
+    leaf = Fraction(1, faces)
+    for first in range(1, faces + 1):
+        if first >= floor_:
+            total += leaf * Fraction(rate * first)
+        else:
+            for second in range(1, faces + 1):
+                total += leaf * Fraction(1, faces) * Fraction(rate * second)
+    return float(total)
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -225,4 +466,12 @@ SOLVERS = {
     "ev-variance/profit-net-of-cost": {"exact": profit_net_of_cost_exact, "brute": profit_net_of_cost_brute},
     "ev-variance/binomial-mean": {"exact": binomial_mean_exact, "brute": binomial_mean_brute},
     "ev-variance/indicator-match-count": {"exact": indicator_match_count_exact, "brute": indicator_match_count_brute},
+    "ev-variance/two-outcome-variance": {"exact": two_outcome_variance_exact, "brute": two_outcome_variance_brute},
+    "ev-variance/spinner-pmf-variance": {"exact": spinner_pmf_variance_exact, "brute": spinner_pmf_variance_brute},
+    "ev-variance/affine-scaling-sd": {"exact": affine_scaling_sd_exact, "brute": affine_scaling_sd_brute},
+    "ev-variance/push-branch-bet": {"exact": push_branch_bet_exact, "brute": push_branch_bet_brute},
+    "ev-variance/sum-of-bets-variance": {"exact": sum_of_bets_variance_exact, "brute": sum_of_bets_variance_brute},
+    "ev-variance/urn-choice-total-expectation": {"exact": urn_choice_total_expectation_exact, "brute": urn_choice_total_expectation_brute},
+    "ev-variance/max-of-two-dice": {"exact": max_of_two_dice_exact, "brute": max_of_two_dice_brute},
+    "ev-variance/one-optional-reroll": {"exact": one_optional_reroll_exact, "brute": one_optional_reroll_brute},
 }

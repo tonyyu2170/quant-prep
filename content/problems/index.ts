@@ -62,6 +62,14 @@ import { labeledTicketsDraw } from "./ev-variance/labeled-tickets-draw";
 import { profitNetOfCost } from "./ev-variance/profit-net-of-cost";
 import { binomialMean } from "./ev-variance/binomial-mean";
 import { indicatorMatchCount } from "./ev-variance/indicator-match-count";
+import { twoOutcomeVariance } from "./ev-variance/two-outcome-variance";
+import { spinnerPmfVariance } from "./ev-variance/spinner-pmf-variance";
+import { affineScalingSd } from "./ev-variance/affine-scaling-sd";
+import { pushBranchBet } from "./ev-variance/push-branch-bet";
+import { sumOfBetsVariance } from "./ev-variance/sum-of-bets-variance";
+import { urnChoiceTotalExpectation } from "./ev-variance/urn-choice-total-expectation";
+import { maxOfTwoDice } from "./ev-variance/max-of-two-dice";
+import { oneOptionalReroll } from "./ev-variance/one-optional-reroll";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -127,6 +135,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   profitNetOfCost,
   binomialMean,
   indicatorMatchCount,
+  twoOutcomeVariance,
+  spinnerPmfVariance,
+  affineScalingSd,
+  pushBranchBet,
+  sumOfBetsVariance,
+  urnChoiceTotalExpectation,
+  maxOfTwoDice,
+  oneOptionalReroll,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
