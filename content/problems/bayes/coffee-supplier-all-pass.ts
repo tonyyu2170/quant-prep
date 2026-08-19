@@ -37,8 +37,8 @@ export const coffeeSupplierAllPass: ProblemTemplate = {
   solution: (p, d) => [
     { title: "Setup", body: `Let $A,B$ = supplier, $P$ = all ${p.n} tested beans pass. Given $P(A)=${p.priorA}$, $P(B)=${fmtNum(d.priorB)}$, per-bean pass rates $P(\\text{pass}\\mid A)=1-${p.defA}=${fmtNum(d.passA)}$ and $P(\\text{pass}\\mid B)=1-${p.defB}=${fmtNum(d.passB)}$.` },
     { title: "Likelihood of the whole sample", body: `With ${p.n} beans tested independently, $P(P\\mid A)=${fmtNum(d.passA)}^{${p.n}}=${fmtNum(d.passAn)}$ and $P(P\\mid B)=${fmtNum(d.passB)}^{${p.n}}=${fmtNum(d.passBn)}$.` },
-    { title: "Joint masses", body: `$${p.priorA}\\times${fmtNum(d.passAn)}=${fmtNum(d.numA)}$ for Supplier A, $${fmtNum(d.priorB)}\\times${fmtNum(d.passBn)}=${fmtNum(d.numB)}$ for Supplier B.` },
-    { title: "Posterior", body: `$P(P)=${fmtNum(d.numA)}+${fmtNum(d.numB)}=${fmtNum(d.denom)}$, so $P(A\\mid P)=${fmtNum(d.numA)}/${fmtNum(d.denom)}=${fmtNum(d.postA)}$.` },
+    { title: "Joint masses", body: `$${p.priorA}\\times${fmtNum(d.passA)}^{${p.n}}=${fmtNum(d.numA)}$ for Supplier A, $${fmtNum(d.priorB)}\\times${fmtNum(d.passB)}^{${p.n}}=${fmtNum(d.numB)}$ for Supplier B.` },
+    { title: "Posterior", body: `$P(P)=${p.priorA}\\times${fmtNum(d.passA)}^{${p.n}}+${fmtNum(d.priorB)}\\times${fmtNum(d.passB)}^{${p.n}}=${fmtNum(d.denom)}$, so $P(A\\mid P)=\\dfrac{${p.priorA}\\times${fmtNum(d.passA)}^{${p.n}}}{${p.priorA}\\times${fmtNum(d.passA)}^{${p.n}}+${fmtNum(d.priorB)}\\times${fmtNum(d.passB)}^{${p.n}}}=${fmtNum(d.postA)}$.` },
     { title: "Sanity check", body: `Supplier A's per-bean pass rate exceeds Supplier B's in every case here, so a run of all-clean beans can only push the posterior above the raw prior — and $${fmtNum(d.postA)} > ${p.priorA}$ holds.` },
   ],
   keyInsight: "When two hypotheses start with unequal prior weight, a string of matching evidence has to overcome the prior imbalance as well as the likelihood gap — the prior odds and the per-item likelihood ratio raised to the sample size both get multiplied together in one update, not evaluated separately.",

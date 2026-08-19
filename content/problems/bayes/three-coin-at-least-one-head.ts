@@ -39,9 +39,9 @@ export const threeCoinAtLeastOneHead: ProblemTemplate = {
     const exactlyTwoList = seqs.filter((s) => s.heads === 2).map((s) => s.seq).join(", ");
     return [
       { title: "Setup", body: `Each flip lands heads independently with probability ${p.headProb}. The eight possible three-flip sequences are ${allList}, each with its own probability from multiplying per-flip odds.` },
-      { title: "Condition on at least one head", body: `Excluding only the all-tails sequence, the sequences with at least one head are ${atLeastOneList}. Its probability is $1-P(\\text{TTT})=1-${fmtNum(d.tailProb)}^{3}=1-${fmtNum(d.pAllTails)}=${fmtNum(d.pAtLeastOne)}$.` },
-      { title: "Isolate exactly two heads", body: `The sequences with exactly two heads are ${exactlyTwoList} — three sequences, each with probability $${p.headProb}^{2}\\times${fmtNum(d.tailProb)}=${fmtNum(d.pOneTwoHeadSeq)}$, giving $P(\\text{exactly two})=3\\times${fmtNum(d.pOneTwoHeadSeq)}=${fmtNum(d.pExactlyTwo)}$.` },
-      { title: "Conditional probability", body: `$P(\\text{exactly two}\\mid\\text{at least one})=${fmtNum(d.pExactlyTwo)}/${fmtNum(d.pAtLeastOne)}=${fmtNum(d.postExactlyTwo)}$.` },
+      { title: "Condition on at least one head", body: `Excluding only the all-tails sequence, the sequences with at least one head are ${atLeastOneList}. Its probability is $1-P(\\text{TTT})=1-${fmtNum(d.tailProb)}^{3}=${fmtNum(d.pAtLeastOne)}$.` },
+      { title: "Isolate exactly two heads", body: `The sequences with exactly two heads are ${exactlyTwoList} — three sequences, each with probability $${p.headProb}^{2}\\times${fmtNum(d.tailProb)}=${fmtNum(d.pOneTwoHeadSeq)}$, giving $P(\\text{exactly two})=3\\times${p.headProb}^{2}\\times${fmtNum(d.tailProb)}=${fmtNum(d.pExactlyTwo)}$.` },
+      { title: "Conditional probability", body: `$P(\\text{exactly two}\\mid\\text{at least one})=\\dfrac{3\\times${p.headProb}^{2}\\times${fmtNum(d.tailProb)}}{1-${fmtNum(d.tailProb)}^{3}}=${fmtNum(d.postExactlyTwo)}$.` },
       { title: "Sanity check", body: `Exactly two heads already implies at least one head, so its raw (unconditional) probability $${fmtNum(d.pExactlyTwo)}$ must be less than the conditional probability, since dividing by $${fmtNum(d.pAtLeastOne)}<1$ can only increase it — and $${fmtNum(d.pExactlyTwo)} < ${fmtNum(d.postExactlyTwo)}$ holds.` },
     ];
   },

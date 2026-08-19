@@ -54,6 +54,36 @@ import { surjectionsNoEmptyBin } from "./counting/surjections-no-empty-bin";
 import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-node";
 import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
 import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
+import { twoOutcomeBet } from "./ev-variance/two-outcome-bet";
+import { diePayoffTable } from "./ev-variance/die-payoff-table";
+import { raffleFairPrice } from "./ev-variance/raffle-fair-price";
+import { sumOfTwoDraws } from "./ev-variance/sum-of-two-draws";
+import { labeledTicketsDraw } from "./ev-variance/labeled-tickets-draw";
+import { profitNetOfCost } from "./ev-variance/profit-net-of-cost";
+import { binomialMean } from "./ev-variance/binomial-mean";
+import { indicatorMatchCount } from "./ev-variance/indicator-match-count";
+import { twoOutcomeVariance } from "./ev-variance/two-outcome-variance";
+import { spinnerPmfVariance } from "./ev-variance/spinner-pmf-variance";
+import { affineScalingSd } from "./ev-variance/affine-scaling-sd";
+import { pushBranchBet } from "./ev-variance/push-branch-bet";
+import { sumOfBetsVariance } from "./ev-variance/sum-of-bets-variance";
+import { urnChoiceTotalExpectation } from "./ev-variance/urn-choice-total-expectation";
+import { maxOfTwoDice } from "./ev-variance/max-of-two-dice";
+import { oneOptionalReroll } from "./ev-variance/one-optional-reroll";
+import { geometricWaitingTime } from "./ev-variance/geometric-waiting-time";
+import { hypergeometricMean } from "./ev-variance/hypergeometric-mean";
+import { cappedPayoff } from "./ev-variance/capped-payoff";
+import { insuranceBreakEvenPremium } from "./ev-variance/insurance-break-even-premium";
+import { distinctTypesCollected } from "./ev-variance/distinct-types-collected";
+import { binomialVariance } from "./ev-variance/binomial-variance";
+import { equalEvSdComparison } from "./ev-variance/equal-ev-sd-comparison";
+import { conditionalExpectationGivenEvent } from "./ev-variance/conditional-expectation-given-event";
+import { matchingIndicatorsVariance } from "./ev-variance/matching-indicators-variance";
+import { patternWaitingHhHt } from "./ev-variance/pattern-waiting-hh-ht";
+import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value";
+import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
+import { waldRandomSum } from "./ev-variance/wald-random-sum";
+import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -111,6 +141,36 @@ export const PROBLEMS: ProblemTemplate[] = [
   latticePathsForbiddenNode,
   pigeonholeExtremal,
   twoPairVsFullHouse,
+  twoOutcomeBet,
+  diePayoffTable,
+  raffleFairPrice,
+  sumOfTwoDraws,
+  labeledTicketsDraw,
+  profitNetOfCost,
+  binomialMean,
+  indicatorMatchCount,
+  twoOutcomeVariance,
+  spinnerPmfVariance,
+  affineScalingSd,
+  pushBranchBet,
+  sumOfBetsVariance,
+  urnChoiceTotalExpectation,
+  maxOfTwoDice,
+  oneOptionalReroll,
+  geometricWaitingTime,
+  hypergeometricMean,
+  cappedPayoff,
+  insuranceBreakEvenPremium,
+  distinctTypesCollected,
+  binomialVariance,
+  equalEvSdComparison,
+  conditionalExpectationGivenEvent,
+  matchingIndicatorsVariance,
+  patternWaitingHhHt,
+  twoRerollStoppingValue,
+  truncatedDoublingGame,
+  waldRandomSum,
+  samplingWithoutReplacementVariance,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
