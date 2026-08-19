@@ -810,6 +810,103 @@ def pattern_waiting_hh_ht_brute(p):
     return float(cost * e0)
 
 
+def two_reroll_stopping_value_exact(p):
+    n, rate = int(p["sectors"]), int(p["rate"])
+    last_mean = (n + 1) / 2
+    mid_low = int(last_mean // 1)
+    mid_top_sum = (n * (n + 1) - mid_low * (mid_low + 1)) / 2
+    mid_numer = 2 * mid_top_sum + mid_low * (n + 1)
+    mid_value = mid_numer / (2 * n)
+    top_low = int(mid_value // 1)
+    top_top_sum = (n * (n + 1) - top_low * (top_low + 1)) / 2
+    top_numer = 2 * n * top_top_sum + top_low * mid_numer
+    return {
+        "lastMean": last_mean,
+        "midLow": mid_low,
+        "midKeep": mid_low + 1,
+        "midTopSum": mid_top_sum,
+        "midNumer": mid_numer,
+        "midValue": mid_value,
+        "topLow": top_low,
+        "topKeep": top_low + 1,
+        "topTopSum": top_top_sum,
+        "topNumer": top_numer,
+        "topValue": top_numer / (2 * n * n),
+        "evMid": (rate * mid_numer) / (2 * n),
+        "bestNumer": 4 * n * n - (n - 1) * (n - 1),
+        "evBest": (rate * (4 * n * n - (n - 1) * (n - 1))) / (4 * n),
+        "ev": (rate * top_numer) / (2 * n * n),
+    }
+
+
+def two_reroll_stopping_value_brute(p):
+    """Search the policy space instead of recursing backwards. A policy is the set of numbers
+    it stops on at each stage, and a stage's value depends on its set only through how many
+    numbers are in it and what they add up to — the value formula below reads nothing else off
+    the set — so enumerating the achievable (count, sum) pairs covers all 2^n subsets without
+    ever assuming the best set is a top slice or that a threshold rule is optimal. Those pairs
+    are built by a subset-sum walk over the sectors. Stage two is maximised first because the
+    first stage's value rises with it and its coefficient, the count of sectors thrown back,
+    can never be negative; for a small enough spinner the two stages are then also searched
+    JOINTLY over every pair of subsets, which tests that split rather than asserting it.
+    Everything runs in integers scaled by twice the squared sector count, so no floor, no
+    threshold and no stage-value formula from the template appears anywhere."""
+    n, rate = int(p["sectors"]), int(p["rate"])
+    classes = {(0, 0)}
+    for x in range(1, n + 1):
+        classes |= {(k + 1, s + x) for k, s in classes}
+    # A second-spin policy stopping on k numbers totalling s is worth 2*s + (n-k)*(n+1),
+    # scaled by 2n; a first-spin policy on top of it is worth 2n*s + (n-k)*that, scaled by 2n^2.
+    best2 = max(2 * s + (n - k) * (n + 1) for k, s in classes)
+    best3 = max(2 * n * s + (n - k) * best2 for k, s in classes)
+    if n <= 8:
+        subsets = [(bin(m).count("1"), sum(x for x in range(1, n + 1) if m >> (x - 1) & 1))
+                   for m in range(1 << n)]
+        joint = max(2 * n * s1 + (n - k1) * (2 * s2 + (n - k2) * (n + 1))
+                    for k1, s1 in subsets for k2, s2 in subsets)
+        assert joint == best3, (joint, best3)
+    return float(Fraction(rate * best3, 2 * n * n))
+
+
+def truncated_doubling_game_exact(p):
+    rounds, stake = int(p["rounds"]), int(p["stake"])
+    pot_mult = 2.0 ** rounds
+    return {
+        "potMult": pot_mult,
+        "maxPay": stake * pot_mult,
+        "pAll": 1 / pot_mult,
+        "half": stake / 2,
+        "ladder": (rounds * stake) / 2,
+        "evShorter": ((rounds + 1) * stake) / 2,
+        "ev": ((rounds + 2) * stake) / 2,
+    }
+
+
+def truncated_doubling_game_brute(p):
+    """Walk the ladder rung by rung. The game ends on flip j when j-1 heads are followed by a
+    tail, paying the pot as it stands then; one further branch survives the cap on all heads.
+    Every branch's chance and pot is written out and the products summed in exact rationals, so
+    the collapsed half-a-stake-per-round the template turns on never appears. For a cap short
+    enough to enumerate, the same figure is rebuilt from every individual sequence of flips,
+    which shares no line with the branch sum either."""
+    rounds, stake = int(p["rounds"]), int(p["stake"])
+    total = Fraction(0)
+    for j in range(1, rounds + 1):
+        total += Fraction(1, 2 ** j) * stake * 2 ** (j - 1)
+    total += Fraction(1, 2 ** rounds) * stake * 2 ** rounds
+    if rounds <= 12:
+        each = Fraction(0)
+        for seq in product((1, 0), repeat=rounds):   # 1 = head, 0 = tail
+            heads = 0
+            for flip in seq:
+                if flip == 0:
+                    break
+                heads += 1
+            each += Fraction(stake * 2 ** heads, 2 ** rounds)
+        assert each == total, (each, total)
+    return float(total)
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -837,4 +934,6 @@ SOLVERS = {
     "ev-variance/conditional-expectation-given-event": {"exact": conditional_expectation_given_event_exact, "brute": conditional_expectation_given_event_brute},
     "ev-variance/matching-indicators-variance": {"exact": matching_indicators_variance_exact, "brute": matching_indicators_variance_brute},
     "ev-variance/pattern-waiting-hh-ht": {"exact": pattern_waiting_hh_ht_exact, "brute": pattern_waiting_hh_ht_brute},
+    "ev-variance/two-reroll-stopping-value": {"exact": two_reroll_stopping_value_exact, "brute": two_reroll_stopping_value_brute},
+    "ev-variance/truncated-doubling-game": {"exact": truncated_doubling_game_exact, "brute": truncated_doubling_game_brute},
 }

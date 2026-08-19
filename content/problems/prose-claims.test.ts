@@ -463,6 +463,53 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.cost * d.flips - d.spend) < EPS,
       breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
   ],
+  "two-reroll-stopping-value": [
+    { says: "Sanity: the two-spin game is worth strictly less, an option you may decline cannot hurt",
+      holds: (p, d) => same((p.rate * d.midNumer) / (2 * p.sectors), d.evMid) && P(d.evMid) < P(d.ev),
+      breaks: (_p, d) => ({ ...d, evMid: d.ev }) },
+    // The clairvoyant figure is re-enumerated here rather than re-typed: the prose claims what
+    // someone seeing all three spins would collect, so the predicate takes the best of three
+    // over the whole spinner and checks the printed bracket against it.
+    { says: "Sanity and commonTrap: the best of three seen in advance is a strictly larger figure",
+      holds: (p, d) => {
+        let bestOfThree = 0;
+        for (let x = 1; x <= p.sectors; x++) bestOfThree += x * (x ** 3 - (x - 1) ** 3);
+        bestOfThree = (p.rate * bestOfThree) / p.sectors ** 3;
+        return Math.abs(bestOfThree - d.evBest) < EPS && P(d.ev) < P(d.evBest);
+      },
+      breaks: (_p, d) => ({ ...d, evBest: d.ev }) },
+    { says: "keyInsight: each stage's threshold is the next stage's value, and the stages rise",
+      holds: (_p, d) => d.midLow === Math.floor(d.lastMean) && d.topLow === Math.floor(d.midValue)
+        && d.midKeep === d.midLow + 1 && d.topKeep === d.topLow + 1
+        && d.lastMean < d.midValue - EPS && d.midValue < d.topValue - EPS,
+      breaks: (_p, d) => ({ ...d, topLow: d.topLow + 1 }) },
+    { says: "Value the spins and price them: each stage pools the kept sectors with the rejected ones valued at the next stage",
+      holds: (p, d) => d.midTopSum === (p.sectors * (p.sectors + 1) - d.midLow * (d.midLow + 1)) / 2
+        && d.midNumer === 2 * d.midTopSum + d.midLow * (p.sectors + 1)
+        && d.topTopSum === (p.sectors * (p.sectors + 1) - d.topLow * (d.topLow + 1)) / 2
+        && d.topNumer === 2 * p.sectors * d.topTopSum + d.topLow * d.midNumer
+        && Math.abs(p.rate * d.topValue - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+  ],
+  "truncated-doubling-game": [
+    { says: "Sanity: capping one round shorter is worth exactly half a stake less, as printed",
+      holds: (p, d) => Math.abs(d.evShorter - ((p.rounds + 1) * p.stake) / 2) < EPS
+        && same(d.evShorter + p.stake / 2, d.ev),
+      breaks: (_p, d) => ({ ...d, evShorter: d.evShorter + 1 }) },
+    { says: "Sanity and commonTrap: the answer beats the bare stake and falls far short of the fully doubled pot",
+      holds: (p, d) => P(p.stake) < P(d.ev) && P(d.ev) < P(d.maxPay),
+      breaks: (_p, d) => ({ ...d, ev: d.maxPay }) },
+    { says: "keyInsight: every round contributes half a stake and the all-heads branch contributes exactly one",
+      holds: (p, d) => Math.abs(d.half - p.stake / 2) < EPS
+        && Math.abs(d.ladder - p.rounds * d.half) < EPS
+        && Math.abs(d.maxPay * d.pAll - p.stake) < EPS
+        && Math.abs(d.ladder + p.stake - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+    { says: "The branch that runs the whole way: the pot multiplier, its chance and the top pot agree with the cap",
+      holds: (p, d) => d.potMult === 2 ** p.rounds && Math.abs(d.pAll * d.potMult - 1) < EPS
+        && d.maxPay === p.stake * d.potMult,
+      breaks: (_p, d) => ({ ...d, potMult: d.potMult * 2 }) },
+  ],
 };
 
 const templateFor = (slug: string) =>

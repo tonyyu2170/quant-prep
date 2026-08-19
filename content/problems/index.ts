@@ -80,6 +80,8 @@ import { equalEvSdComparison } from "./ev-variance/equal-ev-sd-comparison";
 import { conditionalExpectationGivenEvent } from "./ev-variance/conditional-expectation-given-event";
 import { matchingIndicatorsVariance } from "./ev-variance/matching-indicators-variance";
 import { patternWaitingHhHt } from "./ev-variance/pattern-waiting-hh-ht";
+import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value";
+import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -163,6 +165,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   conditionalExpectationGivenEvent,
   matchingIndicatorsVariance,
   patternWaitingHhHt,
+  twoRerollStoppingValue,
+  truncatedDoublingGame,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
