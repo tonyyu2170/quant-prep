@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtNum, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
+import { fmtNum, normalCdf, normalQuantile, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
 import { PROBLEMS, byId } from "./index";
 import { forEachLegalDraw } from "./draw-space.test";
 
@@ -893,6 +893,54 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "commonTrap: the answer is not the elapsed-wait survival probability alone, which conflates the already-observed wait with the further wait actually being asked about",
       holds: (p, d) => P(d.answer) !== P(Math.exp(-p.lam * p.s)),
       breaks: (p, d) => ({ ...d, answer: Math.exp(-p.lam * p.s) }) },
+  ],
+
+  "distributions/normal-below": [
+    { says: "Sanity: the answer sits at or above one half exactly when the threshold sits at or above the mean",
+      holds: (p, d) => (d.z >= 0) === (d.answer >= 0.5),
+      breaks: (_p, d) => ({ ...d, answer: d.z >= 0 ? 0.1 : 0.9 }) },
+    { says: "Combine: the answer equals the standard normal CDF at the standardized z-score, exactly",
+      holds: (p, d) => Math.abs(normalCdf(p.x, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the z-score itself",
+      holds: (p, d) => P(d.answer) !== P(d.z),
+      breaks: (_p, d) => ({ ...d, answer: d.z }) },
+  ],
+
+  "distributions/normal-above": [
+    { says: "Sanity: the below-threshold and above-threshold probabilities partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.below) + P(d.answer) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, below: 0 }) },
+    { says: "Combine: the answer equals one minus the standard normal CDF at the standardized z-score, exactly",
+      holds: (p, d) => Math.abs(1 - normalCdf(p.x, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the below-threshold CDF itself",
+      holds: (p, d) => P(d.answer) !== P(d.below),
+      breaks: (_p, d) => ({ ...d, answer: d.below }) },
+  ],
+
+  "distributions/normal-between": [
+    { says: "Sanity: the lower endpoint's CDF never exceeds the upper endpoint's, since a<b",
+      holds: (p, d) => d.cdfA <= d.cdfB + EPS,
+      breaks: (_p, d) => ({ ...d, cdfA: d.cdfB + 0.05 }) },
+    { says: "Combine: the answer equals the difference of the two endpoint CDFs, exactly",
+      holds: (p, d) => Math.abs(normalCdf(p.b, p.mu, p.sigma) - normalCdf(p.a, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the upper endpoint's CDF alone, which forgets to subtract the lower endpoint's CDF",
+      holds: (p, d) => P(d.answer) !== P(d.cdfB),
+      breaks: (_p, d) => ({ ...d, answer: d.cdfB }) },
+  ],
+
+  "distributions/normal-quantile-then-range": [
+    { says: "Sanity: the threshold found in stage one matches the quantile function's own independent computation",
+      holds: (p, d) => Math.abs(normalQuantile(1 - p.c, p.mu, p.sigma) - d.x) < 1e-6,
+      breaks: (_p, d) => ({ ...d, x: d.x * 1.05 }) },
+    { says: "Combine: the answer equals the difference of the two stage-two endpoint CDFs, exactly",
+      holds: (p, d) => Math.abs(normalCdf(d.x + p.d, p.mu, p.sigma) - normalCdf(d.x - p.d, p.mu, p.sigma) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "commonTrap: the answer is not the first-stage tail probability c reused directly",
+      holds: (p, d) => P(d.answer) !== P(p.c),
+      breaks: (p, d) => ({ ...d, answer: p.c }) },
   ],
 };
 

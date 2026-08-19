@@ -105,6 +105,10 @@ import { cuniformBelowThreshold } from "./distributions/cuniform-below-threshold
 import { exponentialCdfThreshold } from "./distributions/exponential-cdf-threshold";
 import { exponentialFitRate } from "./distributions/exponential-fit-rate";
 import { exponentialMemoryless } from "./distributions/exponential-memoryless";
+import { normalBelow } from "./distributions/normal-below";
+import { normalAbove } from "./distributions/normal-above";
+import { normalBetween } from "./distributions/normal-between";
+import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -213,6 +217,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   exponentialCdfThreshold,
   exponentialFitRate,
   exponentialMemoryless,
+  normalBelow,
+  normalAbove,
+  normalBetween,
+  normalQuantileThenRange,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

@@ -7,6 +7,9 @@ re-calling the template's closed form."""
 import itertools
 from math import comb, exp, log
 
+import numpy as np
+from scipy.stats import norm
+
 
 def binomial_exact_count_exact(p):
     n, k, fail_pct = int(p["n"]), int(p["k"]), p["failPct"]
@@ -490,6 +493,103 @@ def exponential_memoryless_sim(p, rng, trials=15_000_000, chunk=3_000_000):
     return est, se
 
 
+def normal_below_exact(p):
+    mu, sigma, x = p["mu"], p["sigma"], p["x"]
+    z = (x - mu) / sigma
+    answer = norm.cdf(x, mu, sigma)
+    return {"z": z, "answer": answer}
+
+
+def normal_below_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    mu, sigma, x = p["mu"], p["sigma"], p["x"]
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.normal(mu, sigma, n)
+        hits += int((draws < x).sum())
+        done += n
+    est = hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
+def normal_above_exact(p):
+    mu, sigma, x = p["mu"], p["sigma"], p["x"]
+    z = (x - mu) / sigma
+    below = norm.cdf(x, mu, sigma)
+    answer = 1 - below
+    return {"z": z, "below": below, "answer": answer}
+
+
+def normal_above_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    """Estimates P(X>x) directly, not as 1-P(X<x) — a genuinely separate tail count."""
+    mu, sigma, x = p["mu"], p["sigma"], p["x"]
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.normal(mu, sigma, n)
+        hits += int((draws > x).sum())
+        done += n
+    est = hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
+def normal_between_exact(p):
+    mu, sigma, a, b = p["mu"], p["sigma"], p["a"], p["b"]
+    cdf_a = norm.cdf(a, mu, sigma)
+    cdf_b = norm.cdf(b, mu, sigma)
+    answer = cdf_b - cdf_a
+    return {"cdfA": cdf_a, "cdfB": cdf_b, "answer": answer}
+
+
+def normal_between_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    mu, sigma, a, b = p["mu"], p["sigma"], p["a"], p["b"]
+    hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.normal(mu, sigma, n)
+        hits += int(((draws > a) & (draws < b)).sum())
+        done += n
+    est = hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
+def normal_quantile_then_range_exact(p):
+    mu, sigma, c, d = p["mu"], p["sigma"], p["c"], p["d"]
+    x = norm.ppf(1 - c, mu, sigma)
+    cdf_upper = norm.cdf(x + d, mu, sigma)
+    cdf_lower = norm.cdf(x - d, mu, sigma)
+    answer = cdf_upper - cdf_lower
+    return {"x": x, "cdfUpper": cdf_upper, "cdfLower": cdf_lower, "answer": answer}
+
+
+def normal_quantile_then_range_sim(p, rng, trials=15_000_000, chunk=3_000_000):
+    """Recomputes x fresh via scipy (brute() never receives derived), confirms it reproduces c
+    via an independent tail count, then estimates the stage-2 range probability — both counts
+    share one pass of draws for efficiency, but are genuinely separate tallies."""
+    mu, sigma, c, d = p["mu"], p["sigma"], p["c"], p["d"]
+    x = norm.ppf(1 - c, mu, sigma)
+    tail_hits = 0
+    stage2_hits = 0
+    done = 0
+    while done < trials:
+        n = min(chunk, trials - done)
+        draws = rng.normal(mu, sigma, n)
+        tail_hits += int((draws > x).sum())
+        stage2_hits += int((np.abs(draws - x) < d).sum())
+        done += n
+    tail_est = tail_hits / trials
+    assert abs(tail_est - c) < 0.01, f"quantile does not reproduce c: {tail_est} vs {c}"
+    est = stage2_hits / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return est, se
+
+
 SOLVERS = {
     "distributions/binomial-exact-count": {"exact": binomial_exact_count_exact, "brute": binomial_exact_count_brute},
     "distributions/binomial-at-most": {"exact": binomial_at_most_exact, "brute": binomial_at_most_brute},
@@ -512,4 +612,8 @@ SOLVERS = {
     "distributions/exponential-cdf-threshold": {"exact": exponential_cdf_threshold_exact, "simulate": exponential_cdf_threshold_sim},
     "distributions/exponential-fit-rate": {"exact": exponential_fit_rate_exact, "simulate": exponential_fit_rate_sim},
     "distributions/exponential-memoryless": {"exact": exponential_memoryless_exact, "simulate": exponential_memoryless_sim},
+    "distributions/normal-below": {"exact": normal_below_exact, "simulate": normal_below_sim},
+    "distributions/normal-above": {"exact": normal_above_exact, "simulate": normal_above_sim},
+    "distributions/normal-between": {"exact": normal_between_exact, "simulate": normal_between_sim},
+    "distributions/normal-quantile-then-range": {"exact": normal_quantile_then_range_exact, "simulate": normal_quantile_then_range_sim},
 }
