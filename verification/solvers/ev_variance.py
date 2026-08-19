@@ -7,7 +7,7 @@ the template's closed form. Only brute() carries the independence requirement, w
 in Fraction where the space is rational, and returns float() explicitly."""
 
 from fractions import Fraction
-from itertools import permutations
+from itertools import combinations, permutations
 from math import factorial
 
 
@@ -457,6 +457,142 @@ def one_optional_reroll_brute(p):
             for second in range(1, faces + 1):
                 total += leaf * Fraction(1, faces) * Fraction(rate * second)
     return float(total)
+
+def geometric_waiting_time_exact(p):
+    faces, k, cost = int(p["faces"]), int(p["k"]), int(p["cost"])
+    win_faces = faces - k + 1
+    return {
+        "winFaces": win_faces,
+        "missFaces": k - 1,
+        "pEnd": win_faces / faces,
+        "rolls": faces / win_faces,
+        "evEasier": (cost * faces) / (win_faces + 1),
+        "spend": (cost * faces) / win_faces,
+    }
+
+
+def geometric_waiting_time_brute(p):
+    """Assemble the first-step equation by walking the faces of one roll — each face pays its
+    share of a roll's cost, and a miss additionally carries the whole unknown back to the
+    right-hand side — then solve the resulting linear equation in a single unknown. The
+    reciprocal faces/winFaces is never formed. A truncated series over the wait distribution is
+    computed as a second reading and asserted to agree; its tail is cut far below the 1e-9
+    verify.py compares at."""
+    faces, k, cost = int(p["faces"]), int(p["k"]), int(p["cost"])
+    coeff = Fraction(1)   # what multiplies the unknown once the misses are folded in
+    const = Fraction(0)   # what does not
+    for face in range(1, faces + 1):
+        share = Fraction(1, faces)
+        const += share * cost
+        if face < k:
+            coeff -= share
+    solved = const / coeff
+
+    q = (k - 1) / faces
+    hit = 1 - q
+    series, prob, n = 0.0, hit, 1
+    while n < 100000:
+        series += n * prob * cost
+        prob *= q
+        if q ** n * cost * (n + 1 / hit) < 1e-12:
+            break
+        n += 1
+    assert abs(series - float(solved)) < 1e-9, (series, float(solved))
+    return float(solved)
+
+
+def hypergeometric_mean_exact(p):
+    pool, special, draws, rate = int(p["pool"]), int(p["special"]), int(p["draws"]), int(p["rate"])
+    plain = pool - special
+    return {
+        "plain": plain,
+        "perDraw": special / pool,
+        "meanWin": (draws * special) / pool,
+        "meanPlain": (draws * plain) / pool,
+        "maxPay": rate * draws,
+        "ev": (rate * draws * special) / pool,
+    }
+
+
+def hypergeometric_mean_brute(p):
+    """Enumerate every combination of tickets that could come out of the box, count the winners
+    inside each one, and average the payout over the combinations. No per-ticket probability is
+    formed and linearity is never invoked — the dependence between draws is carried explicitly
+    by the enumeration, which is exactly the step the template's argument sidesteps."""
+    pool, special, draws, rate = int(p["pool"]), int(p["special"]), int(p["draws"]), int(p["rate"])
+    tickets = [1] * special + [0] * (pool - special)
+    total, seen = Fraction(0), 0
+    for combo in combinations(range(pool), draws):
+        total += Fraction(rate * sum(tickets[i] for i in combo))
+        seen += 1
+    return float(total / seen)
+
+
+def capped_payoff_exact(p):
+    faces, cap_face, rate = int(p["faces"]), int(p["capFace"]), int(p["rate"])
+    capped_faces = faces - cap_face
+    cap = rate * cap_face
+    low_total = (rate * cap_face * (cap_face + 1)) / 2
+    high_total = capped_faces * cap
+    return {
+        "cap": cap,
+        "cappedFaces": capped_faces,
+        "lowTotal": low_total,
+        "highTotal": high_total,
+        "evUncapped": (rate * (faces + 1)) / 2,
+        "ev": (low_total + high_total) / faces,
+    }
+
+
+def capped_payoff_brute(p):
+    """Walk the faces one at a time, apply the cap inside each face's own payout, and average
+    over the faces. The face at which the cap starts to bite is never located and no run of
+    consecutive numbers is ever summed in closed form, which is the whole of the template's
+    derivation."""
+    faces, cap_face, rate = int(p["faces"]), int(p["capFace"]), int(p["rate"])
+    cap = rate * cap_face
+    total = Fraction(0)
+    for face in range(1, faces + 1):
+        total += Fraction(min(rate * face, cap))
+    return float(total / faces)
+
+
+def insurance_break_even_premium_exact(p):
+    minor_pct, total_pct = int(p["minorPct"]), int(p["totalPct"])
+    minor, total, admin = int(p["minor"]), int(p["total"]), int(p["admin"])
+    minor_leg = (minor_pct * minor) / 100
+    total_leg = (total_pct * total) / 100
+    premium = minor_leg + total_leg + admin
+    return {
+        "noClaimPct": 100 - minor_pct - total_pct,
+        "minorLeg": minor_leg,
+        "totalLeg": total_leg,
+        "expPayout": minor_leg + total_leg,
+        "collect100": 100 * premium,
+        "payOut100": minor_pct * minor + total_pct * total + 100 * admin,
+        "premium": premium,
+    }
+
+
+def insurance_break_even_premium_brute(p):
+    """Lay the policy out as a hundred equally likely policy-years, each carrying the payout of
+    whichever branch it belongs to, and average across them. Then SOLVE for the break-even
+    price rather than assembling it: evaluate the insurer's profit line at two prices and take
+    its root. Nothing here adds an admin cost onto an expected payout."""
+    minor_pct, total_pct = int(p["minorPct"]), int(p["totalPct"])
+    minor, total, admin = int(p["minor"]), int(p["total"]), int(p["admin"])
+    years = [Fraction(0)] * (100 - minor_pct - total_pct)
+    years += [Fraction(minor)] * minor_pct + [Fraction(total)] * total_pct
+    assert len(years) == 100
+    mean_payout = sum(years) / 100
+
+    def profit(price):
+        return price - mean_payout - admin
+
+    at0, at1 = profit(Fraction(0)), profit(Fraction(1))
+    return float(-at0 / (at1 - at0))   # profit is linear in the price, so this root is exact
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -474,4 +610,8 @@ SOLVERS = {
     "ev-variance/urn-choice-total-expectation": {"exact": urn_choice_total_expectation_exact, "brute": urn_choice_total_expectation_brute},
     "ev-variance/max-of-two-dice": {"exact": max_of_two_dice_exact, "brute": max_of_two_dice_brute},
     "ev-variance/one-optional-reroll": {"exact": one_optional_reroll_exact, "brute": one_optional_reroll_brute},
+    "ev-variance/geometric-waiting-time": {"exact": geometric_waiting_time_exact, "brute": geometric_waiting_time_brute},
+    "ev-variance/hypergeometric-mean": {"exact": hypergeometric_mean_exact, "brute": hypergeometric_mean_brute},
+    "ev-variance/capped-payoff": {"exact": capped_payoff_exact, "brute": capped_payoff_brute},
+    "ev-variance/insurance-break-even-premium": {"exact": insurance_break_even_premium_exact, "brute": insurance_break_even_premium_brute},
 }

@@ -70,6 +70,10 @@ import { sumOfBetsVariance } from "./ev-variance/sum-of-bets-variance";
 import { urnChoiceTotalExpectation } from "./ev-variance/urn-choice-total-expectation";
 import { maxOfTwoDice } from "./ev-variance/max-of-two-dice";
 import { oneOptionalReroll } from "./ev-variance/one-optional-reroll";
+import { geometricWaitingTime } from "./ev-variance/geometric-waiting-time";
+import { hypergeometricMean } from "./ev-variance/hypergeometric-mean";
+import { cappedPayoff } from "./ev-variance/capped-payoff";
+import { insuranceBreakEvenPremium } from "./ev-variance/insurance-break-even-premium";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -143,6 +147,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   urnChoiceTotalExpectation,
   maxOfTwoDice,
   oneOptionalReroll,
+  geometricWaitingTime,
+  hypergeometricMean,
+  cappedPayoff,
+  insuranceBreakEvenPremium,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

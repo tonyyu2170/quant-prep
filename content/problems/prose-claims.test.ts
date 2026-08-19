@@ -271,6 +271,74 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.rate * d.pointsNumer) / (2 * p.faces) - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
+  "geometric-waiting-time": [
+    { says: "Sanity: one more ending face would cost strictly less than the answer",
+      holds: (_p, d) => P(d.evEasier) < P(d.spend),
+      breaks: (_p, d) => ({ ...d, evEasier: d.spend }) },
+    { says: "Sanity: the spend clears the price of the single roll that ends the game",
+      holds: (p, d) => P(d.spend) > P(p.cost),
+      breaks: (p, d) => ({ ...d, spend: p.cost }) },
+    { says: "Count the faces: the misses and the enders partition the die",
+      holds: (p, d) => d.missFaces + d.winFaces === p.faces && Math.abs(d.pEnd - d.winFaces / p.faces) < EPS,
+      breaks: (_p, d) => ({ ...d, missFaces: d.missFaces + 1 }) },
+    // The three above pin only the direction of the spend, so a wrong magnitude would pass all
+    // of them; this one pins the wait against the ending chance and the money against the wait.
+    { says: "keyInsight: the wait inverts the chance one roll ends it, and the spend is that wait priced",
+      holds: (p, d) => Math.abs(d.pEnd * d.rolls - 1) < EPS && Math.abs(p.cost * d.rolls - d.spend) < EPS,
+      nonVacuous: (_p, d) => d.winFaces === 1, // the longest wait, where the reciprocal bites hardest
+      breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
+  ],
+  "hypergeometric-mean": [
+    { says: "Sanity: the winners and the blanks drawn account for every ticket pulled",
+      holds: (p, d) => Math.abs(d.meanWin + d.meanPlain - p.draws) < EPS && d.plain === p.pool - p.special,
+      breaks: (_p, d) => ({ ...d, meanPlain: d.meanPlain + 1 }) },
+    { says: "Sanity: the payout falls short of every drawn ticket coming up a winner",
+      holds: (_p, d) => P(d.ev) < P(d.maxPay),
+      breaks: (_p, d) => ({ ...d, ev: d.maxPay }) },
+    { says: "keyInsight: each ticket carries the box's own proportion, and the count is those chances added up",
+      holds: (p, d) => Math.abs(d.perDraw - p.special / p.pool) < EPS
+        && Math.abs(p.draws * d.perDraw - d.meanWin) < EPS && Math.abs(p.rate * d.meanWin - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+    { says: "commonTrap: what a single ticket is worth falls short by exactly the factor of the number drawn",
+      holds: (p, d) => P(p.rate * d.perDraw) < P(d.ev) && Math.abs(p.draws * p.rate * d.perDraw - d.ev) < EPS,
+      breaks: (p, d) => ({ ...d, ev: p.rate * d.perDraw }) },
+  ],
+  "capped-payoff": [
+    { says: "Sanity: the cap can only take money away from the uncapped average",
+      holds: (_p, d) => P(d.ev) < P(d.evUncapped),
+      breaks: (_p, d) => ({ ...d, ev: d.evUncapped }) },
+    { says: "Sanity: the average payout sits below the cap itself",
+      holds: (_p, d) => P(d.ev) < P(d.cap),
+      breaks: (_p, d) => ({ ...d, ev: d.cap }) },
+    { says: "keyInsight and commonTrap: capping the average overstates the average of the capped payouts",
+      holds: (_p, d) => Math.min(d.evUncapped, d.cap) > d.ev + EPS,
+      nonVacuous: (_p, d) => d.cap < d.evUncapped, // the draws where the trap trims to the cap, not to the plain average
+      breaks: (_p, d) => ({ ...d, ev: Math.min(d.evUncapped, d.cap) }) },
+    { says: "Average over the die: the two regional totals pool and divide",
+      holds: (p, d) => d.cappedFaces === p.faces - p.capFace && d.cap === p.rate * p.capFace
+        && d.lowTotal === (p.rate * p.capFace * (p.capFace + 1)) / 2 && d.highTotal === d.cappedFaces * d.cap
+        && Math.abs((d.lowTotal + d.highTotal) / p.faces - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+  ],
+  "insurance-break-even-premium": [
+    // The ledger is an integer identity on both sides, so it is asserted exactly rather than on
+    // printed values: every leg is a whole dollar by construction of the param steps.
+    { says: "Sanity: the hundred-policy ledger balances to the dollar",
+      holds: (_p, d) => d.collect100 === d.payOut100 && Math.abs(d.collect100 - 100 * d.premium) < EPS,
+      breaks: (_p, d) => ({ ...d, payOut100: d.payOut100 + 100 }) },
+    { says: "Sanity: the price lands below a single total loss and above the paperwork",
+      holds: (p, d) => P(d.premium) < P(p.total) && P(d.premium) > P(p.admin),
+      breaks: (p, d) => ({ ...d, premium: p.admin }) },
+    { says: "commonTrap: charging only the paperwork understates the premium by the expected claims",
+      holds: (p, d) => d.expPayout > EPS && Math.abs(d.premium - p.admin - d.expPayout) < EPS,
+      breaks: (_p, d) => ({ ...d, premium: d.premium * 1.02 }) },
+    { says: "keyInsight: each branch is weighted by how often it arrives, and the quiet years carry none",
+      holds: (p, d) => d.noClaimPct === 100 - p.minorPct - p.totalPct
+        && Math.abs(d.minorLeg - (p.minorPct * p.minor) / 100) < EPS
+        && Math.abs(d.totalLeg - (p.totalPct * p.total) / 100) < EPS
+        && Math.abs(d.minorLeg + d.totalLeg - d.expPayout) < EPS,
+      breaks: (_p, d) => ({ ...d, minorLeg: d.minorLeg + 1 }) },
+  ],
 };
 
 const templateFor = (slug: string) =>
