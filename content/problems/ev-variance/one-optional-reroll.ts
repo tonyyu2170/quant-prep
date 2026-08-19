@@ -1,13 +1,11 @@
-import type { Params, ProblemTemplate } from "@qp/engine";
+import type { ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
-// The answer formula, written once. `constraint` only ever sees `params`
-// (packages/engine/src/problem.ts:24), so without this helper the expectation would be typed
-// twice — once to pin the answer away from zero, once to derive it.
-const pointsNumerOf = (p: Params) =>
-  (p.faces - p.floor + 1) * (p.floor + p.faces) + (p.floor - 1) * (p.faces + 1);
-const evOf = (p: Params) => (p.rate * pointsNumerOf(p)) / (2 * p.faces);
-
+// No module-local answer helper here, deliberately. Constraint 2 asks for one only where
+// `constraint` has to re-ask the answer to pin its floor; this template's floor cannot bind
+// (the payout is at least two dollars a point on a roll showing at least one) and its
+// `constraint` is a structural rejection that never needs the expectation, so the numerator
+// is simply built once inside `derived` and used from there.
 // A stated re-roll rule, valued by splitting on the first roll. The branch that stands must be
 // averaged over only the faces that actually stop the game — conditioning on having stopped is
 // the whole lesson. Both branch averages land on an exact half, so they are safe operands.
@@ -33,15 +31,16 @@ export const oneOptionalReroll: ProblemTemplate = {
   derived: (p) => {
     const standCount = p.faces - p.floor + 1;
     const tossCount = p.floor - 1;
+    const pointsNumer = standCount * (p.floor + p.faces) + tossCount * (p.faces + 1);
     return {
       standCount,
       tossCount,
       standMean: (p.floor + p.faces) / 2,
       freshMean: (p.faces + 1) / 2,
-      pointsNumer: pointsNumerOf(p),
-      points: pointsNumerOf(p) / (2 * p.faces),
+      pointsNumer,
+      points: pointsNumer / (2 * p.faces),
       evNoRule: (p.rate * (p.faces + 1)) / 2,
-      ev: evOf(p),
+      ev: (p.rate * pointsNumer) / (2 * p.faces),
     };
   },
   statement: (p) =>
@@ -52,7 +51,7 @@ export const oneOptionalReroll: ProblemTemplate = {
   answerKey: "ev",
   accepted: { tolerance: { rel: 0.005 } },
   solution: (p, d) => [
-    { title: "Split on the first roll", body: `The rule creates two situations, so value each one separately. The first roll stands on ${fmtNum(d.standCount)} of the ${fmtNum(p.faces)} faces; on the other ${fmtNum(d.tossCount)} it is thrown out.` },
+    { title: "Split on the first roll", body: `The rule creates two situations, so value each one separately. The first roll stands on ${fmtNum(d.standCount)} of the ${fmtNum(p.faces)} faces and is thrown out on the rest.` },
     // Both branch averages land on an exact half, so they can safely be operands in the weighted
     // average below; rounding either one first would drift off the printed result.
     { title: "Value each branch", body: `When the first roll stands it is not an average die at all — it is known to be at least ${fmtNum(p.floor)}. ${

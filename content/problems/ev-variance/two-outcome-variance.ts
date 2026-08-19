@@ -1,11 +1,10 @@
-import type { Params, ProblemTemplate } from "@qp/engine";
+import type { ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
-// The answer formula, written once. `constraint` only ever sees `params`
-// (packages/engine/src/problem.ts:24), so without this helper the variance would be typed
-// twice — once to pin the answer away from zero, once to derive it.
-const varOf = (p: Params) => (p.winPct * (100 - p.winPct) * (p.w + p.l) * (p.w + p.l)) / 10000;
-
+// No module-local answer helper here, deliberately. Constraint 2 asks for one only where
+// `constraint` has to re-ask the answer to pin its floor; this template's floor cannot bind
+// (the smallest legal variance is 1.44) and its `constraint` is a structural rejection that
+// never needs the variance, so a helper would be a second copy of the formula for nothing.
 // The spread of a two-point payoff, reached through the definition rather than through a
 // remembered formula: locate the mean, measure each branch's distance from it, and average
 // the squares. Probabilities are whole tens so that every printed distance is an exact tenth
@@ -39,7 +38,7 @@ export const twoOutcomeVariance: ProblemTemplate = {
       devWin: (losePct * gap) / 100,
       devLose: (p.winPct * gap) / 100,
       capVar: (gap * gap) / 4,
-      varProfit: varOf(p),
+        varProfit: (p.winPct * losePct * gap * gap) / 10000,
     };
   },
   statement: (p) =>

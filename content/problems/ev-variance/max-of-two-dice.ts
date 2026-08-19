@@ -24,10 +24,11 @@ export const maxOfTwoDice: ProblemTemplate = {
     rate: { range: { min: 2, max: 10, step: 1 } },
     fee: { range: { min: 2, max: 20, step: 1 } },
   },
-  // Constraint 2's floor, stated as the requirement: a fee that exactly matches the expected
-  // payout answers zero, which grades as strict float equality. It binds — the expectation
-  // moves in steps as fine as a four-hundredth on the twenty-sided draw — and the ceiling
-  // never does; measured over the 1,026 legal draws |answer| runs [0.02778, 136.3].
+  // Constraint 2's floor and ceiling, stated as the requirement: a fee that exactly matches
+  // the expected payout answers zero, which grades as strict float equality. Neither binds on
+  // this space — the check rejects none of the 1,026 draws and |answer| runs [0.02778, 136.3]
+  // — but the expectation moves in steps as fine as a four-hundredth on the twenty-sided draw,
+  // so a wider rate or fee would reach the floor and the rule travels with the template.
   constraint: (p) => Math.abs(evOf(p)) >= 0.01,
   derived: (p) => {
     const sqBelow = ((p.faces - 1) * p.faces * (2 * p.faces - 1)) / 6;
