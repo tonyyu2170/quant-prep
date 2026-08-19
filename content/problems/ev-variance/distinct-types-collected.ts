@@ -41,8 +41,8 @@ export const distinctTypesCollected: ProblemTemplate = {
     };
   },
   statement: (p) =>
-    `A promotion puts one of ${fmtNum(p.types)} collectible card designs into every pack, each design equally likely ` +
-    `and independent of the others. You open ${fmtNum(p.draws)} packs. A dealer pays you ${fmtNum(p.rate)} dollars ` +
+    `A promotion puts one of ${fmtNum(p.types)} collectible card designs into every pack, each design equally likely, ` +
+    `and what one pack holds says nothing about what the others hold. You open ${fmtNum(p.draws)} packs. A dealer pays you ${fmtNum(p.rate)} dollars ` +
     `for every distinct design you end up holding, however many copies of it you have. What is your expected payout, ` +
     `in dollars?`,
   answerKey: "ev",
