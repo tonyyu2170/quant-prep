@@ -43,7 +43,7 @@ export const truncatedDoublingGame: ProblemTemplate = {
   answerKey: "ev",
   accepted: { tolerance: { rel: 0.005 } },
   solution: (p, d) => [
-    { title: "One rung of the ladder", body: `Take the rounds one at a time. Reaching any particular round at all takes a run of heads, and each head that gets you there halves the chance while doubling the pot waiting for you. Those two moves cancel exactly, so every round contributes the same amount to the value — half the starting stake, $\\frac{${fmtNum(p.stake)}}{2}=${fmtNum(d.half)}$ dollars — no matter how far down the ladder it sits.` },
+    { title: "One rung of the ladder", body: `Take the rounds one at a time. Reaching any particular round at all takes a run of heads, and each head that gets you there halves the chance while doubling the pot waiting for you. Those two moves cancel exactly, so every round contributes the same amount to the value — half the starting stake, $\\frac{${fmtNum(p.stake)}}{2}=${fmtNum(d.half)}$ ${d.half === 1 ? "dollar" : "dollars"} — no matter how far down the ladder it sits.` },
     { title: "Add the rungs", body: `There are ${fmtNum(p.rounds)} rounds in which a tail can arrive and end the game, each worth that same half stake, so together they carry $\\frac{${fmtNum(p.rounds)}\\times${fmtNum(p.stake)}}{2}=${fmtNum(d.ladder)}$ dollars.` },
     // The all-heads branch is priced from the integers rather than from the printed chance:
     // at fifteen rounds that chance prints as 0.00003052, and multiplying it by the pot misses
