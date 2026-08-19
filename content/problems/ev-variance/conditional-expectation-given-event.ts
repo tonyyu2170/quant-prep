@@ -46,6 +46,7 @@ export const conditionalExpectationGivenEvent: ProblemTemplate = {
       plainPoints: p.faces + 1,
       meanGiven: totalGood / goodPairs,
       evPlain: p.rate * (p.faces + 1),
+      evBoth: p.rate * (p.k + p.faces),
       ev: (p.rate * totalGood) / goodPairs,
     };
   },
@@ -67,7 +68,14 @@ export const conditionalExpectationGivenEvent: ProblemTemplate = {
     // the ruled-out group's average first and subtracting rounded decimals would drift.
     { title: "Pool the points", body: `Rather than average the survivors one by one, total the points across a whole group and divide at the end. Across all ${fmtNum(d.pairs)} combinations the two dice together carry $${fmtNum(d.pairs)}\\times(${fmtNum(p.faces)}+1)=${fmtNum(d.totalAll)}$ points, since a pair of untouched dice averages ${fmtNum(d.plainPoints)} points. The forbidden combinations run over the faces below ${fmtNum(p.k)} on both dice, averaging ${fmtNum(p.k)} points each, so they carry $${fmtNum(d.lowPairs)}\\times${fmtNum(p.k)}=${fmtNum(d.totalLow)}$ points of that.` },
     { title: "Re-average over the survivors", body: `Take the forbidden points off the pool and spread what is left over the combinations still in play: $\\frac{${fmtNum(d.totalAll)}-${fmtNum(d.totalLow)}}{${fmtNum(d.goodPairs)}}=${fmtNum(d.meanGiven)}$ points. At ${fmtNum(p.rate)} dollars a point that is $\\frac{${fmtNum(p.rate)}\\times${fmtNum(d.totalGood)}}{${fmtNum(d.goodPairs)}}=${fmtNum(d.ev)}$ dollars.` },
-    { title: "Sanity check", body: `Put the forbidden combinations back and the average has to fall to what two untouched dice give: $\\frac{${fmtNum(d.totalLow)}+${fmtNum(d.totalGood)}}{${fmtNum(d.pairs)}}=${fmtNum(d.plainPoints)}$ points, which it does. Since every combination the news removed was one of the low ones, the payout can only have moved up from the untouched figure of $${fmtNum(p.rate)}\\times(${fmtNum(p.faces)}+1)=${fmtNum(d.evPlain)}<${fmtNum(d.ev)}$ dollars.` },
+    // The obvious check here — putting the forbidden points back and recovering the plain
+    // average — is an identity by construction, since totalGood IS totalAll less totalLow, so
+    // it reads as true however wrong the answer is. What follows brackets the answer from both
+    // sides instead, and each bound is built from params rather than from the answer's own
+    // numerator. Both gaps are wide enough to print: swept over all 720 legal draws the lower
+    // one never comes under 0.226% of the answer and the upper never under 4.525%, with zero
+    // draws on which either pair renders equal — a strict relation gets no tie allowance.
+    { title: "Sanity check", body: `Bracket it from both sides. The news removed only combinations where both dice came in low, so the payout has to sit above what two untouched dice pay, $${fmtNum(p.rate)}\\times(${fmtNum(p.faces)}+1)=${fmtNum(d.evPlain)}$ dollars. But plenty of the surviving combinations still have one die below ${fmtNum(p.k)} — the news only says at least one die cleared it — so the payout must also fall short of $${fmtNum(p.rate)}\\times(${fmtNum(p.k)}+${fmtNum(p.faces)})=${fmtNum(d.evBoth)}$ dollars, which is what the pair would average if both dice were known to have cleared the threshold. It lands between them: $${fmtNum(d.evPlain)}<${fmtNum(d.ev)}<${fmtNum(d.evBoth)}$.` },
   ],
   keyInsight: "News does not change what any single outcome pays; it changes which outcomes are still on the table. So the expectation is not adjusted, it is retaken — pool the outcomes the news leaves standing and average over those alone, giving each survivor the weight it had relative to the others rather than the weight it had in the original space.",
   commonTrap: "Averaging over the whole grid of rolls as though nothing had been said, or reading the news as a statement about one die and lifting that die's average while leaving the other untouched. The condition is a fact about the pair, and the only combinations it removes are the ones where both dice came in low.",

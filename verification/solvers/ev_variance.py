@@ -710,6 +710,7 @@ def conditional_expectation_given_event_exact(p):
         "plainPoints": faces + 1,
         "meanGiven": total_good / good_pairs,
         "evPlain": rate * (faces + 1),
+        "evBoth": rate * (k + faces),
         "ev": (rate * total_good) / good_pairs,
     }
 

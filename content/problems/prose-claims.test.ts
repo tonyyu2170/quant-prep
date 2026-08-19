@@ -406,13 +406,17 @@ const CLAIMS: Record<string, Claim[]> = {
   ],
 
   "conditional-expectation-given-event": [
-    { says: "Sanity: putting the forbidden combinations back recovers the untouched pair average",
-      holds: (p, d) => d.totalLow + d.totalGood === d.totalAll && d.plainPoints === p.faces + 1
-        && Math.abs((d.totalLow + d.totalGood) / d.pairs - d.plainPoints) < EPS,
-      breaks: (_p, d) => ({ ...d, totalGood: d.totalGood + d.pairs }) },
-    { says: "Sanity: the payout can only have moved up from the untouched figure, as printed",
-      holds: (p, d) => same(p.rate * (p.faces + 1), d.evPlain) && P(d.evPlain) < P(d.ev),
+    // The bracket is checked as printed and from both sides. A one-sided version was dropped
+    // in review: the natural companion — putting the forbidden points back to recover the
+    // plain average — is an identity by construction here, since totalGood is defined as
+    // totalAll less totalLow, so it holds however wrong the answer is.
+    { says: "Sanity: the payout sits above the untouched pair and below a pair both known to have cleared the threshold",
+      holds: (p, d) => same(p.rate * (p.faces + 1), d.evPlain) && same(p.rate * (p.k + p.faces), d.evBoth)
+        && P(d.evPlain) < P(d.ev) && P(d.ev) < P(d.evBoth),
       breaks: (_p, d) => ({ ...d, ev: d.evPlain }) },
+    { says: "Sanity: the upper bound bites because surviving combinations still hold a low die",
+      holds: (p, d) => P(d.ev) < P(d.evBoth) && d.goodPairs > (p.faces - p.k + 1) * (p.faces - p.k + 1),
+      breaks: (_p, d) => ({ ...d, ev: d.evBoth }) },
     { says: "Pool the points: the forbidden group averages the threshold, which is below the untouched average",
       holds: (p, d) => d.totalLow === d.lowPairs * p.k && p.k < d.plainPoints && P(d.meanGiven) > P(d.plainPoints),
       breaks: (_p, d) => ({ ...d, totalLow: 0 }) },
