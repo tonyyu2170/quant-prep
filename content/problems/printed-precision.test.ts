@@ -159,7 +159,13 @@ export function auditChains(texts: string[], label: string): ChainAudit {
       // One value and some labels is a definition, not a chain: nothing was recomputed.
       if (values.length < 2) { out.claimFree++; continue; }
       out.checked++;
-      const shown = values.map((v) => fmtNum(v));
+      // The claim on the page is about DECIMAL arithmetic: 0.00216/0.00256 is exactly 0.84375,
+      // which fmtNum rounds up to 0.8438. IEEE754 lands one ulp below that tie and would render
+      // 0.8437, flagging a page that is right. Settling each computed value at 12 significant
+      // figures before rendering strips that binary noise. It cannot hide the defect this gate
+      // exists for: feeding a 4-significant-figure operand into the next step moves the result
+      // by around 1e-4 relative, eight orders of magnitude above where this rounds.
+      const shown = values.map((v) => fmtNum(Number(v.toPrecision(12))));
       if (new Set(shown).size !== 1) out.mismatches.push(`${label}: $${seg}$ renders ${shown.join(" vs ")}`);
     }
   }
@@ -236,6 +242,12 @@ describe("the printed-precision checker fails when it should", () => {
     ["\\binom{52}{5}=2598961", true],
     ["\\binom{6}{2}\\times\\binom{5}{3}=150", false],
     ["\\binom{6}{2}\\times\\binom{5}{3}=151", true],
+    // A decimal rounding tie: exactly 0.84375, which IEEE754 lands just under. Not a defect.
+    ["0.00216/0.00256=0.8438", false],
+    ["0.00216/0.00256=0.8437", true],  // rounding the tie the other way contradicts fmtNum
+    ["0.00216/0.00256=0.8439", true],  // but a real last-digit error still flags
+    ["0.2308/0.6923=0.3334", false],   // 0.33338..., not a tie, correctly rounded
+    ["0.2308/0.6923=0.3333", true],    // the rounded-operand drift this gate exists for
     // A label on one side must not excuse the arithmetic on the other two.
     ["P(F\\mid A)=0.1391\\times0.85=0.1182", false],
     ["P(F\\mid A)=0.1391\\times0.85=0.1183", true],
