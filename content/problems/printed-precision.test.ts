@@ -14,7 +14,7 @@ import { PROBLEMS } from "./index";
 // widening the scope is a decision to take on its own evidence, not a side effect of this
 // file. The helpers are exported so the same checker can be pointed at another topic as a
 // diagnostic without being reimplemented (a second implementation is a second thing to be
-// wrong).
+// wrong) — from another test file, since vitest is imported at module top level here.
 const TOPIC = "probability/ev-variance";
 const SEEDS = 200;
 
