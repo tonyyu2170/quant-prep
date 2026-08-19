@@ -47,8 +47,9 @@ def die_payoff_table_exact(p):
     return {
         "midNum": 3 * mid,
         "highNum": 2 * hi,
+        "plainNum": 2 * (lo + mid + hi),
         "plainAvg": (lo + mid + hi) / 3,
-        "shiftMag": abs(mid - lo) / 6,
+        "gapNum": abs(mid - lo),
         "ev": (lo + 3 * mid + 2 * hi) / 6,
     }
 

@@ -25,8 +25,10 @@ export const profitNetOfCost: ProblemTemplate = {
   },
   // Constraint 2's floor, stated as the requirement. It binds here: winners*prize/slots and
   // cost can coincide exactly, and a zero expectation grades as strict float equality.
-  // Payouts are multiples of 1/slots with slots at most 40, so the smallest surviving
-  // |answer| is 0.025 and the largest is 58 — both comfortably inside [0.01, 1e4].
+  // Payouts are multiples of 1/slots with slots at most 40, so a nonzero |answer| can never
+  // be finer than 0.025 — that is the granularity bound the floor leans on, not a value any
+  // draw reaches. Measured over the legal space |answer| actually runs [0.1429, 58], well
+  // inside [0.01, 1e4].
   constraint: (p) => Math.abs(evOf(p)) >= 0.01,
   derived: (p) => ({
     pWin: p.winners / p.slots,

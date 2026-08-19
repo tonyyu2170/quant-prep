@@ -26,8 +26,9 @@ export const diePayoffTable: ProblemTemplate = {
   derived: (p) => ({
     midNum: 3 * p.mid,
     highNum: 2 * p.hi,
+    plainNum: 2 * (p.lo + p.mid + p.hi),
     plainAvg: (p.lo + p.mid + p.hi) / 3,
-    shiftMag: Math.abs(p.mid - p.lo) / 6,
+    gapNum: Math.abs(p.mid - p.lo),
     ev: (p.lo + 3 * p.mid + 2 * p.hi) / 6,
   }),
   statement: (p) =>
@@ -42,11 +43,16 @@ export const diePayoffTable: ProblemTemplate = {
     // rounded decimal first and adding those instead drifts off the printed answer.
     { title: "Put every row over sixths", body: `Measure each row by what it contributes out of six. The single low face contributes ${fmtNum(p.lo)}, the three middle faces contribute $3\\times${fmtNum(p.mid)}=${fmtNum(d.midNum)}$, and the two high faces contribute $2\\times${fmtNum(p.hi)}=${fmtNum(d.highNum)}$.` },
     { title: "Combine", body: `Add the three contributions and divide once by the six faces: $\\frac{${fmtNum(p.lo)}+${fmtNum(d.midNum)}+${fmtNum(d.highNum)}}{6}=${fmtNum(d.ev)}$. That is the expected payout per roll, in dollars.` },
-    { title: "Sanity check", body: `Price the shortcut and see how far off it is. Averaging the three table figures as though the rows were equally likely gives $\\frac{${fmtNum(p.lo)}+${fmtNum(p.mid)}+${fmtNum(p.hi)}}{3}=${fmtNum(d.plainAvg)}$. Weighting moves that by exactly $${
+    // The shortcut is reconciled against the true answer in INTEGER numerators over six,
+    // never by differencing the two printed decimals: plainAvg and ev are each rounded to
+    // four significant figures, and on a quarter of the legal draws those two roundings do
+    // not add back to each other at displayed precision. Only the direction is claimed of
+    // the decimals, and the gap is at least a sixth, far wider than the printing resolution.
+    { title: "Sanity check", body: `Price the shortcut in the same sixths. Averaging the three table figures as though the rows were equally likely hands every row two of the six faces, a numerator of $2\\times(${fmtNum(p.lo)}+${fmtNum(p.mid)}+${fmtNum(p.hi)})=${fmtNum(d.plainNum)}$, so the shortcut answers $\\frac{${fmtNum(d.plainNum)}}{6}=${fmtNum(d.plainAvg)}$. Set that against the true numerator $${fmtNum(p.lo)}+${fmtNum(d.midNum)}+${fmtNum(d.highNum)}$ from the step above: the two differ by exactly $${
       p.mid > p.lo
-        ? `\\frac{${fmtNum(p.mid)}-${fmtNum(p.lo)}}{6}`
-        : `\\frac{${fmtNum(p.lo)}-${fmtNum(p.mid)}}{6}`
-    }=${fmtNum(d.shiftMag)}$, because the middle row covers three faces where the low row covers one — and the expectation above indeed sits that far ${p.mid > p.lo ? "above" : "below"} it.` },
+        ? `${fmtNum(p.mid)}-${fmtNum(p.lo)}`
+        : `${fmtNum(p.lo)}-${fmtNum(p.mid)}`
+    }=${fmtNum(d.gapNum)}$ out of six, because the middle row covers three faces where the low row covers one. So the shortcut has to land ${p.mid > p.lo ? "below" : "above"} the expectation — and it does.` },
   ],
   keyInsight: "A payout table only becomes an expectation once each row is weighted by how many of the equally likely outcomes fall into it, so the row covering the most outcomes pulls the answer toward its own figure while a row covering a single outcome barely moves it.",
   commonTrap: "Averaging the figures in the table as though its rows were equally likely, which ignores that one row covers a single face while another covers three, and lands on a different number entirely.",
