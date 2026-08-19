@@ -7,7 +7,7 @@ the template's closed form. Only brute() carries the independence requirement, w
 in Fraction where the space is rational, and returns float() explicitly."""
 
 from fractions import Fraction
-from itertools import combinations, permutations
+from itertools import combinations, permutations, product
 from math import factorial
 
 
@@ -593,6 +593,102 @@ def insurance_break_even_premium_brute(p):
     return float(-at0 / (at1 - at0))   # profit is linear in the price, so this root is exact
 
 
+
+def distinct_types_collected_exact(p):
+    types, draws, rate = int(p["types"]), int(p["draws"]), int(p["rate"])
+    all_numer = types ** draws
+    miss_numer = (types - 1) ** draws
+    return {
+        "allNumer": all_numer,
+        "missNumer": miss_numer,
+        "pMiss": miss_numer / all_numer,
+        "distinct": (types * (all_numer - miss_numer)) / all_numer,
+        "missing": (types * miss_numer) / all_numer,
+        "capPay": rate * min(types, draws),
+        "ev": (rate * types * (all_numer - miss_numer)) / all_numer,
+    }
+
+
+def distinct_types_collected_brute(p):
+    """Enumerate every sequence of packs the promotion could deal, count the distinct designs
+    inside each one directly, and average over the sequences. No design is ever considered on
+    its own and no missing-design probability is formed, so neither the indicator argument nor
+    the power that the template turns on appears here."""
+    types, draws, rate = int(p["types"]), int(p["draws"]), int(p["rate"])
+    seen = 0
+    total = 0
+    for seq in product(range(types), repeat=draws):
+        total += len(set(seq))
+        seen += 1
+    return float(Fraction(rate * total, seen))
+
+
+def binomial_variance_exact(p):
+    trials, win_pct = int(p["trials"]), int(p["winPct"])
+    loss_pct = 100 - win_pct
+    return {
+        "lossPct": loss_pct,
+        "mean": (trials * win_pct) / 100,
+        "oneVar": (win_pct * loss_pct) / 10000,
+        "capVar": trials / 4,
+        "varCount": (trials * win_pct * loss_pct) / 10000,
+    }
+
+
+def binomial_variance_brute(p):
+    """Build the whole distribution of the day's count by convolving one auction into it at a
+    time, then read the spread straight off that distribution as the probability-weighted
+    squared distance from its own mean. Neither the per-trial spread nor its multiplication by
+    the trial count — the template's entire argument — is used, and npq never appears."""
+    trials, win_pct = int(p["trials"]), int(p["winPct"])
+    win, lose = Fraction(win_pct, 100), Fraction(100 - win_pct, 100)
+    pmf = [Fraction(1)]
+    for _ in range(trials):
+        nxt = [Fraction(0)] * (len(pmf) + 1)
+        for i, pr in enumerate(pmf):
+            nxt[i] += pr * lose
+            nxt[i + 1] += pr * win
+        pmf = nxt
+    assert sum(pmf) == 1 and len(pmf) == trials + 1
+    mu = sum(i * pr for i, pr in enumerate(pmf))
+    return float(sum(pr * (i - mu) ** 2 for i, pr in enumerate(pmf)))
+
+
+def equal_ev_sd_comparison_exact(p):
+    faces, m, k = int(p["faces"]), int(p["m"]), int(p["k"])
+    prize = (faces * m) / k
+    var_coin = m * m
+    mean_sq_die = (k * prize * prize) / faces
+    return {
+        "prize": prize,
+        "coinPay": 2 * m,
+        "varCoin": var_coin,
+        "meanSqDie": mean_sq_die,
+        "blankFaces": faces - k,
+        "varDie": mean_sq_die - var_coin,
+        "sdDie": (mean_sq_die - var_coin) ** 0.5,
+    }
+
+
+def equal_ev_sd_comparison_brute(p):
+    """Lay out each game's outcomes one per equally likely side or face, compute each game's
+    own mean and its mean squared deviation from that mean, and return the larger spread. The
+    two games are compared rather than assumed — the answer is whichever game the enumeration
+    finds riskier — and no closed form for either variance is used."""
+    faces, m, k = int(p["faces"]), int(p["m"]), int(p["k"])
+    prize = Fraction(faces * m, k)
+
+    def spread(outcomes):
+        n = len(outcomes)
+        mean = sum(outcomes) / n
+        return mean, sum((x - mean) ** 2 for x in outcomes) / n
+
+    mean_coin, var_coin = spread([Fraction(2 * m), Fraction(0)])
+    mean_die, var_die = spread([prize] * k + [Fraction(0)] * (faces - k))
+    assert mean_coin == mean_die == m, (mean_coin, mean_die)
+    return float(max(var_coin, var_die)) ** 0.5
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -614,4 +710,7 @@ SOLVERS = {
     "ev-variance/hypergeometric-mean": {"exact": hypergeometric_mean_exact, "brute": hypergeometric_mean_brute},
     "ev-variance/capped-payoff": {"exact": capped_payoff_exact, "brute": capped_payoff_brute},
     "ev-variance/insurance-break-even-premium": {"exact": insurance_break_even_premium_exact, "brute": insurance_break_even_premium_brute},
+    "ev-variance/distinct-types-collected": {"exact": distinct_types_collected_exact, "brute": distinct_types_collected_brute},
+    "ev-variance/binomial-variance": {"exact": binomial_variance_exact, "brute": binomial_variance_brute},
+    "ev-variance/equal-ev-sd-comparison": {"exact": equal_ev_sd_comparison_exact, "brute": equal_ev_sd_comparison_brute},
 }

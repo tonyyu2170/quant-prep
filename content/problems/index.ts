@@ -74,6 +74,9 @@ import { geometricWaitingTime } from "./ev-variance/geometric-waiting-time";
 import { hypergeometricMean } from "./ev-variance/hypergeometric-mean";
 import { cappedPayoff } from "./ev-variance/capped-payoff";
 import { insuranceBreakEvenPremium } from "./ev-variance/insurance-break-even-premium";
+import { distinctTypesCollected } from "./ev-variance/distinct-types-collected";
+import { binomialVariance } from "./ev-variance/binomial-variance";
+import { equalEvSdComparison } from "./ev-variance/equal-ev-sd-comparison";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -151,6 +154,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   hypergeometricMean,
   cappedPayoff,
   insuranceBreakEvenPremium,
+  distinctTypesCollected,
+  binomialVariance,
+  equalEvSdComparison,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

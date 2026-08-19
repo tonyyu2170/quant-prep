@@ -339,6 +339,62 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(d.minorLeg + d.totalLeg - d.expPayout) < EPS,
       breaks: (_p, d) => ({ ...d, minorLeg: d.minorLeg + 1 }) },
   ],
+
+  "distinct-types-collected": [
+    { says: "Sanity: the designs held and the designs missing account for the whole set",
+      holds: (p, d) => Math.abs(d.distinct + d.missing - p.types) < EPS
+        && d.allNumer === p.types ** p.draws && d.missNumer === (p.types - 1) ** p.draws,
+      breaks: (_p, d) => ({ ...d, missing: d.missing + 1 }) },
+    { says: "Sanity: the payout falls short of the most the promotion can ever pay",
+      holds: (_p, d) => P(d.ev) < P(d.capPay),
+      breaks: (_p, d) => ({ ...d, ev: d.capPay }) },
+    { says: "keyInsight: a design is missed only when every pack misses it, and the haul adds one indicator per design",
+      holds: (p, d) => Math.abs(d.pMiss - d.missNumer / d.allNumer) < EPS
+        && Math.abs(p.types * (1 - d.pMiss) - d.distinct) < EPS
+        && Math.abs(p.rate * d.distinct - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+    { says: "commonTrap: counting one new design per pack overstates the haul on every draw",
+      holds: (p, d) => P(p.rate * p.draws) > P(d.ev) && d.distinct < p.draws - EPS,
+      nonVacuous: (p) => p.draws > p.types, // more packs than designs, where the trap is not even possible
+      breaks: (p, d) => ({ ...d, ev: p.rate * p.draws }) },
+  ],
+  "binomial-variance": [
+    { says: "Sanity: the spread comes in strictly under the even-odds ceiling",
+      holds: (_p, d) => P(d.varCount) < P(d.capVar),
+      breaks: (_p, d) => ({ ...d, varCount: d.capVar }) },
+    // The Sanity check prints the same product with the two percentages swapped, which is the
+    // losses-carry-the-same-spread argument. Float multiplication of three operands is not
+    // associative, so this is a real check on what the swapped chain renders, not commutativity.
+    { says: "Sanity: swapping the two percentages renders the identical figure",
+      holds: (p, d) => same((p.trials * d.lossPct * p.winPct) / 10000, d.varCount),
+      breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.01 }) },
+    { says: "keyInsight: one trial's spread is the product of its two chances, and independence multiplies it up",
+      holds: (p, d) => d.lossPct === 100 - p.winPct
+        && Math.abs(d.oneVar - (p.winPct * d.lossPct) / 10000) < EPS
+        && Math.abs(p.trials * d.oneVar - d.varCount) < EPS,
+      breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.02 }) },
+    { says: "commonTrap: the expected count is a different number from the spread on every draw",
+      holds: (_p, d) => P(d.mean) !== P(d.varCount),
+      breaks: (_p, d) => ({ ...d, varCount: d.mean }) },
+  ],
+  "equal-ev-sd-comparison": [
+    { says: "Setup: the two games really do pay the same on average, in whole dollars",
+      holds: (p, d) => same(d.coinPay / 2, p.m) && same((p.k * d.prize) / p.faces, p.m) && Number.isInteger(d.prize),
+      breaks: (_p, d) => ({ ...d, prize: d.prize + 1 }) },
+    { says: "Sanity and commonTrap: the die is the riskier game, so neither the coin's spread nor the shared mean is the answer",
+      holds: (p, d) => P(d.sdDie) > P(p.m),
+      breaks: (p, d) => ({ ...d, sdDie: p.m }) },
+    { says: "Sanity: the squared-deviation definition rebuilds the same variance",
+      holds: (p, d) => d.blankFaces === p.faces - p.k
+        && Math.abs((p.k * (d.prize - p.m) * (d.prize - p.m) + d.blankFaces * p.m * p.m) / p.faces - d.varDie) < EPS,
+      breaks: (_p, d) => ({ ...d, varDie: d.varDie * 1.02 }) },
+    { says: "Spread of the die: the answer is the root of the mean square less the squared mean",
+      holds: (p, d) => Math.abs(d.meanSqDie - (p.k * d.prize * d.prize) / p.faces) < EPS
+        && Math.abs(d.varCoin - p.m * p.m) < EPS
+        && Math.abs(d.varDie - (d.meanSqDie - d.varCoin)) < EPS
+        && Math.abs(d.sdDie * d.sdDie - d.varDie) < EPS,
+      breaks: (_p, d) => ({ ...d, sdDie: d.sdDie * 1.02 }) },
+  ],
 };
 
 const templateFor = (slug: string) =>
