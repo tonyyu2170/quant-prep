@@ -55,6 +55,13 @@ import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-no
 import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
 import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
 import { twoOutcomeBet } from "./ev-variance/two-outcome-bet";
+import { diePayoffTable } from "./ev-variance/die-payoff-table";
+import { raffleFairPrice } from "./ev-variance/raffle-fair-price";
+import { sumOfTwoDraws } from "./ev-variance/sum-of-two-draws";
+import { labeledTicketsDraw } from "./ev-variance/labeled-tickets-draw";
+import { profitNetOfCost } from "./ev-variance/profit-net-of-cost";
+import { binomialMean } from "./ev-variance/binomial-mean";
+import { indicatorMatchCount } from "./ev-variance/indicator-match-count";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -113,6 +120,13 @@ export const PROBLEMS: ProblemTemplate[] = [
   pigeonholeExtremal,
   twoPairVsFullHouse,
   twoOutcomeBet,
+  diePayoffTable,
+  raffleFairPrice,
+  sumOfTwoDraws,
+  labeledTicketsDraw,
+  profitNetOfCost,
+  binomialMean,
+  indicatorMatchCount,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
