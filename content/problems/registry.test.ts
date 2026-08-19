@@ -26,10 +26,11 @@ describe("problem registry invariants", () => {
     const bayes = problemsFor("probability/bayes").length;
     const counting = problemsFor("probability/counting").length;
     const ev = problemsFor("probability/ev-variance").length;
+    const distributions = problemsFor("probability/distributions").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(25);
     expect(ev).toBe(30);
-    expect(bayes + counting + ev).toBe(PROBLEMS.length);
+    expect(bayes + counting + ev + distributions).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

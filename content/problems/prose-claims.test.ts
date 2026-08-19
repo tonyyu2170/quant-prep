@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fmtNum, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
-import { PROBLEMS } from "./index";
+import { PROBLEMS, byId } from "./index";
 import { forEachLegalDraw } from "./draw-space.test";
 
 // Every claim the ev-variance prose makes that no other gate covers.
@@ -43,7 +43,7 @@ interface Claim {
 }
 
 const CLAIMS: Record<string, Claim[]> = {
-  "two-outcome-bet": [
+  "ev-variance/two-outcome-bet": [
     { says: "Sanity: the game offers less than the fair payout, so the expectation is negative",
       holds: (p, d) => P(p.w) < P(d.fairWin) && P(d.ev) < 0,
       breaks: (p, d) => ({ ...d, fairWin: p.w / 2 }) },
@@ -64,7 +64,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => Math.abs(d.winLeg - d.loseLeg - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "die-payoff-table": [
+  "ev-variance/die-payoff-table": [
     { says: "Sanity: the equal-weight shortcut lands on the stated side of the expectation",
       holds: (p, d) => (p.mid > p.lo ? P(d.plainAvg) < P(d.ev) : P(d.plainAvg) > P(d.ev)),
       breaks: (_p, d) => ({ ...d, plainAvg: d.ev }) },
@@ -79,7 +79,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.plainAvg) !== P(d.ev),
       breaks: (_p, d) => ({ ...d, plainAvg: d.ev }) },
   ],
-  "raffle-fair-price": [
+  "ev-variance/raffle-fair-price": [
     { says: "Sanity: the price sits between the grand-prize-only value and the per-winner share",
       holds: (_p, d) => P(d.legGrand) < P(d.price) && P(d.price) < P(d.perWinner),
       breaks: (_p, d) => ({ ...d, price: d.legGrand / 2 }) },
@@ -91,7 +91,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(d.price - d.legGrand - d.runnersVoucher / p.tickets) < EPS,
       breaks: (_p, d) => ({ ...d, legGrand: d.price }) },
   ],
-  "sum-of-two-draws": [
+  "ev-variance/sum-of-two-draws": [
     { says: "Sanity: the midpoint of the total's range is the mean total the dice gave",
       holds: (_p, d) => Math.abs((2 + d.maxTotal) / 2 - d.meanTotal) < EPS
         && Math.abs(d.meanRed + d.meanBlue - d.meanTotal) < EPS,
@@ -104,7 +104,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && P(p.rate * (p.red / 2 + p.blue / 2)) !== P(d.ev),
       breaks: (p, d) => ({ ...d, meanRed: p.red / 2 }) },
   ],
-  "labeled-tickets-draw": [
+  "ev-variance/labeled-tickets-draw": [
     { says: "Sanity: totalling every label the long way and dividing gives the same mean",
       holds: (p, d) => d.total === p.n * p.first + d.sumIncr && Math.abs(d.total / p.n - d.mean) < EPS,
       breaks: (p, d) => ({ ...d, total: d.total + p.n }) },
@@ -116,7 +116,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && (p.first + (p.first + p.gap * p.n)) / 2 > d.mean,
       breaks: (p, d) => ({ ...d, steps: p.n, last: p.first + p.gap * p.n }) },
   ],
-  "profit-net-of-cost": [
+  "ev-variance/profit-net-of-cost": [
     { says: "Sanity: the dealer's price sits on the stated side of the expected contents",
       holds: (p, d) => (d.ev > 0 ? P(p.cost) < P(d.payoutLeg) : P(p.cost) > P(d.payoutLeg)),
       breaks: (p, d) => ({ ...d, payoutLeg: p.cost }) },
@@ -128,7 +128,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => (p.winners * (p.prize - p.cost)) / p.slots > d.ev + EPS,
       breaks: (p, d) => ({ ...d, ev: (p.winners * (p.prize - p.cost)) / p.slots }) },
   ],
-  "binomial-mean": [
+  "ev-variance/binomial-mean": [
     { says: "Sanity: a fill rate off half puts the expected count on the same side of half the bids",
       holds: (p, d) => (p.fillPct > 50 ? P(d.ev) > P(d.half) : P(d.ev) < P(d.half)),
       breaks: (_p, d) => ({ ...d, ev: d.half }) },
@@ -139,7 +139,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => !Number.isInteger(d.ev) && Math.abs(Math.round(d.ev) - d.ev) > EPS,
       breaks: (_p, d) => ({ ...d, ev: Math.round(d.ev) }) },
   ],
-  "indicator-match-count": [
+  "ev-variance/indicator-match-count": [
     { says: "Sanity: counting orderings reaches the same kitty as the indicator argument",
       holds: (p, d) => Math.abs((p.bounty * p.friends * d.waysFixed) / d.waysAll - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, waysAll: d.waysAll * 2 }) },
@@ -150,7 +150,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(d.ev / p.bounty - p.friends / p.guests) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 2 }) },
   ],
-  "two-outcome-variance": [
+  "ev-variance/two-outcome-variance": [
     { says: "Sanity and commonTrap: the variance comes in under the even-match ceiling of a quarter of the squared gap",
       holds: (_p, d) => P(d.varProfit) < P(d.capVar),
       breaks: (_p, d) => ({ ...d, varProfit: d.capVar }) },
@@ -163,7 +163,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(P(p.w) - P(d.mean), P(d.devWin)) && same(P(d.mean) + P(p.l), P(d.devLose)),
       breaks: (_p, d) => ({ ...d, devWin: d.devWin + 0.5 }) },
   ],
-  "spinner-pmf-variance": [
+  "ev-variance/spinner-pmf-variance": [
     { says: "Sanity: the pairwise-distance identity reaches the same variance",
       holds: (_p, d) => Math.abs((d.tA * d.tB * d.dAB * d.dAB + d.tA * d.tC * d.dAC * d.dAC
         + d.tB * d.tC * d.dBC * d.dBC) / 100 - d.varPay) < EPS,
@@ -175,7 +175,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.varPay) !== 0 && same(P(d.meanSq) - P(d.mean) * P(d.mean), d.varPay),
       breaks: (_p, d) => ({ ...d, varPay: 0 }) },
   ],
-  "affine-scaling-sd": [
+  "ev-variance/affine-scaling-sd": [
     { says: "Sanity: the answer sits between a quarter and a half of the payout range",
       holds: (_p, d) => P(d.quarterSpread) < P(d.sd) && P(d.sd) < P(d.halfSpread),
       breaks: (_p, d) => ({ ...d, sd: d.halfSpread * 2 }) },
@@ -195,7 +195,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && P(d.sd + p.bonus) !== P(d.sd),
       breaks: (p, d) => ({ ...d, sd: d.sd + p.bonus }) },
   ],
-  "push-branch-bet": [
+  "ev-variance/push-branch-bet": [
     { says: "Sanity: the offered payout sits on the stated side of the break-even payout",
       holds: (p, d) => (d.ev > 0 ? P(p.payout) > P(d.fairPayout) : P(p.payout) < P(d.fairPayout)),
       breaks: (p, d) => ({ ...d, fairPayout: p.payout }) },
@@ -210,7 +210,7 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (_p, d) => ({ ...d, ev: d.ev * 3 }) },
   ],
-  "sum-of-bets-variance": [
+  "ev-variance/sum-of-bets-variance": [
     { says: "Sanity and commonTrap: the combined spread is strictly under the sum of the two spreads",
       holds: (_p, d) => P(d.sdTotal) < P(d.sdSum),
       breaks: (_p, d) => ({ ...d, sdTotal: d.sdSum }) },
@@ -222,7 +222,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.sdSum * d.sdSum > d.varTotal + EPS,
       breaks: (_p, d) => ({ ...d, sdSum: d.sdTotal }) },
   ],
-  "urn-choice-total-expectation": [
+  "ev-variance/urn-choice-total-expectation": [
     { says: "Sanity: the answer lands strictly between the two box values",
       holds: (_p, d) => P(d.ev) > Math.min(P(d.evA), P(d.evB)) && P(d.ev) < Math.max(P(d.evA), P(d.evB)),
       breaks: (_p, d) => ({ ...d, ev: d.evA }) },
@@ -243,7 +243,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.boxPct * d.evA + d.otherPct * d.evB) / 100 - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "max-of-two-dice": [
+  "ev-variance/max-of-two-dice": [
     { says: "Sanity: the higher and lower dice's point totals add to the whole, in integers",
       holds: (p, d) => d.topNumer + d.lowNumer === (p.faces + 1) * p.faces * p.faces,
       breaks: (_p, d) => ({ ...d, lowNumer: d.lowNumer + 1 }) },
@@ -257,7 +257,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.rate * d.topNumer) / (p.faces * p.faces) - p.fee - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "one-optional-reroll": [
+  "ev-variance/one-optional-reroll": [
     { says: "Sanity: pricing the rule as an option reaches the same points average",
       holds: (p, d) => Math.abs(d.freshMean + (d.tossCount * d.standCount) / (2 * p.faces) - d.points) < EPS,
       breaks: (_p, d) => ({ ...d, points: d.points * 1.1 }) },
@@ -271,7 +271,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs((p.rate * d.pointsNumer) / (2 * p.faces) - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "geometric-waiting-time": [
+  "ev-variance/geometric-waiting-time": [
     { says: "Sanity: one more ending face would cost strictly less than the answer",
       holds: (_p, d) => P(d.evEasier) < P(d.spend),
       breaks: (_p, d) => ({ ...d, evEasier: d.spend }) },
@@ -288,7 +288,7 @@ const CLAIMS: Record<string, Claim[]> = {
       nonVacuous: (_p, d) => d.winFaces === 1, // the longest wait, where the reciprocal bites hardest
       breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
   ],
-  "hypergeometric-mean": [
+  "ev-variance/hypergeometric-mean": [
     { says: "Sanity: the winners and the blanks drawn account for every ticket pulled",
       holds: (p, d) => Math.abs(d.meanWin + d.meanPlain - p.draws) < EPS && d.plain === p.pool - p.special,
       breaks: (_p, d) => ({ ...d, meanPlain: d.meanPlain + 1 }) },
@@ -303,7 +303,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(p.rate * d.perDraw) < P(d.ev) && Math.abs(p.draws * p.rate * d.perDraw - d.ev) < EPS,
       breaks: (p, d) => ({ ...d, ev: p.rate * d.perDraw }) },
   ],
-  "capped-payoff": [
+  "ev-variance/capped-payoff": [
     { says: "Sanity: the cap can only take money away from the uncapped average",
       holds: (_p, d) => P(d.ev) < P(d.evUncapped),
       breaks: (_p, d) => ({ ...d, ev: d.evUncapped }) },
@@ -320,7 +320,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs((d.lowTotal + d.highTotal) / p.faces - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "insurance-break-even-premium": [
+  "ev-variance/insurance-break-even-premium": [
     // The ledger is an integer identity on both sides, so it is asserted exactly rather than on
     // printed values: every leg is a whole dollar by construction of the param steps.
     { says: "Sanity: the hundred-policy ledger balances to the dollar",
@@ -342,7 +342,7 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, minorLeg: d.minorLeg + 1 }) },
   ],
 
-  "distinct-types-collected": [
+  "ev-variance/distinct-types-collected": [
     { says: "Sanity: the designs held and the designs missing account for the whole set",
       holds: (p, d) => Math.abs(d.distinct + d.missing - p.types) < EPS
         && d.allNumer === p.types ** p.draws && d.missNumer === (p.types - 1) ** p.draws,
@@ -361,7 +361,7 @@ const CLAIMS: Record<string, Claim[]> = {
       nonVacuous: (p) => p.draws > p.types, // more packs than designs, where the trap is not even possible
       breaks: (p, d) => ({ ...d, ev: p.rate * p.draws }) },
   ],
-  "binomial-variance": [
+  "ev-variance/binomial-variance": [
     { says: "Sanity: the spread comes in strictly under the even-odds ceiling",
       holds: (_p, d) => P(d.varCount) < P(d.capVar),
       breaks: (_p, d) => ({ ...d, varCount: d.capVar }) },
@@ -380,7 +380,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.mean) !== P(d.varCount),
       breaks: (_p, d) => ({ ...d, varCount: d.mean }) },
   ],
-  "equal-ev-sd-comparison": [
+  "ev-variance/equal-ev-sd-comparison": [
     { says: "Setup: the two games really do pay the same on average, in whole dollars",
       holds: (p, d) => same(d.coinPay / 2, p.m) && same((p.k * d.prize) / p.faces, p.m) && Number.isInteger(d.prize),
       breaks: (_p, d) => ({ ...d, prize: d.prize + 1 }) },
@@ -405,7 +405,7 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, sdDie: d.sdDie * 1.02 }) },
   ],
 
-  "conditional-expectation-given-event": [
+  "ev-variance/conditional-expectation-given-event": [
     // The bracket is checked as printed and from both sides. A one-sided version was dropped
     // in review: the natural companion — putting the forbidden points back to recover the
     // plain average — is an identity by construction here, since totalGood is defined as
@@ -427,7 +427,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs((p.rate * d.totalGood) / d.goodPairs - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "matching-indicators-variance": [
+  "ev-variance/matching-indicators-variance": [
     { says: "Sanity: the mean-of-squares route rebuilds the same count variance",
       holds: (p, d) => p.party * p.diners * (p.diners - 1) + d.pairs * p.diners
           - p.party * p.party * (p.diners - 1) === d.numer
@@ -446,7 +446,7 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(p.rate * p.rate * d.varCount - d.varPay) < EPS,
       breaks: (_p, d) => ({ ...d, varPay: d.varPay * 1.02 }) },
   ],
-  "pattern-waiting-hh-ht": [
+  "ev-variance/pattern-waiting-hh-ht": [
     { says: "Sanity: the bill clears the price of the two runs the pair takes at minimum",
       holds: (p, d) => d.twoRuns === 2 * p.cost && P(d.twoRuns) < P(d.spend),
       breaks: (_p, d) => ({ ...d, spend: d.twoRuns }) },
@@ -467,7 +467,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.cost * d.flips - d.spend) < EPS,
       breaks: (_p, d) => ({ ...d, spend: d.spend * 1.02 }) },
   ],
-  "two-reroll-stopping-value": [
+  "ev-variance/two-reroll-stopping-value": [
     { says: "Sanity: the two-spin game is worth strictly less, an option you may decline cannot hurt",
       holds: (p, d) => same((p.rate * d.midNumer) / (2 * p.sectors), d.evMid) && P(d.evMid) < P(d.ev),
       breaks: (_p, d) => ({ ...d, evMid: d.ev }) },
@@ -495,7 +495,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.rate * d.topValue - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "truncated-doubling-game": [
+  "ev-variance/truncated-doubling-game": [
     { says: "Sanity: capping one round shorter is worth exactly half a stake less, as printed",
       holds: (p, d) => Math.abs(d.evShorter - ((p.rounds + 1) * p.stake) / 2) < EPS
         && same(d.evShorter + p.stake / 2, d.ev),
@@ -514,7 +514,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.maxPay === p.stake * d.potMult,
       breaks: (_p, d) => ({ ...d, potMult: d.potMult * 2 }) },
   ],
-  "wald-random-sum": [
+  "ev-variance/wald-random-sum": [
     { says: "Sanity: the midpoint of the one-box and full-load values is the answer, as printed",
       holds: (p, d) => same((p.rate * (p.items + 1)) / 2, d.lowTotal)
         && same((p.rate * p.boxes * (p.items + 1)) / 2, d.highTotal)
@@ -539,7 +539,7 @@ const CLAIMS: Record<string, Claim[]> = {
         && Math.abs(p.rate * d.meanTotalItems - d.ev) < EPS,
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
   ],
-  "sampling-without-replacement-variance": [
+  "ev-variance/sampling-without-replacement-variance": [
     { says: "Sanity: the pairwise rebuild reaches the same variance, in integers",
       holds: (p, d) => d.pairsDrawn === p.draws * (p.draws - 1)
         && p.draws * p.faulty * d.sound * (p.pool - 1) - d.pairsDrawn * p.faulty * d.sound
@@ -576,10 +576,22 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.01 }) },
   ],
+
+  "distributions/binomial-exact-count": [
+    { says: "Sanity: for k=0 the exact-count and at-least-one-failure probabilities are complements summing to 1; for k>=1 the exact-count probability sits at or below at-least-one-failure",
+      holds: (p, d) => p.k === 0
+        ? Math.abs(P(d.pmf) + P(d.atLeastOne) - 1) < 1e-4 // printed-precision sum, not raw floats — measured worst gap 5e-5 across the legal space
+        : P(d.pmf) <= P(d.atLeastOne),
+      breaks: (_p, d) => ({ ...d, atLeastOne: 0 }) },
+    { says: "Combine: the answer is the arrangement count times one arrangement's probability, exactly",
+      holds: (p, d) => Math.abs(d.combNK * (d.prob ** p.k) * (d.q ** d.nMinusK) - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the per-board fail rate alone, or that rate times the trial count, is not the exact-count probability",
+      holds: (p, d) => P(d.pmf) !== P(p.n * d.prob) && P(d.pmf) !== P(d.prob),
+      breaks: (p, d) => ({ ...d, pmf: p.n * d.prob }) },
+  ],
 };
 
-const templateFor = (slug: string) =>
-  PROBLEMS.find((t) => t.id === `ev-variance/${slug}`) as ProblemTemplate;
 const firstLegalDraw = (t: ProblemTemplate) => {
   let first: Params | null = null;
   forEachLegalDraw(t, (p) => { first ??= p; });
@@ -589,7 +601,7 @@ const firstLegalDraw = (t: ProblemTemplate) => {
 describe("prose claims hold on every legal draw", () => {
   for (const [slug, claims] of Object.entries(CLAIMS)) {
     it(`${slug} — ${claims.length} claims`, () => {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       expect(t, `no template registered for ${slug}`).toBeDefined();
       const failed = claims.map(() => 0);
       const covered = claims.map(() => 0);
@@ -614,7 +626,7 @@ describe("prose claims hold on every legal draw", () => {
 describe("the prose-claim predicates fail when they should", () => {
   it("every claim's own falsifier makes it false, and the sound draw makes it true", () => {
     for (const [slug, claims] of Object.entries(CLAIMS)) {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       const p = firstLegalDraw(t);
       const d = t.derived(p);
       for (const c of claims) {
@@ -630,7 +642,7 @@ describe("the prose-claim predicates fail when they should", () => {
     // claims that never touch what it is actually asked for.
     const undetected: string[] = [];
     for (const [slug, claims] of Object.entries(CLAIMS)) {
-      const t = templateFor(slug);
+      const t = byId.get(slug) as ProblemTemplate;
       const p = firstLegalDraw(t);
       const d = t.derived(p);
       const bent = { ...d, [t.answerKey]: d[t.answerKey] * 1.02 };
@@ -639,9 +651,9 @@ describe("the prose-claim predicates fail when they should", () => {
     expect(undetected, "a 2% wrong answer passes every claim on these templates").toEqual([]);
   });
 
-  it("covers every ev-variance template, with no claim left unstated", () => {
-    const shipped = PROBLEMS.filter((t) => t.topic === "probability/ev-variance")
-      .map((t) => t.id.replace("ev-variance/", "")).sort();
+  it("covers every ev-variance/distributions template, with no claim left unstated", () => {
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions"];
+    const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
       expect(claims.length, `${slug} has too few claims to cover its prose`).toBeGreaterThanOrEqual(3);

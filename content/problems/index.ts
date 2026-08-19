@@ -84,6 +84,7 @@ import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value"
 import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
 import { waldRandomSum } from "./ev-variance/wald-random-sum";
 import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
+import { binomialExactCount } from "./distributions/binomial-exact-count";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -171,6 +172,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   truncatedDoublingGame,
   waldRandomSum,
   samplingWithoutReplacementVariance,
+  binomialExactCount,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

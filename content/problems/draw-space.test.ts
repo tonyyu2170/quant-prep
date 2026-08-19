@@ -16,10 +16,10 @@ import { PROBLEMS } from "./index";
 // Those are bespoke to each template and would grow to one hand-written claim per problem.
 // Promoting them is a separate decision with its own maintenance cost.
 //
-// Scope is ev-variance, matching printed-precision.test.ts. Constraint 8 is a B3 rule and the
-// 55 bayes and counting problems predate it; widening is a decision to take on its own
-// evidence, not a side effect of this file.
-const TOPIC = "probability/ev-variance";
+// Scope is ev-variance and distributions. Constraint 8 is a B3 rule and the 55 bayes and
+// counting problems predate it; widening further is a decision to take on its own evidence,
+// not a side effect of this file.
+const TOPICS = ["probability/ev-variance", "probability/distributions"];
 
 /** Walk the full cartesian product of a template's param specs, legal draws only. */
 export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): void {
@@ -194,8 +194,8 @@ describe("the draw-space counters fail when they should", () => {
   });
 });
 
-describe("ev-variance draw spaces clear constraint 8", () => {
-  const templates = PROBLEMS.filter((t) => t.topic === TOPIC);
+describe("distribution-batch draw spaces clear constraint 8", () => {
+  const templates = PROBLEMS.filter((t) => TOPICS.includes(t.topic));
   it("has templates to measure", () => expect(templates.length).toBeGreaterThan(0));
 
   it("every template yields at least 12 distinct answers over its full legal space", () => {
