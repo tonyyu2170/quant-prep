@@ -907,6 +907,65 @@ def truncated_doubling_game_brute(p):
     return float(total)
 
 
+def wald_random_sum_exact(p):
+    boxes, items, rate = int(p["boxes"]), int(p["items"]), int(p["rate"])
+    return {
+        "meanBoxes": (boxes + 1) / 2,
+        "meanItems": (items + 1) / 2,
+        "meanTotalItems": ((boxes + 1) * (items + 1)) / 4,
+        "lowTotal": (rate * (items + 1)) / 2,
+        "highTotal": (rate * boxes * (items + 1)) / 2,
+        "ev": (rate * (boxes + 1) * (items + 1)) / 4,
+    }
+
+
+def wald_random_sum_brute(p):
+    """Enumerate the joint space: every delivery size, and inside each one every combination of
+    box contents, each weighted by how often it happens. The total is summed over that whole
+    space in exact rationals. No average count and no average box-load is ever formed, so the
+    product of two expectations the template turns on plays no part in this figure."""
+    boxes, items, rate = int(p["boxes"]), int(p["items"]), int(p["rate"])
+    grand = Fraction(0)
+    for n in range(1, boxes + 1):
+        pile = 0
+        for delivery in product(range(1, items + 1), repeat=n):
+            pile += sum(delivery)
+        grand += Fraction(rate * pile, boxes * items ** n)
+    return float(grand)
+
+
+def sampling_without_replacement_variance_exact(p):
+    pool, faulty, draws = int(p["pool"]), int(p["faulty"]), int(p["draws"])
+    sound = pool - faulty
+    denom = pool * pool * (pool - 1)
+    return {
+        "sound": sound,
+        "denom": denom,
+        "pairsDrawn": draws * (draws - 1),
+        "oneVar": (faulty * sound) / (pool * pool),
+        "fpc": (pool - draws) / (pool - 1),
+        "mean": (draws * faulty) / pool,
+        "withRepl": (draws * faulty * sound) / (pool * pool),
+        "varCount": (draws * faulty * sound * (pool - draws)) / denom,
+    }
+
+
+def sampling_without_replacement_variance_brute(p):
+    """Lay out the drawer as labelled cables and enumerate every handful that could be pulled
+    from it, counting the faulty ones inside each. The spread comes straight from the
+    definition — the average squared distance from the average count — over that list of
+    handfuls. No per-draw chance, no covariance and no finite-population correction is formed,
+    so neither the template's factor nor the Sanity check's pairwise term appears here."""
+    pool, faulty, draws = int(p["pool"]), int(p["faulty"]), int(p["draws"])
+    cables = [1] * faulty + [0] * (pool - faulty)
+    hist = [0] * (draws + 1)
+    for handful in combinations(cables, draws):
+        hist[sum(handful)] += 1
+    n = sum(hist)
+    mean = Fraction(sum(c * w for c, w in enumerate(hist)), n)
+    return float(sum(w * (c - mean) ** 2 for c, w in enumerate(hist)) / n)
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -936,4 +995,6 @@ SOLVERS = {
     "ev-variance/pattern-waiting-hh-ht": {"exact": pattern_waiting_hh_ht_exact, "brute": pattern_waiting_hh_ht_brute},
     "ev-variance/two-reroll-stopping-value": {"exact": two_reroll_stopping_value_exact, "brute": two_reroll_stopping_value_brute},
     "ev-variance/truncated-doubling-game": {"exact": truncated_doubling_game_exact, "brute": truncated_doubling_game_brute},
+    "ev-variance/wald-random-sum": {"exact": wald_random_sum_exact, "brute": wald_random_sum_brute},
+    "ev-variance/sampling-without-replacement-variance": {"exact": sampling_without_replacement_variance_exact, "brute": sampling_without_replacement_variance_brute},
 }

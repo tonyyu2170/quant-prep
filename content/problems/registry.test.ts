@@ -28,6 +28,7 @@ describe("problem registry invariants", () => {
     const ev = problemsFor("probability/ev-variance").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(25);
+    expect(ev).toBe(30);
     expect(bayes + counting + ev).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
@@ -99,6 +100,23 @@ describe("problem registry invariants", () => {
     const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
     expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(15);
     expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
+  });
+  it("ev-variance batch hits the 12/12/6 difficulty distribution", () => {
+    const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
+    expect(ev.length).toBe(30);
+    expect(ev.filter((t) => t.difficulty === 1).length).toBe(12);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(ev.filter((t) => t.difficulty === 3).length).toBe(6);
+  });
+  it("every ev-variance problem grades on rel 0.005 — never abs", () => {
+    // An expectation is a decimal the solver rounds, so strict equality would be a
+    // grading bug; and an abs tolerance would have to satisfy the smallest |answer|
+    // across all 100 emitted draws (emit.ts:43), which no author can pick safely.
+    const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
+    for (const t of ev) {
+      expect(t.accepted.tolerance.rel).toBe(0.005);
+      expect(t.accepted.tolerance.abs).toBeUndefined();
+    }
   });
   it("bayes batch hits the 12/12/6 difficulty distribution", () => {
     const bayes = PROBLEMS.filter((t) => t.id.startsWith("bayes/"));

@@ -82,6 +82,8 @@ import { matchingIndicatorsVariance } from "./ev-variance/matching-indicators-va
 import { patternWaitingHhHt } from "./ev-variance/pattern-waiting-hh-ht";
 import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value";
 import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
+import { waldRandomSum } from "./ev-variance/wald-random-sum";
+import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -167,6 +169,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   patternWaitingHhHt,
   twoRerollStoppingValue,
   truncatedDoublingGame,
+  waldRandomSum,
+  samplingWithoutReplacementVariance,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

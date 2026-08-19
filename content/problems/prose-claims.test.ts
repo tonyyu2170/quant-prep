@@ -510,6 +510,68 @@ const CLAIMS: Record<string, Claim[]> = {
         && d.maxPay === p.stake * d.potMult,
       breaks: (_p, d) => ({ ...d, potMult: d.potMult * 2 }) },
   ],
+  "wald-random-sum": [
+    { says: "Sanity: the midpoint of the one-box and full-load values is the answer, as printed",
+      holds: (p, d) => same((p.rate * (p.items + 1)) / 2, d.lowTotal)
+        && same((p.rate * p.boxes * (p.items + 1)) / 2, d.highTotal)
+        && same((d.lowTotal + d.highTotal) / 2, d.ev),
+      breaks: (_p, d) => ({ ...d, highTotal: d.highTotal * 2 }) },
+    { says: "Sanity and commonTrap: pricing every delivery at full size overstates the takings",
+      holds: (_p, d) => P(d.ev) < P(d.highTotal),
+      breaks: (_p, d) => ({ ...d, ev: d.highTotal }) },
+    // The prose claims the conditional totals are evenly spaced, which is what makes the
+    // midpoint argument sound; this walks every delivery size rather than taking that on trust.
+    { says: "Sanity: averaging over every delivery size one at a time reaches the same figure",
+      holds: (p, d) => {
+        let sum = 0;
+        for (let n = 1; n <= p.boxes; n++) sum += (p.rate * n * (p.items + 1)) / 2;
+        return Math.abs(sum / p.boxes - d.ev) < EPS;
+      },
+      breaks: (_p, d) => ({ ...d, ev: d.ev + 1 }) },
+    { says: "keyInsight: the expected total is the expected count times the expected box-load, priced",
+      holds: (p, d) => Math.abs(d.meanBoxes - (p.boxes + 1) / 2) < EPS
+        && Math.abs(d.meanItems - (p.items + 1) / 2) < EPS
+        && Math.abs(d.meanBoxes * d.meanItems - d.meanTotalItems) < EPS
+        && Math.abs(p.rate * d.meanTotalItems - d.ev) < EPS,
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+  ],
+  "sampling-without-replacement-variance": [
+    { says: "Sanity: the pairwise rebuild reaches the same variance, in integers",
+      holds: (p, d) => d.pairsDrawn === p.draws * (p.draws - 1)
+        && p.draws * p.faulty * d.sound * (p.pool - 1) - d.pairsDrawn * p.faulty * d.sound
+          === p.draws * p.faulty * d.sound * (p.pool - p.draws)
+        && Math.abs((p.draws * p.faulty * d.sound * (p.pool - p.draws)) / d.denom - d.varCount) < EPS,
+      breaks: (_p, d) => ({ ...d, pairsDrawn: d.pairsDrawn + 1 }) },
+    { says: "Sanity and commonTrap: the answer comes in strictly under the independent-draw figure",
+      holds: (p, d) => same((p.draws * p.faulty * d.sound) / (p.pool * p.pool), d.withRepl)
+        && P(d.varCount) < P(d.withRepl),
+      breaks: (_p, d) => ({ ...d, varCount: d.withRepl }) },
+    { says: "keyInsight: the whole effect is one factor set by how much of the drawer was taken, and the mean is untouched",
+      holds: (p, d) => Math.abs(d.fpc - (p.pool - p.draws) / (p.pool - 1)) < EPS && d.fpc < 1 - EPS
+        && Math.abs(d.withRepl * d.fpc - d.varCount) < EPS
+        && Math.abs(d.mean - (p.draws * p.faulty) / p.pool) < EPS,
+      breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.02 }) },
+    // The three above never leave the template's own algebra, so the answer is also held
+    // against the distribution of the count itself, built from binomial coefficients.
+    { says: "Statement: the answer is the spread of the count's own distribution",
+      holds: (p, d) => {
+        const ch = (a: number, b: number) => {
+          if (b < 0 || b > a) return 0;
+          let r = 1;
+          for (let j = 0; j < b; j++) r = (r * (a - j)) / (j + 1);
+          return Math.round(r);
+        };
+        const all = ch(p.pool, p.draws);
+        let mu = 0, sq = 0;
+        for (let k = 0; k <= p.draws; k++) {
+          const w = (ch(p.faulty, k) * ch(d.sound, p.draws - k)) / all;
+          mu += k * w;
+          sq += k * k * w;
+        }
+        return Math.abs(mu - d.mean) < EPS && Math.abs(sq - mu * mu - d.varCount) < EPS;
+      },
+      breaks: (_p, d) => ({ ...d, varCount: d.varCount * 1.01 }) },
+  ],
 };
 
 const templateFor = (slug: string) =>
