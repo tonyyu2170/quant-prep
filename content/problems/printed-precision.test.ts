@@ -10,11 +10,12 @@ import { PROBLEMS } from "./index";
 // during this batch: the floats reconciled exactly while the rendered decimals did not, on
 // a quarter of that template's draws, and a float-based sweep reported all-green.
 //
-// Scope is every shipped topic. The helpers are exported so the same checker can be pointed
-// at a subset as a diagnostic without being reimplemented (a second implementation is a
-// second thing to be wrong) — from another test file, since vitest is imported at module
+// Scope is every shipped topic, each audited on its own so a collapse to zero chains in one
+// cannot hide under another's volume. The helpers are exported so the same checker can be
+// pointed at a subset as a diagnostic without being reimplemented (a second implementation is
+// a second thing to be wrong) — from another test file, since vitest is imported at module
 // top level here.
-const TOPICS = ["probability/ev-variance"];
+const TOPICS = ["probability/bayes", "probability/counting", "probability/ev-variance"];
 const SEEDS = 200;
 const MIN_CHECKED_PER_TOPIC = 1000; // a silent drop to zero chains in ONE topic must not pass
 
@@ -137,6 +138,21 @@ export interface ChainAudit {
   segments: number;
 }
 
+/** Every rendering a value could legitimately take, allowing for a rounding boundary. */
+function atBoundaryEitherWay(v: number): Set<string> {
+  // fmtNum prints an integer in full and everything else at four significant figures, so a
+  // whole number has exactly one rendering and must never be nudged off it — perturbing
+  // 2598960 would offer "2599000" as an alternative and let 2598961 pass against it.
+  if (Number.isInteger(v)) return new Set([fmtNum(v)]);
+  const eps = 1e-11;
+  const out = new Set([fmtNum(v)]);
+  for (const w of [v * (1 + eps), v * (1 - eps)]) if (!Number.isInteger(w)) out.add(fmtNum(w));
+  return out;
+}
+
+const intersects = (sets: Set<string>[]) =>
+  [...sets[0]].some((s) => sets.every((other) => other.has(s)));
+
 export function auditChains(texts: string[], label: string): ChainAudit {
   const out: ChainAudit = { mismatches: [], unevaluable: [], claimFree: 0, checked: 0, segments: 0 };
   for (const text of texts) {
@@ -159,14 +175,16 @@ export function auditChains(texts: string[], label: string): ChainAudit {
       // One value and some labels is a definition, not a chain: nothing was recomputed.
       if (values.length < 2) { out.claimFree++; continue; }
       out.checked++;
-      // The claim on the page is about DECIMAL arithmetic: 0.00216/0.00256 is exactly 0.84375,
-      // which fmtNum rounds up to 0.8438. IEEE754 lands one ulp below that tie and would render
-      // 0.8437, flagging a page that is right. Settling each computed value at 12 significant
-      // figures before rendering strips that binary noise. It cannot hide the defect this gate
-      // exists for: feeding a 4-significant-figure operand into the next step moves the result
-      // by around 1e-4 relative, eight orders of magnitude above where this rounds.
-      const shown = values.map((v) => fmtNum(Number(v.toPrecision(12))));
-      if (new Set(shown).size !== 1) out.mismatches.push(`${label}: $${seg}$ renders ${shown.join(" vs ")}`);
+      const shown = values.map((v) => fmtNum(v));
+      // A value sitting exactly on a 4-significant-figure boundary may render either way, and
+      // which way it falls is decided by binary representation rather than by anything on the
+      // page: 0.00216/0.00256 is exactly 0.84375, and IEEE754 puts the quotient one ulp under
+      // that tie while the template's own float sits on it, so the two render 0.8437 and
+      // 0.8438. Neither is wrong. Accepting both readings at a boundary cannot forgive the
+      // defect this gate exists for — a 4-significant-figure operand fed into the next step
+      // moves the result by about 1e-4 relative, seven orders of magnitude further out.
+      if (!intersects(values.map(atBoundaryEitherWay)))
+        out.mismatches.push(`${label}: $${seg}$ renders ${shown.join(" vs ")}`);
     }
   }
   return out;
@@ -244,8 +262,11 @@ describe("the printed-precision checker fails when it should", () => {
     ["\\binom{6}{2}\\times\\binom{5}{3}=151", true],
     // A decimal rounding tie: exactly 0.84375, which IEEE754 lands just under. Not a defect.
     ["0.00216/0.00256=0.8438", false],
-    ["0.00216/0.00256=0.8437", true],  // rounding the tie the other way contradicts fmtNum
+    ["0.00216/0.00256=0.8437", false], // and the other reading of the same tie is equally fine
     ["0.00216/0.00256=0.8439", true],  // but a real last-digit error still flags
+    ["0.5\\times0.65^{2}=0.2113", false], // exactly 0.21125 — a tie the other way round
+    ["0.5\\times0.65^{2}=0.2112", false],
+    ["0.5\\times0.65^{2}=0.2114", true],  // one digit past the boundary is still a defect
     ["0.2308/0.6923=0.3334", false],   // 0.33338..., not a tie, correctly rounded
     ["0.2308/0.6923=0.3333", true],    // the rounded-operand drift this gate exists for
     // A label on one side must not excuse the arithmetic on the other two.
