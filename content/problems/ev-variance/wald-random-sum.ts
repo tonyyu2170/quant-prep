@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (the joint space the
 // Python counterpart enumerates has to stay inside the enumeration budget) and never asks the
 // answer, so a helper would be a second copy of the product for nothing. Constraint 2's floor
-// cannot bind — enumerated over the legal space |answer| runs [8, 405].
+// cannot bind — enumerated over the legal space |answer| runs [8, 240].
 // A sum of a random number of random pieces. Both averages are halves of whole numbers, so
 // every chain is written over a common denominator of four and no printed decimal is ever an
 // operand. The Sanity check re-derives the answer by conditioning on the delivery size instead

@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (the party cannot be
 // larger than the room, and one diner alone has no pair to correlate with) and never asks the
 // answer, so a helper would be a second copy of the variance formula for nothing. Constraint
-// 2's floor cannot bind — every draw carries at least two diners paid at least two dollars.
+// 2's floor cannot bind — enumerated over the legal space |answer| runs [0.8929, 144].
 // The variance of a matching count, where the indicators are NOT independent. Every chain is
 // an integer over an integer: the individual spread, the covariance and the total all sit over
 // the common denominator that the room size and the room size less one supply, so nothing

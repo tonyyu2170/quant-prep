@@ -3,8 +3,8 @@ import { fmtNum } from "../util";
 
 // No module-local answer helper, and no `constraint` at all: constraint 2 licenses a helper
 // only where a floor has to be pinned against the answer, and this template's floor cannot
-// bind — no game ends before two runs and every run is charged at least two dollars, so the
-// bill starts at four and runs to 360.
+// bind — no game ends before two runs and every run is charged at least two dollars:
+// enumerated over the legal space |answer| runs [5.625, 360].
 // The wait for a repeated outcome, against the wait for a mixed pair. Chances are integers
 // over a hundred throughout, so the two closed forms print as one integer over another and no
 // rounded decimal is ever an operand. The Sanity check prices the mixed pair — a genuinely

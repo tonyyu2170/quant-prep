@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 // No module-local answer helper: `constraint` is a structural rejection (the threshold has to
 // sit inside the dice and leave more than one face above it) and never asks the answer, so a
 // helper would be a second copy of the expectation for nothing. Constraint 2's floor cannot
-// bind — the pair always totals at least two points at two dollars a point.
+// bind — enumerated over the legal space |answer| runs [10.4, 472.4].
 // An expectation re-taken over the outcomes a piece of news leaves standing. Everything is
 // counted in whole combinations and whole points, so every chain divides an integer by an
 // integer and no printed decimal is ever fed back in as an operand. The Sanity check puts the
