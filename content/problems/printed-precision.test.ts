@@ -167,6 +167,10 @@ describe("the printed-precision checker fails when it should", () => {
     // is arithmetically false, and both were silently claim-free before the \text guard.
     "0.4\\text{ of }0.5=0.25",
     "12\\text{ cm}\\times2=25\\text{ cm}",
+    // The prose-carrying commands RECOGNISED_CMD warns about are absent from the corpus, and
+    // must stay loud while they are: both of these are false, and both are reported.
+    "\\mathrm{P}(A)=2\\times3=7",
+    "\\operatorname{odds}(S)=0.4\\times6=2.5",
   ];
   it.each(unreadable)("%s -> is reported unreadable", (seg) => {
     const a = auditChains([`$${seg}$`], "mutation");

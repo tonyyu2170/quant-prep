@@ -77,6 +77,19 @@ export function evalTex(expr: string): number | null {
 // The LaTeX commands this corpus uses, and only those. A side that still carries a command
 // outside this set is reported unevaluable rather than assumed inert: an unfamiliar command
 // could be wrapping arithmetic the reader never saw. Adding one here is a deliberate act.
+//
+// BEFORE YOU ADD ONE: this set holds two kinds of command, and only one of them is safe to
+// extend by name alone. Most are inert — removing "\mid" or "\cap" can only take away
+// structure, never the letters that decide whether isLabel calls a side notation. "\text" is
+// not: its letters come from its own braces, so left unguarded it lets prose vouch for
+// operands printed beside it, and "0.4\text{ of }0.5=0.25" reads as notation while printing
+// two real numbers. isLabel handles that with TEXT_GROUP. Any command that likewise carries
+// arbitrary prose — \mathrm, \operatorname, \mbox — needs the same treatment before it goes
+// in here, or it reopens that hole. Today they are absent and so fail loud, which is the
+// behaviour to preserve until one is deliberately admitted.
+//
+// "\leq" is deliberately absent even though splitClaim reads it as a relation: the corpus
+// prints none, and a nested one should fail loud rather than be quietly excused.
 const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|text|bar|cap|max|geq|sigma|,)/g;
 
 /** Prose set in \text{...}, the one recognised command whose own content supplies letters. */
