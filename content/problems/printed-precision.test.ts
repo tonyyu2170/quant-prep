@@ -117,29 +117,66 @@ export function isLabel(side: string): boolean {
   return /[A-Za-z]/.test(rest);
 }
 
+/** What a relation asserts between the value on its left and the value on its right. */
+export type Rel = "EQ" | "GT" | "GE" | "LT" | "LE";
+
+// "\propto" relates the same two values up to a shared factor, so the arithmetic printed on
+// either side of it still has to reconcile — it is a relation, not decoration.
+const RELATIONS: [string, Rel][] = [
+  ["=", "EQ"], ["\\propto", "EQ"], ["\\geq", "GE"], ["\\leq", "LE"], [">", "GT"], ["<", "LT"],
+];
+
+export interface Claim {
+  /** the expressions between the relations, one more of these than there are relations */
+  sides: string[];
+  /** relations[i] is asserted between sides[i] and sides[i+1] */
+  relations: Rel[];
+}
+
 /**
- * Split a segment at the relations that assert equality of value, ignoring any inside a brace
- * or paren group: the "=" in "P(\max=3\mid\ldots)" names an event, it does not join two
+ * Split a segment at the relations that assert something about value, ignoring any inside a
+ * brace or paren group: the "=" in "P(\max=3\mid\ldots)" names an event, it does not join two
  * expressions, and splitting there tears the notation into two unreadable halves. `null`
  * means the delimiters do not balance, which is reported rather than guessed at.
+ *
+ * A direction claim is the same machinery as an equality claim, not new machinery: both sides
+ * of "$0.6667 > 0.2$" are printed literals, and a learner reads them off the page exactly as
+ * they read "$0.1391\times0.85=0.1182$".
  */
-export function splitClaim(seg: string): string[] | null {
-  const out: string[] = [];
+export function splitClaim(seg: string): Claim | null {
+  const sides: string[] = [];
+  const relations: Rel[] = [];
   let depth = 0, start = 0;
   for (let i = 0; i < seg.length; i++) {
     const c = seg[i];
-    if (c === "{" || c === "(") depth++;
-    else if (c === "}" || c === ")") { depth--; if (depth < 0) return null; }
-    else if (depth === 0 && c === "=") { out.push(seg.slice(start, i)); start = i + 1; }
-    else if (depth === 0 && seg.startsWith("\\propto", i)) {
-      // "\propto" relates the same two values up to a shared factor, so the arithmetic
-      // printed on either side of it still has to reconcile.
-      out.push(seg.slice(start, i)); i += "\\propto".length - 1; start = i + 1;
-    }
+    if (c === "{" || c === "(") { depth++; continue; }
+    if (c === "}" || c === ")") { depth--; if (depth < 0) return null; continue; }
+    if (depth !== 0) continue;
+    const hit = RELATIONS.find(([tok]) => seg.startsWith(tok, i));
+    if (!hit) continue;
+    sides.push(seg.slice(start, i));
+    relations.push(hit[1]);
+    i += hit[0].length - 1;
+    start = i + 1;
   }
   if (depth !== 0) return null;
-  out.push(seg.slice(start));
-  return out;
+  sides.push(seg.slice(start));
+  return { sides, relations };
+}
+
+/**
+ * The relation implied by following one relation with another, so a label standing between two
+ * printed numbers does not hide the claim they make about each other: in
+ * "$P(A\mid RR)=0.08551<0.5$" the "=" and the "<" compose to "<" between 0.08551 and 0.5.
+ * `null` where nothing follows — "$a>b<c$" says nothing about a against c.
+ */
+export function compose(a: Rel, b: Rel): Rel | null {
+  if (a === "EQ") return b;
+  if (b === "EQ") return a;
+  const rising = (r: Rel) => r === "GT" || r === "GE";
+  if (rising(a) !== rising(b)) return null;
+  if (rising(a)) return a === "GT" || b === "GT" ? "GT" : "GE";
+  return a === "LT" || b === "LT" ? "LT" : "LE";
 }
 
 export interface ChainAudit {
@@ -168,6 +205,19 @@ function atBoundaryEitherWay(v: number): Set<string> {
 const intersects = (sets: Set<string>[]) =>
   [...sets[0]].some((s) => sets.every((other) => other.has(s)));
 
+/**
+ * Whether a direction claim holds between two values AS THE PAGE PRINTS THEM. The comparison is
+ * on the rendered numbers, not the underlying floats, because the rendered numbers are what a
+ * learner reads: two values a hair apart that both print 0.3333 make "$0.3333 > 0.3333$" a
+ * false line on the page whatever the floats say. That is why a strict claim gets no boundary
+ * allowance — where the "=" case forgives two readings of one number, here rendering equal IS
+ * the defect. A non-strict claim is the mirror image: rendering equal makes it true.
+ */
+function directionHolds(a: number, rel: Rel, b: number): boolean {
+  const x = Number(fmtNum(a)), y = Number(fmtNum(b));
+  return rel === "GT" ? x > y : rel === "GE" ? x >= y : rel === "LT" ? x < y : x <= y;
+}
+
 export function auditChains(texts: string[], label: string): ChainAudit {
   const out: ChainAudit = { mismatches: [], unevaluable: [], claimFree: 0, checked: 0, segments: 0 };
   for (const text of texts) {
@@ -175,31 +225,57 @@ export function auditChains(texts: string[], label: string): ChainAudit {
     for (let i = 1; i < parts.length; i += 2) {
       const seg = parts[i];
       out.segments++;
-      const sides = splitClaim(seg);
-      if (sides === null) { out.unevaluable.push(`${label}: $${seg}$ — unbalanced delimiters`); continue; }
-      if (sides.length < 2) { out.claimFree++; continue; }
-      const values: number[] = [];
-      let unreadable = false;
-      for (const side of sides) {
-        if (side.trim() === "") continue; // a leading "=" prints no operand of its own
-        const v = evalTex(side);
-        if (v !== null) values.push(v);
-        else if (!isLabel(side)) unreadable = true;
+      const claim = splitClaim(seg);
+      if (claim === null) { out.unevaluable.push(`${label}: $${seg}$ — unbalanced delimiters`); continue; }
+      const { sides, relations } = claim;
+      if (relations.length === 0) { out.claimFree++; continue; }
+      if (sides.some((side) => side.trim() !== "" && evalTex(side) === null && !isLabel(side))) {
+        out.unevaluable.push(`${label}: $${seg}$`);
+        continue;
       }
-      if (unreadable) { out.unevaluable.push(`${label}: $${seg}$`); continue; }
-      // One value and some labels is a definition, not a chain: nothing was recomputed.
-      if (values.length < 2) { out.claimFree++; continue; }
+      // Walk the sides left to right. Values joined by "=" accumulate into one group that must
+      // all render alike; a direction relation closes that group and is asserted between the
+      // group's last value and the next one. Relations compose across labels and across empty
+      // sides (a leading "=" prints no operand of its own), so notation standing in the middle
+      // of a chain never hides the claim the printed numbers make about each other.
+      let group: number[] = [];
+      let acc: Rel | null = "EQ";
+      let compared = false;
+      const failures: string[] = [];
+      const closeGroup = () => {
+        if (group.length < 2) return;
+        compared = true;
+        // A value sitting exactly on a 4-significant-figure boundary may render either way, and
+        // which way it falls is decided by binary representation rather than by anything on the
+        // page: 0.00216/0.00256 is exactly 0.84375, and IEEE754 puts the quotient one ulp under
+        // that tie while the template's own float sits on it, so the two render 0.8437 and
+        // 0.8438. Neither is wrong. Accepting both readings at a boundary cannot forgive the
+        // defect this gate exists for — a 4-significant-figure operand fed into the next step
+        // moves the result by about 1e-4 relative, seven orders of magnitude further out.
+        if (!intersects(group.map(atBoundaryEitherWay)))
+          failures.push(`renders ${group.map((v) => fmtNum(v)).join(" vs ")}`);
+      };
+      for (let k = 0; k < sides.length; k++) {
+        const v = sides[k].trim() === "" ? null : evalTex(sides[k]);
+        if (v !== null) {
+          if (group.length > 0 && acc !== "EQ") {
+            if (acc !== null && !directionHolds(group[group.length - 1], acc, v)) {
+              compared = true;
+              failures.push(`${fmtNum(group[group.length - 1])} ${acc} ${fmtNum(v)} is false as printed`);
+            } else if (acc !== null) compared = true;
+            closeGroup();
+            group = [];
+          }
+          group.push(v);
+          acc = "EQ";
+        }
+        const rel = relations[k];
+        if (rel !== undefined && acc !== null) acc = compose(acc, rel);
+      }
+      closeGroup();
+      if (!compared) { out.claimFree++; continue; } // one value and some labels is a definition
       out.checked++;
-      const shown = values.map((v) => fmtNum(v));
-      // A value sitting exactly on a 4-significant-figure boundary may render either way, and
-      // which way it falls is decided by binary representation rather than by anything on the
-      // page: 0.00216/0.00256 is exactly 0.84375, and IEEE754 puts the quotient one ulp under
-      // that tie while the template's own float sits on it, so the two render 0.8437 and
-      // 0.8438. Neither is wrong. Accepting both readings at a boundary cannot forgive the
-      // defect this gate exists for — a 4-significant-figure operand fed into the next step
-      // moves the result by about 1e-4 relative, seven orders of magnitude further out.
-      if (!intersects(values.map(atBoundaryEitherWay)))
-        out.mismatches.push(`${label}: $${seg}$ renders ${shown.join(" vs ")}`);
+      for (const f of failures) out.mismatches.push(`${label}: $${seg}$ ${f}`);
     }
   }
   return out;
@@ -287,6 +363,28 @@ describe("the printed-precision checker fails when it should", () => {
     // The \text notation shapes must not swallow the arithmetic standing beside them.
     ["\\text{odds}(S\\mid H)=\\text{odds}(S)\\times\\text{LR}=0.4286\\times6=2.572", false],
     ["\\text{odds}(S\\mid H)=\\text{odds}(S)\\times\\text{LR}=0.4286\\times6=2.571", true],
+    // Direction claims. A strict inequality gets no boundary allowance: rendering equal is
+    // exactly what makes the printed line false, so it must flag.
+    ["0.6667 > 0.2", false],
+    ["0.2 > 0.6667", true],
+    ["0.2 < 0.6667", false],
+    ["0.6667 < 0.2", true],
+    ["0.3333 > 0.3333", true],       // a strict claim between two equal printed numbers
+    ["1/3 > 0.3333", true],          // and between two values that PRINT equal
+    ["0.3333 \\geq 0.3333", false], // the non-strict claim is the mirror image: equal is true
+    ["1/3 \\geq 0.3333", false],
+    ["0.2 \\geq 0.6667", true],
+    ["0.6667 \\leq 0.2", true],
+    ["0.2 \\leq 0.2", false],
+    // A relation composes across a label standing in the middle of the chain.
+    ["P(A\\mid RR)=0.08551<0.5", false],
+    ["P(A\\mid RR)=0.08551<0.05", true],
+    // ...and across an equality, which is how a Sanity check usually reads.
+    ["0.5\\times0.4=0.2<0.6667", false],
+    ["0.5\\times0.4=0.2>0.6667", true],
+    // Nothing composes across a change of direction, so a>b<c claims nothing about a and c.
+    ["0.5>0.2<0.9", false],
+    ["0.5>0.9<0.2", true],           // but each adjacent pair is still asserted
     // A label on one side must not excuse the arithmetic on the other two.
     ["P(F\\mid A)=0.1391\\times0.85=0.1182", false],
     ["P(F\\mid A)=0.1391\\times0.85=0.1183", true],
