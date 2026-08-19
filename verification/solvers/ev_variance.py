@@ -190,29 +190,30 @@ def binomial_mean_brute(p):
 
 
 def indicator_match_count_exact(p):
-    guests, friends = int(p["guests"]), int(p["friends"])
+    guests, friends, bounty = int(p["guests"]), int(p["friends"]), int(p["bounty"])
     return {
         "perGuest": 1 / guests,
         "others": guests - 1,
         "waysFixed": factorial(guests - 1),
         "waysAll": factorial(guests),
-        "ev": friends / guests,
+        "ev": (bounty * friends) / guests,
     }
 
 
 def indicator_match_count_brute(p):
-    """Enumerate every ordering of the coats and count the group's matches outright. No
+    """Enumerate every ordering of the coats and pay the kitty out inside each ordering. No
     per-guest probability is formed and nothing is multiplied by the group size, so the
-    linearity argument the template rests on is never invoked."""
-    guests, friends = int(p["guests"]), int(p["friends"])
-    matches = 0
+    linearity argument the template rests on is never invoked; the payout is applied per
+    match as the orderings are walked rather than scaled onto a finished expectation."""
+    guests, friends, bounty = int(p["guests"]), int(p["friends"]), int(p["bounty"])
+    kitty = 0
     orderings = 0
     for perm in permutations(range(guests)):
         orderings += 1
         for seat in range(friends):
             if perm[seat] == seat:
-                matches += 1
-    return float(Fraction(matches, orderings))
+                kitty += bounty
+    return float(Fraction(kitty, orderings))
 
 
 SOLVERS = {
