@@ -86,6 +86,9 @@ export function evalTex(expr: string): number | null {
 // could be wrapping arithmetic the reader never saw. Adding one here is a deliberate act.
 const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|text|bar|cap|max|geq|sigma|,)/g;
 
+/** Prose set in \text{...}, the one recognised command whose own content supplies letters. */
+const TEXT_GROUP = /\\text\{[^{}]*\}/g;
+
 /**
  * True when a side names a quantity instead of printing one — "P(D\mid +)", "\text{odds}(S)",
  * "\dfrac{P(+\mid D)\,P(D)}{P(+)}". Such a side asserts no arithmetic over printed literals, so
@@ -95,9 +98,21 @@ const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|te
  * and digits and so is NOT a label (it is arithmetic the reader must actually read), while
  * "\binom{n}{k}" keeps its letters and is. Any unrecognised command disqualifies the side
  * outright, whatever letters it holds.
+ *
+ * \text{...} needs a guard the other commands do not, because its letters come from its own
+ * content rather than from the expression around it. Left to vouch for a side, prose in braces
+ * would carry real operands past this gate unread: "0.4\text{ of }0.5=0.25" would count as
+ * notation, and so would "12\text{ cm}\times2=25\text{ cm}", which is false. So the group is
+ * transparent exactly when a numeral survives OUTSIDE it — the side is then printing an operand
+ * and the prose may not speak for it — and opaque otherwise, which is what leaves "\text{LR}",
+ * "\text{odds}(\text{win})" and "P(\text{2 bad}\mid A)" reading as the pure notation they are.
+ * Letters outside the braces still count either way: "2\times P(\text{win})" stays a label on
+ * the strength of its P.
  */
 export function isLabel(side: string): boolean {
-  const rest = side.replace(RECOGNISED_CMD, " ");
+  const outsideText = side.replace(TEXT_GROUP, " ");
+  const printsAnOperand = /\d/.test(outsideText);
+  const rest = (printsAnOperand ? outsideText : side).replace(RECOGNISED_CMD, " ");
   if (rest.includes("\\")) return false;
   return /[A-Za-z]/.test(rest);
 }
@@ -269,6 +284,9 @@ describe("the printed-precision checker fails when it should", () => {
     ["0.5\\times0.65^{2}=0.2114", true],  // one digit past the boundary is still a defect
     ["0.2308/0.6923=0.3334", false],   // 0.33338..., not a tie, correctly rounded
     ["0.2308/0.6923=0.3333", true],    // the rounded-operand drift this gate exists for
+    // The \text notation shapes must not swallow the arithmetic standing beside them.
+    ["\\text{odds}(S\\mid H)=\\text{odds}(S)\\times\\text{LR}=0.4286\\times6=2.572", false],
+    ["\\text{odds}(S\\mid H)=\\text{odds}(S)\\times\\text{LR}=0.4286\\times6=2.571", true],
     // A label on one side must not excuse the arithmetic on the other two.
     ["P(F\\mid A)=0.1391\\times0.85=0.1182", false],
     ["P(F\\mid A)=0.1391\\times0.85=0.1183", true],
@@ -293,6 +311,11 @@ describe("the printed-precision checker fails when it should", () => {
     "\\text{odds}(S)=P(S)/P(\\bar S)",       // a formula over named quantities
     "\\binom{n}{k}=\\binom{n}{n-k}",         // symbolic, so the reader leaves it standing
     "P(\\text{shows }4\\mid \\text{sum}=5)", // the only "=" is inside the event description
+    // Prose in braces still names a quantity when no numeral is printed outside it.
+    "\\text{LR}=P(H\\mid S)/P(H\\mid \\bar S)",
+    "\\text{odds}(\\text{win}\\mid\\text{signal})=\\text{odds}(\\text{win})\\times\\text{LR}",
+    "P(\\text{2 bad}\\mid A)=P(\\text{2 bad}\\mid C)",
+    "2\\times P(\\text{win})=P(\\text{signal})", // a letter outside the braces still labels it
   ];
   it.each(claimFree)("%s -> carries no claim", (seg) => {
     const a = auditChains([`$${seg}$`], "mutation");
@@ -309,6 +332,10 @@ describe("the printed-precision checker fails when it should", () => {
     "2+3+\\cdots+9=44",       // an elided sum that is not the triangular form
     "7\\times5\\times\\cdots\\times3=105", // a run that does not descend by one
     "\\binom{4.5}{2}=6",      // a binomial the reader declines to fold
+    // Prose in braces must never vouch for an operand printed outside it. The second of these
+    // is arithmetically false, and both were silently claim-free before the \text guard.
+    "0.4\\text{ of }0.5=0.25",
+    "12\\text{ cm}\\times2=25\\text{ cm}",
   ];
   it.each(unreadable)("%s -> is reported unreadable", (seg) => {
     const a = auditChains([`$${seg}$`], "mutation");
