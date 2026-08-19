@@ -28,6 +28,20 @@ const P = (x: number) => Number(fmtNum(x));
 /** Two printed quantities render to the same string. */
 const same = (a: number, b: number) => fmtNum(a) === fmtNum(b);
 const EPS = 1e-9;
+/** Shared C(n,k), for distributions claims that recompute a binomial/Poisson term fresh from
+ *  params rather than trusting the template's own derived value. */
+const comb = (n: number, k: number): number => {
+  if (k < 0 || k > n) return 0;
+  const kk = Math.min(k, n - k);
+  let r = 1;
+  for (let i = 0; i < kk; i++) r = (r * (n - i)) / (i + 1);
+  return r;
+};
+const poissonPmf = (lam: number, k: number): number => {
+  let r = Math.exp(-lam);
+  for (let i = 1; i <= k; i++) r = (r * lam) / i;
+  return r;
+};
 
 interface Claim {
   /** the sentence in the template this predicate is checking */
@@ -589,6 +603,116 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "commonTrap: the per-board fail rate alone, or that rate times the trial count, is not the exact-count probability",
       holds: (p, d) => P(d.pmf) !== P(p.n * d.prob) && P(d.pmf) !== P(d.prob),
       breaks: (p, d) => ({ ...d, pmf: p.n * d.prob }) },
+  ],
+
+  "distributions/binomial-at-most": [
+    { says: "Sanity: the cumulative probability up to k and the tail probability above k partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.cdf) + P(d.tailProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, tailProb: 0 }) },
+    { says: "Combine: the cumulative probability is the sum of the PMF over every count from 0 through k, exactly",
+      holds: (p, d) => {
+        let s = 0;
+        for (let i = 0; i <= p.k; i++) s += comb(p.n, i) * d.prob ** i * d.q ** (p.n - i);
+        return Math.abs(s - d.cdf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, cdf: d.cdf * 1.5 }) },
+    { says: "commonTrap: the cumulative probability is never less than the single PMF term at k alone",
+      holds: (p, d) => d.cdf >= comb(p.n, p.k) * d.prob ** p.k * d.q ** (p.n - p.k) - EPS,
+      breaks: (_p, d) => ({ ...d, cdf: 0 }) },
+  ],
+
+  "distributions/binomial-at-least-one": [
+    { says: "Sanity: the zero-failure event and the at-least-one event partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.zeroFails) + P(d.atLeastOne) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, zeroFails: 0 }) },
+    { says: "Combine: the at-least-one probability equals one minus the all-succeed probability, exactly",
+      holds: (p, d) => Math.abs(1 - (1 - d.prob) ** p.n - d.atLeastOne) < 1e-9,
+      breaks: (_p, d) => ({ ...d, atLeastOne: d.atLeastOne * 1.5 }) },
+    { says: "commonTrap: the at-least-one probability is not the per-trial rate times the trial count",
+      holds: (p, d) => P(d.atLeastOne) !== P(p.n * d.prob) && P(d.atLeastOne) !== P(d.prob),
+      breaks: (p, d) => ({ ...d, atLeastOne: p.n * d.prob }) },
+  ],
+
+  "distributions/binomial-fit-then-pmf": [
+    { says: "Sanity: the fitted p reproduces the stated zero-event probability c",
+      holds: (p, d) => Math.abs(P(d.q ** p.n) - P(p.c)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, q: d.q * 1.02 }) },
+    { says: "Combine: P(X=1) is n times the fitted p times q to the n-1, exactly",
+      holds: (p, d) => Math.abs(p.n * d.fittedP * d.q ** d.nMinus1 - d.pmf1) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf1: d.pmf1 * 1.5 }) },
+    { says: "commonTrap: P(X=1) is not the stated zero-event probability, nor the fitted rate alone",
+      holds: (p, d) => P(d.pmf1) !== P(p.c) && P(d.pmf1) !== P(d.fittedP),
+      breaks: (p, d) => ({ ...d, pmf1: p.c }) },
+  ],
+
+  "distributions/poisson-exact-count": [
+    { says: "Sanity: the PMF at k equals the PMF at k-1 times lambda over k, the Poisson recurrence",
+      holds: (p, d) => Math.abs(d.pPrev * (p.lam / p.k) - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pPrev: d.pPrev * 1.5 }) },
+    { says: "Combine: the PMF equals the direct closed form e^-lambda times lambda^k over k!, exactly",
+      holds: (p, d) => {
+        let fact = 1;
+        for (let i = 2; i <= p.k; i++) fact *= i;
+        return Math.abs((Math.exp(-p.lam) * p.lam ** p.k) / fact - d.pmf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the rate itself, nor the bare exponential decay factor",
+      // At lambda=1, k=1, the PMF (lambda*e^-lambda) IS algebraically identical to e^-lambda —
+      // a real mathematical coincidence at that single point, not a floating-point artefact.
+      holds: (p, d) => P(d.pmf) !== P(p.lam) && P(d.pmf) !== P(Math.exp(-p.lam)),
+      exceptions: 1,
+      breaks: (p, d) => ({ ...d, pmf: p.lam }) },
+  ],
+
+  "distributions/poisson-at-most": [
+    { says: "Sanity: the cumulative probability equals the running sum through the previous count plus this count's own term",
+      holds: (p, d) => Math.abs(d.cdfPrev + d.pmfAtK - d.cdf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmfAtK: 0 }) },
+    { says: "Combine: the cumulative probability equals the direct sum of the closed-form PMF over every count from 0 through k",
+      holds: (p, d) => {
+        let s = 0;
+        for (let i = 0; i <= p.k; i++) {
+          let fact = 1;
+          for (let j = 2; j <= i; j++) fact *= j;
+          s += (Math.exp(-p.lam) * p.lam ** i) / fact;
+        }
+        return Math.abs(s - d.cdf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, cdf: d.cdf * 1.5 }) },
+    { says: "commonTrap: the cumulative probability is never less than the single PMF term at k alone",
+      holds: (p, d) => d.cdf >= d.pmfAtK - EPS,
+      breaks: (_p, d) => ({ ...d, cdf: 0 }) },
+  ],
+
+  "distributions/poisson-rescaled-at-least-one": [
+    { says: "Sanity: the zero-event probability and the at-least-one probability partition every outcome and sum to 1",
+      holds: (p, d) => Math.abs(P(d.zeroEvents) + P(d.atLeastOne) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, zeroEvents: 0 }) },
+    { says: "Combine: the at-least-one probability equals one minus e to the negative rescaled rate, exactly",
+      holds: (p, d) => Math.abs(1 - Math.exp((-p.lam0 * p.w1) / p.w0) - d.atLeastOne) < 1e-9,
+      breaks: (_p, d) => ({ ...d, atLeastOne: d.atLeastOne * 1.5 }) },
+    { says: "commonTrap: the at-least-one probability is not the unrescaled rate itself, nor the bare window ratio",
+      holds: (p, d) => P(d.atLeastOne) !== P(p.lam0) && P(d.atLeastOne) !== P(p.w1 / p.w0),
+      breaks: (p, d) => ({ ...d, atLeastOne: p.lam0 }) },
+  ],
+
+  "distributions/poisson-fit-then-tail": [
+    { says: "Sanity: zero, exactly one, and at least two events partition every outcome and sum to 1",
+      // Three independently-printed 4-sig-fig terms occasionally drift a hair past 1e-4 —
+      // measured max 1.0000000000021e-4 across the full legal space — so the bound allows a
+      // little headroom rather than chasing the exact float boundary.
+      holds: (p, d) => Math.abs(P(d.pZero) + P(d.pOne) + P(d.atLeastTwo) - 1) < 2e-4,
+      breaks: (_p, d) => ({ ...d, pZero: 0 }) },
+    { says: "Combine: the at-least-two probability equals one minus the zero- and one-event probabilities, recomputed fresh from the fitted rate",
+      holds: (p, d) => {
+        const lam = -Math.log(p.c) / p.t;
+        const lamP = lam * p.t2;
+        return Math.abs(1 - Math.exp(-lamP) * (1 + lamP) - d.atLeastTwo) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, atLeastTwo: d.atLeastTwo * 1.5 }) },
+    { says: "commonTrap: the at-least-two probability is not the stated zero-event probability, nor the fitted rate alone",
+      holds: (p, d) => P(d.atLeastTwo) !== P(p.c) && P(d.atLeastTwo) !== P(d.lam),
+      breaks: (p, d) => ({ ...d, atLeastTwo: p.c }) },
   ],
 };
 

@@ -90,7 +90,7 @@ export function evalTex(expr: string): number | null {
 //
 // "\leq" is deliberately absent even though splitClaim reads it as a relation: the corpus
 // prints none, and a nested one should fail loud rather than be quietly excused.
-const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|text|bar|cap|max|geq|sigma|,)/g;
+const RECOGNISED_CMD = /\\(?:dfrac|frac|binom|sqrt|times|cdots|left|right|mid|text|bar|cap|max|geq|sigma|lambda|mu|,)/g;
 
 /** Prose set in \text{...}, the one recognised command whose own content supplies letters. */
 const TEXT_GROUP = /\\text\{[^{}]*\}/g;

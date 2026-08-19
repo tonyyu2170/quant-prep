@@ -85,6 +85,13 @@ import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
 import { waldRandomSum } from "./ev-variance/wald-random-sum";
 import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
 import { binomialExactCount } from "./distributions/binomial-exact-count";
+import { binomialAtMost } from "./distributions/binomial-at-most";
+import { binomialAtLeastOne } from "./distributions/binomial-at-least-one";
+import { binomialFitThenPmf } from "./distributions/binomial-fit-then-pmf";
+import { poissonExactCount } from "./distributions/poisson-exact-count";
+import { poissonAtMost } from "./distributions/poisson-at-most";
+import { poissonRescaledAtLeastOne } from "./distributions/poisson-rescaled-at-least-one";
+import { poissonFitThenTail } from "./distributions/poisson-fit-then-tail";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -173,6 +180,13 @@ export const PROBLEMS: ProblemTemplate[] = [
   waldRandomSum,
   samplingWithoutReplacementVariance,
   binomialExactCount,
+  binomialAtMost,
+  binomialAtLeastOne,
+  binomialFitThenPmf,
+  poissonExactCount,
+  poissonAtMost,
+  poissonRescaledAtLeastOne,
+  poissonFitThenTail,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
