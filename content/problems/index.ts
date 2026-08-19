@@ -92,6 +92,13 @@ import { poissonExactCount } from "./distributions/poisson-exact-count";
 import { poissonAtMost } from "./distributions/poisson-at-most";
 import { poissonRescaledAtLeastOne } from "./distributions/poisson-rescaled-at-least-one";
 import { poissonFitThenTail } from "./distributions/poisson-fit-then-tail";
+import { geometricExactTrial } from "./distributions/geometric-exact-trial";
+import { geometricMoreThanK } from "./distributions/geometric-more-than-k";
+import { geometricConditionalMemoryless } from "./distributions/geometric-conditional-memoryless";
+import { negbinomExactTrial } from "./distributions/negbinom-exact-trial";
+import { negbinomFitP } from "./distributions/negbinom-fit-p";
+import { hypergeomExactDraw } from "./distributions/hypergeom-exact-draw";
+import { hypergeomZeroSuccesses } from "./distributions/hypergeom-zero-successes";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -187,6 +194,13 @@ export const PROBLEMS: ProblemTemplate[] = [
   poissonAtMost,
   poissonRescaledAtLeastOne,
   poissonFitThenTail,
+  geometricExactTrial,
+  geometricMoreThanK,
+  geometricConditionalMemoryless,
+  negbinomExactTrial,
+  negbinomFitP,
+  hypergeomExactDraw,
+  hypergeomZeroSuccesses,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

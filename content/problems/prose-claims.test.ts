@@ -714,6 +714,114 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.atLeastTwo) !== P(p.c) && P(d.atLeastTwo) !== P(d.lam),
       breaks: (p, d) => ({ ...d, atLeastTwo: p.c }) },
   ],
+
+  "distributions/geometric-exact-trial": [
+    { says: "Sanity: no-conversion-in-k-1-calls splits into converting on call k and still no conversion after k, which recombine to the same total",
+      holds: (p, d) => Math.abs(d.pmf + d.tailAtK - d.tailAtKMinus1) < 1e-9,
+      breaks: (_p, d) => ({ ...d, tailAtK: 0 }) },
+    { says: "Combine: the PMF equals q to the k-1 times p, exactly",
+      holds: (p, d) => Math.abs(d.q ** d.kMinus1 * d.prob - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the success rate alone",
+      holds: (p, d) => P(d.pmf) !== P(d.prob),
+      breaks: (_p, d) => ({ ...d, pmf: d.prob }) },
+  ],
+
+  "distributions/geometric-more-than-k": [
+    { says: "Sanity: the tail probability never exceeds q itself, since each additional required tick multiplies by another factor of q",
+      holds: (p, d) => d.tailProb <= d.q + EPS,
+      breaks: (_p, d) => ({ ...d, tailProb: d.tailProb * 1.5 + 1 }) },
+    { says: "Combine: the tail probability equals q to the k, exactly",
+      holds: (p, d) => Math.abs(d.q ** p.k - d.tailProb) < 1e-9,
+      breaks: (_p, d) => ({ ...d, tailProb: d.tailProb * 1.5 }) },
+    { says: "commonTrap: for k>1 the tail probability is strictly below q — at k=1 the two are algebraically identical",
+      holds: (p, d) => p.k === 1 ? P(d.tailProb) === P(d.q) : d.tailProb < d.q - 1e-9,
+      breaks: (p, d) => ({ ...d, tailProb: p.k === 1 ? d.tailProb * 0.5 : d.q }) },
+  ],
+
+  "distributions/geometric-conditional-memoryless": [
+    { says: "Combine: the answer equals q to the k, recomputed fresh — the elapsed wait j never enters the formula",
+      holds: (p, d) => Math.abs(d.q ** p.k - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 }) },
+    { says: "Sanity: the answer is NOT the unconditional tail measured from the very start (q to the j+k), the memoryless-violating shortcut",
+      holds: (p, d) => p.j === 0 || P(d.answer) !== P(d.q ** (p.j + p.k)),
+      breaks: (p, d) => ({ ...d, answer: d.q ** (p.j + p.k) }) },
+    { says: "commonTrap: the answer never exceeds q, since each additional further-tick requirement multiplies by another factor of q — equality only at k=1",
+      holds: (p, d) => d.answer <= d.q + EPS,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.5 + 1 }) },
+  ],
+
+  "distributions/negbinom-exact-trial": [
+    { says: "Sanity: the negative-binomial PMF equals r/k times the plain binomial PMF at the same (k,r) — a known combinatorial identity, checked via an independently-computed C(k,r)",
+      holds: (p, d) => {
+        const combKfullR = comb(p.k, p.r);
+        const binomPmf = combKfullR * d.prob ** p.r * d.q ** d.kMinusR;
+        return Math.abs((p.r / p.k) * binomPmf - d.pmf) < 1e-9;
+      },
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "Combine: the PMF equals C(k-1,r-1) times p^r times q^(k-r), exactly",
+      holds: (p, d) => Math.abs(d.combKR * d.prob ** p.r * d.q ** d.kMinusR - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the plain binomial PMF for r successes in k trials, which allows the r-th success to land anywhere rather than exactly on trial k",
+      // p.k > p.r is enforced by the constraint (the k=r boundary is negbinom-fit-p's own
+      // territory, where the two formulas are algebraically identical), so this comparison is
+      // never vacuous.
+      holds: (p, d) => {
+        const binomPmf = comb(p.k, p.r) * d.prob ** p.r * d.q ** (p.k - p.r);
+        return P(d.pmf) !== P(binomPmf);
+      },
+      breaks: (p, d) => ({ ...d, pmf: comb(p.k, p.r) * d.prob ** p.r * d.q ** (p.k - p.r) }) },
+  ],
+
+  "distributions/negbinom-fit-p": [
+    { says: "Sanity: the fitted p raised to the r reproduces the stated c",
+      holds: (p, d) => Math.abs(P(d.fittedP ** p.r) - P(p.c)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, fittedP: d.fittedP * 1.02 }) },
+    { says: "Combine: the fitted p equals c to the 1/r, exactly",
+      holds: (p, d) => Math.abs(p.c ** (1 / p.r) - d.fittedP) < 1e-9,
+      breaks: (_p, d) => ({ ...d, fittedP: d.fittedP * 1.5 }) },
+    { says: "commonTrap: the fitted p is not the stated c itself",
+      holds: (p, d) => P(d.fittedP) !== P(p.c),
+      breaks: (p, d) => ({ ...d, fittedP: p.c }) },
+  ],
+
+  "distributions/hypergeom-exact-draw": [
+    { says: "Sanity: the favorable count never exceeds the total count",
+      holds: (p, d) => d.combKk * d.combRest <= d.combTotal + EPS,
+      breaks: (_p, d) => ({ ...d, combTotal: 1 }) },
+    { says: "Combine: the PMF equals C(K,k) times C(N-K,n-k) over C(N,n), exactly",
+      holds: (p, d) => Math.abs((d.combKk * d.combRest) / d.combTotal - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the with-replacement binomial approximation at rate K/N",
+      // A handful of (N,K,n,k) combos make the hypergeometric and with-replacement-binomial
+      // values coincide at printed precision by chance, not by any formula relationship —
+      // measured 2 of 1912 legal draws.
+      holds: (p, d) => {
+        const rate = p.K / p.N;
+        const approx = comb(p.n, p.k) * rate ** p.k * (1 - rate) ** (p.n - p.k);
+        return P(d.pmf) !== P(approx);
+      },
+      exceptions: 2,
+      breaks: (p, d) => {
+        const rate = p.K / p.N;
+        return { ...d, pmf: comb(p.n, p.k) * rate ** p.k * (1 - rate) ** (p.n - p.k) };
+      } },
+  ],
+
+  "distributions/hypergeom-zero-successes": [
+    { says: "Sanity: the all-unqualified count never exceeds the total count",
+      holds: (p, d) => d.combZero <= d.combTotal + EPS,
+      breaks: (_p, d) => ({ ...d, combTotal: 1 }) },
+    { says: "Combine: the PMF equals C(N-K,n) over C(N,n), exactly",
+      holds: (p, d) => Math.abs(d.combZero / d.combTotal - d.pmf) < 1e-9,
+      breaks: (_p, d) => ({ ...d, pmf: d.pmf * 1.5 }) },
+    { says: "commonTrap: the PMF is not the with-replacement binomial approximation (1-K/N)^n",
+      holds: (p, d) => {
+        const approx = (1 - p.K / p.N) ** p.n;
+        return P(d.pmf) !== P(approx);
+      },
+      breaks: (p, d) => ({ ...d, pmf: (1 - p.K / p.N) ** p.n }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
