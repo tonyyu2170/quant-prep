@@ -145,6 +145,10 @@ import { cornerQuarterDisk } from "./geometric/corner-quarter-disk";
 import { diskInRectComplement } from "./geometric/disk-in-rect-complement";
 import { buffonFitLengthInverse } from "./geometric/buffon-fit-length-inverse";
 import { triangleParallelCut } from "./geometric/triangle-parallel-cut";
+import { fitWindowThenOtherWindow } from "./geometric/fit-window-then-other-window";
+import { buffonFitThenOtherBoard } from "./geometric/buffon-fit-then-other-board";
+import { delayedArrivalMeeting } from "./geometric/delayed-arrival-meeting";
+import { concentricFitThenRing } from "./geometric/concentric-fit-then-ring";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -293,6 +297,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   diskInRectComplement,
   buffonFitLengthInverse,
   triangleParallelCut,
+  fitWindowThenOtherWindow,
+  buffonFitThenOtherBoard,
+  delayedArrivalMeeting,
+  concentricFitThenRing,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

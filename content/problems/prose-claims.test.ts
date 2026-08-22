@@ -1423,6 +1423,60 @@ const CLAIMS: Record<string, Claim[]> = {
       },
       breaks: (p, d) => ({ ...d, answer: 1 - Math.pow((p.cutPct + 5) / 100, 2) }) },
   ],
+
+  "geometric/fit-window-then-other-window": [
+    { says: "Stage one wait recomputes from the old window and target",
+      holds: (p, d) => same(d.wait, p.firstWindow * (1 - Math.sqrt(1 - p.targetPct / 100))),
+      breaks: (_p, d) => ({ ...d, wait: d.wait * 1.05 }) },
+    { says: "Stage two legs are the new window short of the carried-over wait",
+      holds: (p, d) => same(d.missLeg, p.secondWindow - d.wait),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 6 }) },
+    { says: "The new chance recomputes from the carried wait inside the second window",
+      holds: (p, d) => Math.abs(1 - Math.pow((p.secondWindow - d.wait) / p.secondWindow, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+    { says: "The shorter window improves on the original staged-in chance",
+      holds: (p, d) => P(d.answer) > p.targetPct / 100,
+      breaks: (p, d) => ({ ...d, answer: p.targetPct / 100 }) },
+  ],
+
+  "geometric/buffon-fit-then-other-board": [
+    { says: "Fitted needle is target share of old spacing times two-over-pi",
+      holds: (p, d) => same(d.needle, (p.targetPct / 100) * p.firstBoardCm * (Math.PI / 2)),
+      breaks: (_p, d) => ({ ...d, needle: d.needle * 1.04 }) },
+    { says: "New board prints back as its percentage of the old",
+      holds: (p, d) => same(d.secondBoard, (p.secondBoardPct / 100) * p.firstBoardCm),
+      breaks: (_p, d) => ({ ...d, secondBoard: d.secondBoard + 7 }) },
+    { says: "Answer is twice the fitted needle over pi times the new spacing",
+      holds: (p, d) => Math.abs((2 * d.needle) / (Math.PI * d.secondBoard) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+    { says: "Tighter lines raise the crossing chance above the original target",
+      holds: (p, d) => P(d.answer) > p.targetPct / 100,
+      breaks: (p, d) => ({ ...d, answer: p.targetPct / 100 }) },
+  ],
+
+  "geometric/delayed-arrival-meeting": [
+    { says: "Full sweep is the window short of both delay and patience",
+      holds: (p, d) => same(d.fullSpan, p.windowMinutes - p.delayMinutes - p.waitMinutes),
+      breaks: (_p, d) => ({ ...d, fullSpan: d.fullSpan + 8 }) },
+    { says: "Answer is stripe width times untouched sweep over the square",
+      holds: (p, d) => Math.abs((2 * p.waitMinutes * (p.windowMinutes - p.delayMinutes)) / (p.windowMinutes ** 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.96 }) },
+    { says: "Extra delay minutes eat exactly two waits of area per minute",
+      holds: (p, d) => same(d.answer - (2 * p.waitMinutes * (p.windowMinutes - p.delayMinutes - 5)) / (p.windowMinutes ** 2), (2 * p.waitMinutes * 5) / (p.windowMinutes ** 2)),
+      breaks: (p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "geometric/concentric-fit-then-ring": [
+    { says: "Bullseye radius is board radius times root of its share",
+      holds: (p, d) => same(d.bullR, p.boardR * Math.sqrt(p.bullseyePct / 100)),
+      breaks: (_p, d) => ({ ...d, bullR: d.bullR * 1.05 }) },
+    { says: "Outer edge prints back at its percentage of the board",
+      holds: (p, d) => same(d.outerR, (p.outerPct / 100) * p.boardR),
+      breaks: (_p, d) => ({ ...d, outerR: d.outerR + 3 }) },
+    { says: "Ring share is outer squared share minus bullseye share",
+      holds: (p, d) => Math.abs(Math.pow(p.outerPct / 100, 2) - p.bullseyePct / 100 - d.ringShare) < 1e-9,
+      breaks: (_p, d) => ({ ...d, ringShare: d.ringShare * 0.9 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

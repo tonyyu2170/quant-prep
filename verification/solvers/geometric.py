@@ -356,3 +356,95 @@ SOLVERS.update({
     "geometric/buffon-fit-length-inverse": {"exact": buffon_fit_length_inverse_exact, "simulate": buffon_fit_length_inverse_sim},
     "geometric/triangle-parallel-cut": {"exact": triangle_parallel_cut_exact, "simulate": triangle_parallel_cut_sim},
 })
+
+
+def fit_window_then_other_window_exact(p):
+    wait = p["firstWindow"] * (1 - math.sqrt(1 - p["targetPct"] / 100))
+    miss_leg = p["secondWindow"] - wait
+    return {"wait": wait, "answer": 1 - (miss_leg / p["secondWindow"]) ** 2, "missLeg": miss_leg}
+
+
+def fit_window_then_other_window_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    """Simulate both arrivals in the SECOND window with the stage-one-implied wait."""
+    t2 = p["secondWindow"]
+    wait = p["firstWindow"] * (1 - math.sqrt(1 - p["targetPct"] / 100))
+
+    def hits(m):
+        x = rng.uniform(0, t2, m)
+        y = rng.uniform(0, t2, m)
+        return int((np.abs(x - y) <= wait).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def buffon_fit_then_other_board_exact(p):
+    needle = (p["targetPct"] / 100) * p["firstBoardCm"] * (math.pi / 2)
+    second = round((p["secondBoardPct"] / 100) * p["firstBoardCm"])
+    return {"needle": needle, "secondBoard": second,
+            "answer": (2 * needle) / (math.pi * second)}
+
+
+def buffon_fit_then_other_board_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    needle = (p["targetPct"] / 100) * p["firstBoardCm"] * (math.pi / 2)
+    t2 = round((p["secondBoardPct"] / 100) * p["firstBoardCm"])
+
+    def hits(m):
+        y = rng.uniform(0, t2, m)
+        theta = rng.uniform(0, math.pi, m)
+        reach = (needle / 2) * np.sin(theta)
+        return int(((y <= reach) | (y >= t2 - reach)).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def delayed_arrival_meeting_exact(p):
+    full_span = p["windowMinutes"] - p["delayMinutes"] - p["waitMinutes"]
+    answer = (2 * p["waitMinutes"] * (p["windowMinutes"] - p["delayMinutes"])) / p["windowMinutes"] ** 2
+    full_area = 2 * p["waitMinutes"] * full_span
+    taper_area = 2 * p["waitMinutes"] ** 2
+    board_area = p["windowMinutes"] ** 2
+    stripe_width = 2 * p["waitMinutes"]
+    total_area = full_area + taper_area
+    return {"fullSpan": full_span, "answer": answer, "fullArea": full_area,
+            "taperArea": taper_area, "boardArea": board_area, "stripeWidth": stripe_width,
+            "totalArea": total_area}
+
+
+def delayed_arrival_meeting_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    t = p["windowMinutes"]
+    s = p["delayMinutes"]
+    w = p["waitMinutes"]
+
+    def hits(m):
+        a = rng.uniform(0, t, m)
+        b = rng.uniform(s, t + s, m)
+        return int((np.abs(a - b) <= w).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def concentric_fit_then_ring_exact(p):
+    bull_r = p["boardR"] * math.sqrt(p["bullseyePct"] / 100)
+    outer_r = (p["outerPct"] / 100) * p["boardR"]
+    ring_share = (p["outerPct"] / 100) ** 2 - p["bullseyePct"] / 100
+    return {"bullR": bull_r, "outerR": outer_r, "ringShare": ring_share}
+
+
+def concentric_fit_then_ring_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    board_r = p["boardR"]
+    bull_r = board_r * math.sqrt(p["bullseyePct"] / 100)
+    outer_r = (p["outerPct"] / 100) * board_r
+
+    def hits(m):
+        rad = board_r * np.sqrt(rng.random(m))
+        return int(((rad > bull_r) & (rad <= outer_r)).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+SOLVERS.update({
+    "geometric/fit-window-then-other-window": {"exact": fit_window_then_other_window_exact, "simulate": fit_window_then_other_window_sim},
+    "geometric/buffon-fit-then-other-board": {"exact": buffon_fit_then_other_board_exact, "simulate": buffon_fit_then_other_board_sim},
+    "geometric/delayed-arrival-meeting": {"exact": delayed_arrival_meeting_exact, "simulate": delayed_arrival_meeting_sim},
+    "geometric/concentric-fit-then-ring": {"exact": concentric_fit_then_ring_exact, "simulate": concentric_fit_then_ring_sim},
+})

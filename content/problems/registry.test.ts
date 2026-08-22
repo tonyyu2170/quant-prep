@@ -33,8 +33,8 @@ describe("problem registry invariants", () => {
     expect(counting).toBe(25);
     expect(ev).toBe(30);
     expect(distributions).toBe(25);
-    expect(ruin).toBeLessThanOrEqual(20);
-    expect(geometric).toBeLessThanOrEqual(20);
+    expect(ruin).toBe(20);
+    expect(geometric).toBe(20);
     expect(bayes + counting + ev + distributions + ruin + geometric).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
