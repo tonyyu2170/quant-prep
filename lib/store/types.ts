@@ -1,3 +1,8 @@
+import type { ReviewRow as SrsRow } from "@qp/engine";
+
+/** `pending` is local-only: the row is a grade parked by a failed remote write, not an anonymous intake. */
+export type ReviewRow = SrsRow & { pending?: boolean };
+
 export interface AttemptRow {
   problemId: string; problemVersion: number; seed: number;
   mode: "practice" | "test" | "review";
@@ -19,4 +24,7 @@ export interface Store {
   saveSession(row: TestSessionRow): Promise<void>;
   listAttempts(): Promise<AttemptRow[]>;
   listSessions(): Promise<TestSessionRow[]>;
+  listReviews(): Promise<ReviewRow[]>;
+  saveReview(row: ReviewRow): Promise<void>;
+  removeReview(problemId: string): Promise<void>;
 }
