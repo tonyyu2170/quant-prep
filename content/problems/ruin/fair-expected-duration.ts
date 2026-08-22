@@ -38,6 +38,6 @@ export const fairExpectedDuration: ProblemTemplate = {
   keyInsight: "Expected duration obeys a recursion whose second difference is constant, so it is a parabola over the stack — maximal halfway between the barriers and vanishing at both.",
   commonTrap: "Guessing the average from the two fastest exits — the walk usually dawdles far longer than either clean run, which is exactly why the parabola's peak sits mid-corridor.",
   expectedPaceS: 60,
-  verify: { method: "montecarlo" },
+  verify: { method: "brute-force" },
   constants: [0, 1, 2],
 };

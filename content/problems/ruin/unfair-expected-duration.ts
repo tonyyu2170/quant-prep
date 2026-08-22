@@ -53,6 +53,6 @@ export const unfairExpectedDuration: ProblemTemplate = {
   keyInsight: "An edge both bends the win probability into an exponential and tilts expected time below the fair parabola — the same odds ratio r appears inside both answers.",
   commonTrap: "Reaching for the fair-game product i(N-i) after glancing at the barriers — with any edge that formula overestimates, because drift toward one barrier cuts the loitering.",
   expectedPaceS: 80,
-  verify: { method: "montecarlo" },
+  verify: { method: "brute-force" },
   constants: [0, 1],
 };

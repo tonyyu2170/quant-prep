@@ -1177,6 +1177,57 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(d.edge, (100 - p.winPct) / 100 - p.winPct / 100),
       breaks: (_p, d) => ({ ...d, edge: d.edge * 0.5 }) },
   ],
+
+  "ruin/fit-then-duration": [
+    { says: "Stage one recovers the stake as the target percentage of the goal",
+      holds: (p, d) => same(d.stake, (p.reachPct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, stake: d.stake + 2 }) },
+    { says: "Stage two prices the session off the recovered stake alone",
+      holds: (p, d) => same(d.duration, d.stake * (p.goalChips - d.stake)),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "A 2 percent perturbation of the duration breaks the parabola read-back",
+      holds: (p, d) => Math.abs(p.reachPct / 100 * p.goalChips * (p.goalChips - p.reachPct / 100 * p.goalChips) - d.duration) < 1e-6,
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.02 }) },
+  ],
+
+  "ruin/infer-capital-then-new-goal": [
+    { says: "Stage one: the buy-in is the first share of the first goal",
+      holds: (p, d) => same(d.stake, (p.firstSharePct / 100) * p.firstGoal),
+      breaks: (_p, d) => ({ ...d, stake: d.stake + 1 }) },
+    { says: "Stage two: the new chance is the stake over the raised goal",
+      holds: (p, d) => same(d.newChance, d.stake / d.secondGoal),
+      breaks: (_p, d) => ({ ...d, newChance: d.newChance * 1.02 }) },
+    { says: "Raising the barrier with fixed capital strictly lowers a fair share",
+      holds: (p, d) => d.secondGoal > p.firstGoal ? P(d.newChance) < P(d.oldChance) : P(d.newChance) === P(d.oldChance),
+      breaks: (p, d) => ({ ...d, newChance: d.oldChance * 1.01 }) },
+  ],
+
+  "ruin/doubling-fit-then-duration": [
+    { says: "Stage one: the fitted loss rate raised to the rounds reproduces the stated streak",
+      holds: (p, d) => Math.abs(d.q ** p.rounds - p.streakPct / 100) < 1e-9,
+      breaks: (_p, d) => ({ ...d, q: d.q * 1.02 }) },
+    { says: "The per-hand win rate is one minus the fitted loss rate",
+      holds: (_p, d) => same(d.prob, 1 - d.q),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 0.5 }) },
+    { says: "Stage two: the expected grind recomputes as winSession over win rate",
+      holds: (_p, d) => same(d.duration, d.winSession / d.prob),
+      breaks: (_p, d) => ({ ...d, duration: d.duration + 3 }) },
+  ],
+
+  "ruin/survive-then-remaining-duration": [
+    { says: "Restart the parabola at the current stack",
+      holds: (p, d) => same(d.remaining, p.currentStack * (p.goalChips - p.currentStack)),
+      breaks: (_p, d) => ({ ...d, remaining: d.remaining * 1.02 }) },
+    { says: "Elapsed hands never enter the conditional answer",
+      holds: (p, d) => {
+        const alt = p.currentStack * (p.goalChips - p.currentStack);
+        return same(alt, d.remaining);
+      },
+      breaks: (p, d) => ({ ...d, remaining: d.remaining + Math.round(p.elapsedHands / 10) }) },
+    { says: "Mid-corridor fresh sessions bound the remainder from above",
+      holds: (p, d) => P(d.remaining) <= P(d.fromZero),
+      breaks: (_p, d) => ({ ...d, remaining: 10 ** 6 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

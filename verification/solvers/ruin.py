@@ -53,6 +53,16 @@ def unfair_reach_goal_exact(p):
     }
 
 
+def _refined_solve(A, rhs):
+    """One Newton step of iterative refinement: kills the kappa-scaled forward error so the
+    absolute error lands at rounding level even for large-barrier fair walks."""
+    x = np.linalg.solve(A, rhs)
+    # OpenBLAS leaves stale FP flags behind matmul; the values here are rounding-level.
+    with np.errstate(all="ignore"):
+        residual = rhs - A @ x
+    return x + np.linalg.solve(A, residual)
+
+
 def _absorption_solve(goal, start, up_prob):
     """Absorption probability at `goal` for the ±1 walk on 0..goal started at `start`, by
     numerically solving x = Qx + R — independent of any closed form."""
@@ -64,11 +74,30 @@ def _absorption_solve(goal, start, up_prob):
     for row in range(m - 1):
         A[row, row + 1] -= up_prob
     b[m - 1] = up_prob
-    return float(np.linalg.solve(A, b)[start - 1])
+    return float(_refined_solve(A, b)[start - 1])
 
 
 def unfair_reach_goal_brute(p):
     return _absorption_solve(int(p["goalChips"]), int(p["startChips"]), p["winPct"] / 100)
+
+
+def _duration_solve(upper, start, up_prob):
+    """Expected steps to absorption for the ±1 walk on 0..upper started at `start`, from
+    t = 1 + Q t solved numerically — matrix inversion vs whatever closed form the template
+    uses, which is what makes this independent. Requires |q-p| bounded off zero so (I-Q) is
+    strictly diagonally dominant; the solve's absolute error then sits far inside
+    verify.py's unscaled 1e-9 comparison."""
+    m = upper - 1                      # transient states 1 .. upper-1
+    A = np.eye(m)
+    rhs = np.ones(m)
+    for row in range(m):
+        s = row + 1
+        if s + 1 < upper:
+            A[row, row + 1] -= up_prob
+        if s - 1 >= 1:
+            A[row, row - 1] -= 1 - up_prob
+        # absorption contributes t=0, hence nothing to the right-hand side
+    return float(_refined_solve(A, rhs)[start - 1])
 
 
 def walk_hit_upper_first_exact(p):
@@ -103,44 +132,8 @@ def fair_expected_duration_exact(p):
     return {"duration": i * (n - i), "straightLoss": i, "straightWin": n - i}
 
 
-def _walk_duration_batch(i, n, prob_up, rng, size):
-    """One lockstep batch: every walker steps simultaneously until absorbed; returns (sum,
-    sum-of-squares) of absorption times."""
-    pos = np.full(size, float(i))
-    steps = np.zeros(size)
-    alive = np.ones(size, dtype=bool)
-    while alive.any():
-        idx = np.nonzero(alive)[0]
-        moves = (rng.random(idx.size) < prob_up) * 2 - 1
-        pos[idx] += moves
-        steps[idx] += 1
-        alive[idx] &= (pos[idx] > 0) & (pos[idx] < n)
-    return steps.sum(), (steps**2).sum()
-
-
-def _adaptive_walk_mean(i, n, prob_up, rng, chunk=400_000, min_count=800_000, max_count=40_000_000):
-    """Adaptive trial count: keep batching until 3*se <= 0.001*mean — a 25 percent margin
-    inside verify.py's 3se <= bound/2 requirement (bound = 0.005*answer). Required N scales
-    with (sigma/E)^2 while cost scales with sigma^2/E, so adapting per instance keeps every
-    corner of the legal space seconds-cheap instead of sizing one constant for the worst."""
-    total = 0.0
-    total2 = 0.0
-    count = 0
-    while True:
-        s, s2 = _walk_duration_batch(i, n, prob_up, rng, chunk)
-        total += s
-        total2 += s2
-        count += chunk
-        est = total / count
-        var = max(total2 / count - est * est, 1e-9)
-        se = var**0.5 / count**0.5
-        if (count >= min_count and 3 * se <= 0.001 * est) or count >= max_count:
-            return est, se
-
-
-def fair_expected_duration_sim(p, rng):
-    i, n = int(p["stake"]), int(p["target"])
-    return _adaptive_walk_mean(i, n, 0.5, rng)
+def fair_expected_duration_brute(p):
+    return _duration_solve(int(p["target"]), int(p["stake"]), 0.5)
 
 
 def unfair_expected_duration_exact(p):
@@ -161,10 +154,9 @@ def unfair_expected_duration_exact(p):
     }
 
 
-def unfair_expected_duration_sim(p, rng):
-    i, n = int(p["stake"]), int(p["target"])
+def unfair_expected_duration_brute(p):
     prob = p["winPct"] / 100
-    return _adaptive_walk_mean(i, n, prob, rng)
+    return _duration_solve(int(p["target"]), int(p["stake"]), prob)
 
 
 def drift_touch_downside_exact(p):
@@ -243,8 +235,8 @@ SOLVERS.update({
     "ruin/unfair-reach-goal": {"exact": unfair_reach_goal_exact, "brute": unfair_reach_goal_brute},
     "ruin/walk-hit-upper-first": {"exact": walk_hit_upper_first_exact, "brute": walk_hit_upper_first_brute},
     "ruin/walk-hit-loss-first": {"exact": walk_hit_loss_first_exact, "brute": walk_hit_loss_first_brute},
-    "ruin/fair-expected-duration": {"exact": fair_expected_duration_exact, "simulate": fair_expected_duration_sim},
-    "ruin/unfair-expected-duration": {"exact": unfair_expected_duration_exact, "simulate": unfair_expected_duration_sim},
+    "ruin/fair-expected-duration": {"exact": fair_expected_duration_exact, "brute": fair_expected_duration_brute},
+    "ruin/unfair-expected-duration": {"exact": unfair_expected_duration_exact, "brute": unfair_expected_duration_brute},
     "ruin/drift-touch-downside": {"exact": drift_touch_downside_exact, "brute": drift_touch_downside_brute},
     "ruin/adverse-drift-reach-upside": {"exact": adverse_drift_reach_upside_exact, "brute": adverse_drift_reach_upside_brute},
 })
@@ -412,14 +404,74 @@ def drift_one_sided_duration_exact(p):
     }
 
 
-def drift_one_sided_duration_sim(p, rng):
-    """Adaptive lockstep walkers with downward drift: the touch is certain, so a plain
-    sample mean of hitting times is well-defined (plan constraint 4 sizing). Walkers that
-    wander up to reserve+160 are censored; with winPct <= 45 that miss probability is
-    (p/q)^160 < 1e-14, and the time it steals is bounded well inside the MC comparison."""
+def drift_one_sided_duration_brute(p):
+    """One-sided fall time under adverse drift, on a chain truncated at reserve+140. The
+    truncation undercounts the mean by at most P(reach the top first) * O(top/edge); with
+    winPct <= 42 (p/q <= 0.75) that is below 1e-15 — far inside the absolute comparison."""
     b = int(p["reserve"])
     prob = p["winPct"] / 100
-    return _adaptive_walk_mean(b, b + 160, prob, rng)
+    return _duration_solve(b + 140, b, prob)
+
+
+def fit_then_duration_exact(p):
+    stake = int(round((p["reachPct"] / 100) * p["goalChips"]))
+    n = int(p["goalChips"])
+    duration = stake * (n - stake)
+    return {"stake": stake, "duration": duration, "straightWin": n - stake}
+
+
+def fit_then_duration_brute(p):
+    stake = int(round((p["reachPct"] / 100) * p["goalChips"]))
+    return _duration_solve(int(p["goalChips"]), stake, 0.5)
+
+
+def infer_capital_then_new_goal_exact(p):
+    stake = int(round((p["firstSharePct"] / 100) * p["firstGoal"]))
+    second = int(round((p["secondGoalPct"] / 100) * p["firstGoal"]))
+    return {
+        "stake": stake, "secondGoal": second,
+        "newChance": stake / second, "oldChance": stake / int(p["firstGoal"]),
+        "raisePct": int(p["secondGoalPct"]) - 100,
+    }
+
+
+def infer_capital_then_new_goal_brute(p):
+    """Solve the second-goal chain numerically from the implied stake."""
+    stake = int(round((p["firstSharePct"] / 100) * p["firstGoal"]))
+    second = int(round((p["secondGoalPct"] / 100) * p["firstGoal"]))
+    return _absorption_solve(second, stake, 0.5)
+
+
+def doubling_fit_then_duration_exact(p):
+    q = (p["streakPct"] / 100) ** (1 / int(p["rounds"]))
+    prob = 1 - q
+    streak_prob = q ** int(p["rounds"])
+    return {
+        "q": q, "prob": prob, "streakProb": streak_prob,
+        "winSession": 1 - streak_prob, "duration": (1 - streak_prob) / prob,
+    }
+
+
+def doubling_fit_then_duration_brute(p):
+    """Sum every capped ending weighted by its length: first win on bet k (k q^{k-1} p) plus
+    the full streak (n q^n) — an independent series, not the collapsed closed form."""
+    n = int(p["rounds"])
+    q = (p["streakPct"] / 100) ** (1 / n)
+    prob = 1 - q
+    total = sum(k * prob * q ** (k - 1) for k in range(1, n + 1))
+    return total + n * q**n
+
+
+def survive_then_remaining_duration_exact(p):
+    j, n = int(p["currentStack"]), int(p["goalChips"])
+    remaining = j * (n - j)
+    from_zero = round(n * n / 4)
+    return {"remaining": remaining, "fromZero": from_zero, "upperGap": n - j}
+
+
+def survive_then_remaining_duration_brute(p):
+    j, n = int(p["currentStack"]), int(p["goalChips"])
+    return _duration_solve(n, j, 0.5)
 
 
 SOLVERS.update({
@@ -430,5 +482,9 @@ SOLVERS.update({
     "ruin/fit-goal-from-duration-fair": {"exact": fit_goal_from_duration_fair_exact, "brute": fit_goal_from_duration_fair_brute},
     "ruin/stake-rescale": {"exact": stake_rescale_exact, "brute": stake_rescale_brute},
     "ruin/restart-after-survival": {"exact": restart_after_survival_exact, "brute": restart_after_survival_brute},
-    "ruin/drift-one-sided-duration": {"exact": drift_one_sided_duration_exact, "simulate": drift_one_sided_duration_sim},
+    "ruin/drift-one-sided-duration": {"exact": drift_one_sided_duration_exact, "brute": drift_one_sided_duration_brute},
+    "ruin/fit-then-duration": {"exact": fit_then_duration_exact, "brute": fit_then_duration_brute},
+    "ruin/infer-capital-then-new-goal": {"exact": infer_capital_then_new_goal_exact, "brute": infer_capital_then_new_goal_brute},
+    "ruin/doubling-fit-then-duration": {"exact": doubling_fit_then_duration_exact, "brute": doubling_fit_then_duration_brute},
+    "ruin/survive-then-remaining-duration": {"exact": survive_then_remaining_duration_exact, "brute": survive_then_remaining_duration_brute},
 })

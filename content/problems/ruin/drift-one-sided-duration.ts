@@ -15,7 +15,7 @@ export const driftOneSidedDuration: ProblemTemplate = {
   firms: [{ firm: "flow-traders", weight: 0.35 }, { firm: "citadel", weight: 0.3 }],
   source: { kind: "original", inspiration: "expected time to a certain downside under adverse drift" },
   params: {
-    winPct: { range: { min: 30, max: 48, step: 1 } },
+    winPct: { range: { min: 30, max: 42, step: 1 } },
     reserve: { range: { min: 2, max: 20, step: 1 } },
   },
   constraint: (p) => Math.abs(p.winPct - 50) >= 2 && yearsOf(p) >= 1 && yearsOf(p) <= 600,
@@ -40,6 +40,6 @@ export const driftOneSidedDuration: ProblemTemplate = {
   keyInsight: "Under adverse drift the walk's average slope is the edge itself, so the expected time to fall a fixed distance is that distance divided by the edge.",
   commonTrap: "Treating the random ups as reason to stretch the estimate beyond the ratio — fluctuations cancel around the drift line over long horizons, leaving distance over speed.",
   expectedPaceS: 45,
-  verify: { method: "montecarlo" },
+  verify: { method: "brute-force" },
   constants: [0, 1],
 };

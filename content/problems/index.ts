@@ -125,6 +125,10 @@ import { fitGoalFromDurationFair } from "./ruin/fit-goal-from-duration-fair";
 import { stakeRescale } from "./ruin/stake-rescale";
 import { restartAfterSurvival } from "./ruin/restart-after-survival";
 import { driftOneSidedDuration } from "./ruin/drift-one-sided-duration";
+import { fitThenDuration } from "./ruin/fit-then-duration";
+import { inferCapitalThenNewGoal } from "./ruin/infer-capital-then-new-goal";
+import { doublingFitThenDuration } from "./ruin/doubling-fit-then-duration";
+import { surviveThenRemainingDuration } from "./ruin/survive-then-remaining-duration";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -253,6 +257,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   stakeRescale,
   restartAfterSurvival,
   driftOneSidedDuration,
+  fitThenDuration,
+  inferCapitalThenNewGoal,
+  doublingFitThenDuration,
+  surviveThenRemainingDuration,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
