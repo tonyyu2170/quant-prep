@@ -10,7 +10,7 @@ export const brokenStickLeftShare: ProblemTemplate = {
   version: 1,
   topic: "probability/geometric",
   difficulty: 1,
-  firms: [{ firm: "citadel-securities", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "citadel-securities", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "textbook", inspiration: "single-break stick, length-share probability" },
   params: {
     stickCm: { range: { min: 30, max: 90, step: 5 } },

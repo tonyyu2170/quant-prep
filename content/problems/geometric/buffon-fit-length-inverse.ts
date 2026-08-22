@@ -10,7 +10,7 @@ export const buffonFitLengthInverse: ProblemTemplate = {
   version: 1,
   topic: "probability/geometric",
   difficulty: 2,
-  firms: [{ firm: "citadel", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "citadel", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "inverting Buffon for a target crossing probability" },
   params: {
     targetPct: { range: { min: 10, max: 60, step: 5 } },

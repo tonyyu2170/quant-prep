@@ -12,7 +12,7 @@ export const driftOneSidedDuration: ProblemTemplate = {
   version: 1,
   topic: "probability/ruin",
   difficulty: 2,
-  firms: [{ firm: "flow-traders", weight: 0.35 }, { firm: "citadel", weight: 0.3 }],
+  firms: [{ firm: "flow", weight: 0.35 }, { firm: "citadel", weight: 0.3 }],
   source: { kind: "original", inspiration: "expected time to a certain downside under adverse drift" },
   params: {
     winPct: { range: { min: 30, max: 42, step: 1 } },

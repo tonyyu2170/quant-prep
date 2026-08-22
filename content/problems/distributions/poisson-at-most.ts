@@ -20,7 +20,7 @@ export const poissonAtMost: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 1,
-  firms: [{ firm: "imc", weight: 0.35 }, { firm: "flow-traders", weight: 0.3 }],
+  firms: [{ firm: "imc", weight: 0.35 }, { firm: "flow", weight: 0.3 }],
   source: { kind: "original", inspiration: "Poisson CDF as a running sum, checked against its own last increment" },
   params: {
     lam: { range: { min: 0.5, max: 15, step: 0.5 } },

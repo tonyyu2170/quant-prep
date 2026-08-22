@@ -19,7 +19,7 @@ export const hypergeomExactDraw: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 1,
-  firms: [{ firm: "jane-street", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "jane-street", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "hypergeometric PMF as a ratio of favorable to total sampling arrangements" },
   params: {
     N: { range: { min: 10, max: 20, step: 1 } },

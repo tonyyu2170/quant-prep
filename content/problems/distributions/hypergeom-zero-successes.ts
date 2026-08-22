@@ -19,7 +19,7 @@ export const hypergeomZeroSuccesses: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 2,
-  firms: [{ firm: "optiver", weight: 0.35 }, { firm: "flow-traders", weight: 0.3 }],
+  firms: [{ firm: "optiver", weight: 0.35 }, { firm: "flow", weight: 0.3 }],
   source: { kind: "original", inspiration: "the hypergeometric boundary case of drawing none of the marked items" },
   params: {
     N: { range: { min: 10, max: 20, step: 1 } },

@@ -14,7 +14,7 @@ export const adverseDriftReachUpside: ProblemTemplate = {
   version: 1,
   topic: "probability/ruin",
   difficulty: 1,
-  firms: [{ firm: "millennium", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "millennium", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "longshot goal probability against adverse drift" },
   params: {
     winPct: { range: { min: 20, max: 45, step: 1 } },

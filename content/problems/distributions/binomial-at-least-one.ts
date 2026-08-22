@@ -8,7 +8,7 @@ export const binomialAtLeastOne: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 2,
-  firms: [{ firm: "two-sigma", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "two-sigma", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "at-least-one as the complement of the zero-success event" },
   params: {
     n: { range: { min: 5, max: 20, step: 1 } },

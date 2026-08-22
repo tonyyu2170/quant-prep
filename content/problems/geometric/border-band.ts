@@ -14,7 +14,7 @@ export const borderBand: ProblemTemplate = {
   version: 1,
   topic: "probability/geometric",
   difficulty: 1,
-  firms: [{ firm: "flow-traders", weight: 0.35 }, { firm: "two-sigma", weight: 0.3 }],
+  firms: [{ firm: "flow", weight: 0.35 }, { firm: "two-sigma", weight: 0.3 }],
   source: { kind: "original", inspiration: "boundary strip of a rectangular field" },
   params: {
     boardW: { range: { min: 40, max: 100, step: 10 } },

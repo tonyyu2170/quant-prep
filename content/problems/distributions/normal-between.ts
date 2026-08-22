@@ -10,7 +10,7 @@ export const normalBetween: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 2,
-  firms: [{ firm: "susquehanna", weight: 0.35 }, { firm: "optiver", weight: 0.3 }],
+  firms: [{ firm: "sig", weight: 0.35 }, { firm: "optiver", weight: 0.3 }],
   source: { kind: "original", inspiration: "a Normal interval probability as a difference of two standardized CDF lookups" },
   params: {
     mu: { range: { min: 50, max: 150, step: 25 } },

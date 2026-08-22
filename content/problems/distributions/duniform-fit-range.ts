@@ -6,7 +6,7 @@ export const duniformFitRange: ProblemTemplate = {
   version: 1,
   topic: "probability/distributions",
   difficulty: 2,
-  firms: [{ firm: "jane-street", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "jane-street", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "recovering a discrete uniform's range size from a stated subrange probability" },
   params: {
     M: { range: { min: 1, max: 20, step: 1 } },

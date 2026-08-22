@@ -11,7 +11,7 @@ export const surviveThenRemainingDuration: ProblemTemplate = {
   version: 1,
   topic: "probability/ruin",
   difficulty: 3,
-  firms: [{ firm: "imc", weight: 0.35 }, { firm: "susquehanna", weight: 0.3 }],
+  firms: [{ firm: "imc", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "conditional expectation restarts the ruin clock" },
   params: {
     currentStack: { range: { min: 3, max: 14, step: 1 } },
