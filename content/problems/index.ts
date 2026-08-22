@@ -109,6 +109,46 @@ import { normalBelow } from "./distributions/normal-below";
 import { normalAbove } from "./distributions/normal-above";
 import { normalBetween } from "./distributions/normal-between";
 import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
+import { fairReachGoal } from "./ruin/fair-reach-goal";
+import { unfairReachGoal } from "./ruin/unfair-reach-goal";
+import { walkHitUpperFirst } from "./ruin/walk-hit-upper-first";
+import { walkHitLossFirst } from "./ruin/walk-hit-loss-first";
+import { fairExpectedDuration } from "./ruin/fair-expected-duration";
+import { unfairExpectedDuration } from "./ruin/unfair-expected-duration";
+import { driftTouchDownside } from "./ruin/drift-touch-downside";
+import { adverseDriftReachUpside } from "./ruin/adverse-drift-reach-upside";
+import { complementRuinFirst } from "./ruin/complement-ruin-first";
+import { fitCapitalFair } from "./ruin/fit-capital-fair";
+import { fitCapitalUnfair } from "./ruin/fit-capital-unfair";
+import { doublingStrategy } from "./ruin/doubling-strategy";
+import { fitGoalFromDurationFair } from "./ruin/fit-goal-from-duration-fair";
+import { stakeRescale } from "./ruin/stake-rescale";
+import { restartAfterSurvival } from "./ruin/restart-after-survival";
+import { driftOneSidedDuration } from "./ruin/drift-one-sided-duration";
+import { fitThenDuration } from "./ruin/fit-then-duration";
+import { inferCapitalThenNewGoal } from "./ruin/infer-capital-then-new-goal";
+import { doublingFitThenDuration } from "./ruin/doubling-fit-then-duration";
+import { surviveThenRemainingDuration } from "./ruin/survive-then-remaining-duration";
+import { segmentSubinterval } from "./geometric/segment-subinterval";
+import { twoPointsGap } from "./geometric/two-points-gap";
+import { meetingWindow } from "./geometric/meeting-window";
+import { squareInnerDisk } from "./geometric/square-inner-disk";
+import { concentricCircles } from "./geometric/concentric-circles";
+import { brokenStickLeftShare } from "./geometric/broken-stick-left-share";
+import { borderBand } from "./geometric/border-band";
+import { chordAngleCap } from "./geometric/chord-angle-cap";
+import { meetingInverseFit } from "./geometric/meeting-inverse-fit";
+import { stickTriangleConditional } from "./geometric/stick-triangle-conditional";
+import { buffonShortNeedle } from "./geometric/buffon-short-needle";
+import { threePointsSpacing } from "./geometric/three-points-spacing";
+import { cornerQuarterDisk } from "./geometric/corner-quarter-disk";
+import { diskInRectComplement } from "./geometric/disk-in-rect-complement";
+import { buffonFitLengthInverse } from "./geometric/buffon-fit-length-inverse";
+import { triangleParallelCut } from "./geometric/triangle-parallel-cut";
+import { fitWindowThenOtherWindow } from "./geometric/fit-window-then-other-window";
+import { buffonFitThenOtherBoard } from "./geometric/buffon-fit-then-other-board";
+import { delayedArrivalMeeting } from "./geometric/delayed-arrival-meeting";
+import { concentricFitThenRing } from "./geometric/concentric-fit-then-ring";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -221,6 +261,46 @@ export const PROBLEMS: ProblemTemplate[] = [
   normalAbove,
   normalBetween,
   normalQuantileThenRange,
+  fairReachGoal,
+  unfairReachGoal,
+  walkHitUpperFirst,
+  walkHitLossFirst,
+  fairExpectedDuration,
+  unfairExpectedDuration,
+  driftTouchDownside,
+  adverseDriftReachUpside,
+  complementRuinFirst,
+  fitCapitalFair,
+  fitCapitalUnfair,
+  doublingStrategy,
+  fitGoalFromDurationFair,
+  stakeRescale,
+  restartAfterSurvival,
+  driftOneSidedDuration,
+  fitThenDuration,
+  inferCapitalThenNewGoal,
+  doublingFitThenDuration,
+  surviveThenRemainingDuration,
+  segmentSubinterval,
+  twoPointsGap,
+  meetingWindow,
+  squareInnerDisk,
+  concentricCircles,
+  brokenStickLeftShare,
+  borderBand,
+  chordAngleCap,
+  meetingInverseFit,
+  stickTriangleConditional,
+  buffonShortNeedle,
+  threePointsSpacing,
+  cornerQuarterDisk,
+  diskInRectComplement,
+  buffonFitLengthInverse,
+  triangleParallelCut,
+  fitWindowThenOtherWindow,
+  buffonFitThenOtherBoard,
+  delayedArrivalMeeting,
+  concentricFitThenRing,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

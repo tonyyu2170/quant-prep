@@ -942,6 +942,541 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.answer) !== P(p.c),
       breaks: (p, d) => ({ ...d, answer: p.c }) },
   ],
+
+  "ruin/fair-reach-goal": [
+    { says: "Sanity: sweeping the table and busting are complements whose printed probabilities sum to 1",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.ruinProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ruinProb: d.ruinProb * 0.5 }) },
+    { says: "Read off the line: the reach probability equals the starting share, recomputed fresh from raw params",
+      holds: (p, d) => same(d.frac, p.startChips / p.goalChips),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 1.02 }) },
+    { says: "The bust probability is one minus the very same share",
+      holds: (p, d) => same(d.ruinProb, 1 - p.startChips / p.goalChips),
+      breaks: (_p, d) => ({ ...d, ruinProb: 1 }) },
+  ],
+
+  "ruin/unfair-reach-goal": [
+    { says: "Sanity: one extra chip strictly raises the reach chance",
+      holds: (_p, d) => P(d.successNext) > P(d.success),
+      breaks: (_p, d) => ({ ...d, successNext: d.success * 0.9 }) },
+    { says: "Solve: with r=q/p the answer recomputed fresh from params matches the printed value",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.startChips) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "The complement is the bust chance and both sit inside the unit interval",
+      holds: (_p, d) => Math.abs(P(d.success) + P(1 - d.success) - 1) < 1e-4 && P(d.success) > 0 && P(d.success) < 1,
+      breaks: (_p, d) => ({ ...d, success: 2 }) },
+  ],
+
+  "ruin/walk-hit-upper-first": [
+    { says: "Sanity: touching the top first and the bottom first are complements summing to 1",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.mirrorFrac) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, mirrorFrac: d.mirrorFrac * 0.5 }) },
+    { says: "Read off the line: the answer equals downBarrier over total width, fresh from raw params",
+      holds: (p, d) => same(d.frac, p.downBarrier / (p.upBarrier + p.downBarrier)),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 1.02 }) },
+    { says: "The corridor width printed in Setup equals the sum of the two barriers from raw params",
+      holds: (p, d) => same(d.total, p.upBarrier + p.downBarrier),
+      breaks: (_p, d) => ({ ...d, total: d.total * 2 }) },
+  ],
+
+  "ruin/walk-hit-loss-first": [
+    { says: "Sanity: cut-first and bank-first exits account for the whole walk",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.gainFirst) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, gainFirst: d.gainFirst + 0.5 }) },
+    { says: "The cut-first chance equals reboundTarget over corridor width, recomputed from raw params",
+      holds: (p, d) => same(d.frac, p.reboundTarget / (p.dropLimit + p.reboundTarget)),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 0.98 }) },
+    { says: "The corridor width printed in Setup equals the sum of the two levels from raw params",
+      holds: (p, d) => same(d.total, p.dropLimit + p.reboundTarget),
+      breaks: (_p, d) => ({ ...d, total: d.total + 1 }) },
+  ],
+
+  "ruin/fair-expected-duration": [
+    { says: "Setup fit: the parabola form k*(N-k) reproduces the printed duration from raw params",
+      holds: (p, d) => same(d.duration, p.stake * (p.target - p.stake)),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "Sanity: the average sits at or above both clean-run bounds",
+      holds: (_p, d) => P(d.duration) >= P(d.straightLoss) && P(d.duration) >= P(d.straightWin),
+      breaks: (_p, d) => ({ ...d, duration: Math.min(d.straightLoss, d.straightWin) - 1 }) },
+    { says: "Monotonicity: pushing the target one chip higher strictly lengthens the expected session",
+      holds: (p, d) => {
+        const grown = p.stake * (p.target + 1 - p.stake);
+        return P(grown) > P(d.duration);
+      },
+      breaks: (p, d) => ({ ...d, duration: p.stake * (p.target + 1 - p.stake) }) },
+  ],
+
+  "ruin/unfair-expected-duration": [
+    { says: "Sanity: expected play stays strictly inside the positive integers",
+      holds: (_p, d) => P(d.duration) >= 1 && P(d.duration) <= P(d.fairDuration) + P(d.fairDuration),
+      breaks: (_p, d) => ({ ...d, duration: -1 }) },
+    { says: "Success first: Pi from the odds ratio recomputes fresh from raw params",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.stake) / (1 - r ** p.target) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Monotonicity: pushing the target one chip higher strictly lengthens expected play",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const q = 1 - prob;
+        const r = q / prob;
+        const pi = (1 - r ** p.stake) / (1 - r ** (p.target + 1));
+        const grown = (p.stake - (p.target + 1) * pi) / (q - prob);
+        return grown - d.duration > 1e-4; // measured min growth 1.5e-3 across the legal space
+      },
+      breaks: (p, d) => {
+        const prob = p.winPct / 100;
+        const q = 1 - prob;
+        const r = q / prob;
+        const pi = (1 - r ** p.stake) / (1 - r ** (p.target + 1));
+        return { ...d, duration: (p.stake - (p.target + 1) * pi) / (q - prob) };
+      } },
+  ],
+
+  "ruin/drift-touch-downside": [
+    { says: "Solve: the touch chance equals the odds ratio to the distance, fresh from raw params",
+      holds: (p, d) => Math.abs(((1 - p.winPct / 100) / (p.winPct / 100)) ** (p.startLevel + p.depth) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+    { says: "Sanity: a hole one deeper gives a strictly smaller touch chance",
+      holds: (_p, d) => P(d.oneDeeper) < P(d.answer),
+      breaks: (_p, d) => ({ ...d, oneDeeper: d.answer * 1.5 }) },
+    { says: "The touch chance stays a strict probability inside the band",
+      holds: (_p, d) => P(d.answer) >= 0.1 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1.0000001 }) },
+  ],
+
+  "ruin/adverse-drift-reach-upside": [
+    { says: "Solve: the reach chance equals the inverted odds ratio to the distance, fresh from raw params",
+      holds: (p, d) => Math.abs((p.winPct / 100 / (1 - p.winPct / 100)) ** (p.hole + p.height) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.97 }) },
+    { says: "Sanity: a target one lower gives a strictly larger reach chance",
+      holds: (_p, d) => P(d.oneLower) > P(d.answer),
+      breaks: (_p, d) => ({ ...d, oneLower: d.answer * 0.5 }) },
+    { says: "Bounds chain: the answer sits at or below the one-lower reach, which stays a probability",
+      holds: (_p, d) => P(d.answer) <= P(d.oneLower) && P(d.oneLower) <= 1,
+      breaks: (_p, d) => ({ ...d, oneLower: 0 }) },
+  ],
+
+  "ruin/complement-ruin-first": [
+    { says: "Take the complement: the bust chance is exactly one minus the printed reach chance",
+      holds: (_p, d) => Math.abs(P(d.success) + P(d.ruinProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ruinProb: d.ruinProb * 0.5 }) },
+    { says: "Reach chance recomputes fresh from the odds ratio and the raw barriers",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.startChips) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Buying in one chip deeper strictly raises the bust probability",
+      holds: (_p, d) => P(d.nextRuin) > P(d.ruinProb),
+      breaks: (_p, d) => ({ ...d, nextRuin: d.ruinProb * 0.9 }) },
+  ],
+
+  "ruin/fit-capital-fair": [
+    { says: "Round up: the achieved share clears the target percentage",
+      holds: (p, d) => P(d.achieved) >= p.targetPct / 100,
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "One chip less sits at or below the target while the answer clears it",
+      holds: (p, d) => P(d.below) <= P(p.targetPct / 100) && P(d.achieved) >= P(p.targetPct / 100),
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "The raw requirement recomputes from the printed literals",
+      holds: (p, d) => same(d.need, (p.targetPct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, need: d.need * 1.05 }) },
+    { says: "The answer is exactly the ceiling of the raw requirement",
+      holds: (_p, d) => d.capital === Math.ceil(d.need),
+      breaks: (_p, d) => ({ ...d, capital: d.capital * 1.02 }) },
+  ],
+
+  "ruin/fit-capital-unfair": [
+    { says: "Round up: the fitted stack clears the promise and one chip less does not",
+      holds: (p, d) => P(d.achieved) >= P(p.targetPct / 100) && P(d.below) < P(d.achieved),
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "Adverse edges demand at least the fair linear share; favorable ones at most",
+      holds: (p, d) => p.winPct < 50 ? P(d.capital) >= P(d.fairNeed) : P(d.capital) <= P(d.fairNeed),
+      breaks: (p, d) => ({ ...d, capital: p.winPct < 50 ? d.fairNeed - 1 : d.fairNeed + 1 }) },
+    { says: "The odds ratio against you exceeds one exactly when the edge is negative",
+      holds: (p, d) => (p.winPct < 50 ? P(d.ratio) > 1 : P(d.ratio) < 1),
+      breaks: (p, d) => ({ ...d, ratio: p.winPct < 50 ? d.ratio * 0.5 : d.ratio * 2 }) },
+    { says: "The fitted stack is exactly the log-inversion ceiling recomputed from raw params",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        const rn = r ** p.goalChips;
+        return d.capital === Math.ceil(Math.log(1 - (p.targetPct / 100) * (1 - rn)) / Math.log(r));
+      },
+      breaks: (_p, d) => ({ ...d, capital: d.capital * 1.02 }) },
+  ],
+
+  "ruin/doubling-strategy": [
+    { says: "Ruin path: the streak probability recomputes fresh as q to the rounds",
+      holds: (p, d) => Math.abs((1 - p.winPct / 100) ** p.rounds - d.streakProb) < 1e-9,
+      breaks: (_p, d) => ({ ...d, streakProb: d.streakProb * 1.02 }) },
+    { says: "Success side: the session win chance is the exact complement of the streak",
+      holds: (_p, d) => Math.abs(P(d.winSession) + P(d.streakProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, winSession: d.streakProb }) },
+    { says: "One more round strictly shrinks the ruin tail",
+      holds: (_p, d) => P(d.nextStreak) < P(d.streakProb),
+      breaks: (_p, d) => ({ ...d, nextStreak: d.streakProb * 2 }) },
+  ],
+
+  "ruin/fit-goal-from-duration-fair": [
+    { says: "Invert the parabola: stake plus average-over-stake reproduces the target",
+      holds: (p, d) => same(d.goalFit, p.stake + d.avgSession / p.stake),
+      breaks: (_p, d) => ({ ...d, goalFit: d.goalFit + 3 }) },
+    { says: "Reading the parabola back reproduces the stated average exactly",
+      holds: (p, d) => same(d.avgSession, p.stake * (d.goalFit - p.stake)),
+      breaks: (_p, d) => ({ ...d, avgSession: d.avgSession * 1.02 }) },
+    { says: "Both clean exits are shorter than the measured average session",
+      holds: (_p, d) => P(d.avgSession) > P(d.straightLoss) && P(d.avgSession) > P(d.straightWin),
+      breaks: (_p, d) => ({ ...d, avgSession: Math.min(d.straightLoss, d.straightWin) - 1 }) },
+  ],
+
+  "ruin/stake-rescale": [
+    { says: "The scrip-unit share equals the original share — invariance checked from raw params",
+      holds: (p, d) => same(d.frac, p.startChips / p.goalChips) && same(d.scaledFrac, d.frac),
+      breaks: (_p, d) => ({ ...d, scaledFrac: d.frac * 1.02 }) },
+    { says: "The rescaled stacks print back as scale times the originals",
+      holds: (p, d) => same(d.bigStart, (p.scalePct / 100) * p.startChips) && same(d.bigGoal, (p.scalePct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, bigStart: d.bigStart + 1 }) },
+    { says: "The share stays a strict probability inside the band",
+      holds: (_p, d) => P(d.frac) >= 0.01 && P(d.frac) <= 0.99,
+      breaks: (_p, d) => ({ ...d, frac: 1.5 }) },
+  ],
+
+  "ruin/restart-after-survival": [
+    { says: "Restart: the fresh reach chance recomputes from the current level alone",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.reachedLevel) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Remaining climb equals goal minus current level",
+      holds: (p, d) => same(d.remaining, p.goalChips - p.reachedLevel),
+      breaks: (_p, d) => ({ ...d, remaining: d.remaining + 2 }) },
+    { says: "The updated chance is a strict probability inside the band",
+      holds: (_p, d) => P(d.success) >= 0.01 && P(d.success) <= 0.99,
+      breaks: (_p, d) => ({ ...d, success: 0 }) },
+  ],
+
+  "ruin/drift-one-sided-duration": [
+    { says: "Drain rate: expected periods equal reserve over the per-period edge",
+      holds: (p, d) => same(d.duration, p.reserve / d.edge),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "Twice the cushion takes twice as long",
+      holds: (p, d) => same(d.doubleReserve, (p.reserve * 2) / d.edge),
+      breaks: (_p, d) => ({ ...d, doubleReserve: d.duration * 3 }) },
+    { says: "The adverse edge recomputes from the raw win percentage",
+      holds: (p, d) => same(d.edge, (100 - p.winPct) / 100 - p.winPct / 100),
+      breaks: (_p, d) => ({ ...d, edge: d.edge * 0.5 }) },
+  ],
+
+  "ruin/fit-then-duration": [
+    { says: "Stage one recovers the stake as the target percentage of the goal",
+      holds: (p, d) => same(d.stake, (p.reachPct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, stake: d.stake + 2 }) },
+    { says: "Stage two prices the session off the recovered stake alone",
+      holds: (p, d) => same(d.duration, d.stake * (p.goalChips - d.stake)),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "A 2 percent perturbation of the duration breaks the parabola read-back",
+      holds: (p, d) => Math.abs(p.reachPct / 100 * p.goalChips * (p.goalChips - p.reachPct / 100 * p.goalChips) - d.duration) < 1e-6,
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.02 }) },
+  ],
+
+  "ruin/infer-capital-then-new-goal": [
+    { says: "Stage one: the buy-in is the first share of the first goal",
+      holds: (p, d) => same(d.stake, (p.firstSharePct / 100) * p.firstGoal),
+      breaks: (_p, d) => ({ ...d, stake: d.stake + 1 }) },
+    { says: "Stage two: the new chance is the stake over the raised goal",
+      holds: (p, d) => same(d.newChance, d.stake / d.secondGoal),
+      breaks: (_p, d) => ({ ...d, newChance: d.newChance * 1.02 }) },
+    { says: "Raising the barrier with fixed capital strictly lowers a fair share",
+      holds: (p, d) => d.secondGoal > p.firstGoal ? P(d.newChance) < P(d.oldChance) : P(d.newChance) === P(d.oldChance),
+      breaks: (p, d) => ({ ...d, newChance: d.oldChance * 1.01 }) },
+  ],
+
+  "ruin/doubling-fit-then-duration": [
+    { says: "Stage one: the fitted loss rate raised to the rounds reproduces the stated streak",
+      holds: (p, d) => Math.abs(d.q ** p.rounds - p.streakPct / 100) < 1e-9,
+      breaks: (_p, d) => ({ ...d, q: d.q * 1.02 }) },
+    { says: "The per-hand win rate is one minus the fitted loss rate",
+      holds: (_p, d) => same(d.prob, 1 - d.q),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 0.5 }) },
+    { says: "Stage two: the expected grind recomputes as winSession over win rate",
+      holds: (_p, d) => same(d.duration, d.winSession / d.prob),
+      breaks: (_p, d) => ({ ...d, duration: d.duration + 3 }) },
+  ],
+
+  "ruin/survive-then-remaining-duration": [
+    { says: "Restart the parabola at the current stack",
+      holds: (p, d) => same(d.remaining, p.currentStack * (p.goalChips - p.currentStack)),
+      breaks: (_p, d) => ({ ...d, remaining: d.remaining * 1.02 }) },
+    { says: "Elapsed hands never enter the conditional answer",
+      holds: (p, d) => {
+        const alt = p.currentStack * (p.goalChips - p.currentStack);
+        return same(alt, d.remaining);
+      },
+      breaks: (p, d) => ({ ...d, remaining: d.remaining + Math.round(p.elapsedHands / 10) }) },
+    { says: "Mid-corridor fresh sessions bound the remainder from above",
+      holds: (p, d) => P(d.remaining) <= P(d.fromZero),
+      breaks: (_p, d) => ({ ...d, remaining: 10 ** 6 }) },
+  ],
+
+  "geometric/segment-subinterval": [
+    { says: "Sanity: before and after shares reassemble the window",
+      holds: (p, d) => same(d.frac + d.complement, p.endMark / p.trailLength + (p.trailLength - p.endMark) / p.trailLength),
+      breaks: (_p, d) => ({ ...d, complement: d.frac }) },
+    { says: "The after-share recomputes fresh from raw params",
+      holds: (p, d) => same(d.complement, 1 - p.endMark / p.trailLength),
+      breaks: (_p, d) => ({ ...d, complement: d.complement * 1.02 }) },
+    { says: "The remaining stretch prints back as length minus mark",
+      holds: (p, d) => same(d.windowLeft, p.trailLength - p.endMark),
+      breaks: (_p, d) => ({ ...d, windowLeft: d.windowLeft + 5 }) },
+  ],
+
+  "geometric/two-points-gap": [
+    { says: "Close and far chances fill the square",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.farProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, farProb: d.farProb * 0.5 }) },
+    { says: "The corner leg is the stick short of the gap",
+      holds: (p, d) => same(d.cornerLeg, p.stickLength - p.gapUnits),
+      breaks: (_p, d) => ({ ...d, cornerLeg: d.cornerLeg * 1.05 }) },
+    { says: "The answer recomputes as one minus the squared shortfall ratio",
+      holds: (p, d) => Math.abs(1 - Math.pow(1 - p.gapUnits / p.stickLength, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+  ],
+
+  "geometric/meeting-window": [
+    { says: "Meeting plus missing fills the arrival square",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.missProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, missProb: d.missProb + 0.5 }) },
+    { says: "The miss triangle legs are the window short of the patience",
+      holds: (p, d) => same(d.missLeg, p.windowMinutes - p.waitMinutes),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 7 }) },
+    { says: "The meeting chance recomputes fresh from the two times",
+      holds: (p, d) => Math.abs(1 - Math.pow((p.windowMinutes - p.waitMinutes) / p.windowMinutes, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "geometric/square-inner-disk": [
+    { says: "Areas: pi r-squared over width-times-height reproduces the printed chance",
+      holds: (p, d) => same(d.answer, (Math.PI * p.diskR * p.diskR) / (p.boardW * p.boardH)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+    { says: "The disk fits inside the board and its share stays a probability",
+      holds: (p, d) => 2 * p.diskR <= Math.min(p.boardW, p.boardH) && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 2 }) },
+    { says: "A square board would cap any inscribed circle's share at a quarter of pi",
+      holds: (p, d) => p.boardW !== p.boardH || P(d.answer) <= P(Math.PI / 4),
+      breaks: (_p, d) => ({ ...d, answer: Math.PI / 3 }) },
+  ],
+
+  "geometric/concentric-circles": [
+    { says: "Bullseye share equals squared radius ratio, fresh from raw params",
+      holds: (p, d) => same(d.answer, Math.pow(p.bullR / p.boardR, 2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Ring and bullseye partition the board",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.ringShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ringShare: d.ringShare * 0.9 }) },
+    { says: "The radius ratio itself prints back from raw params",
+      holds: (p, d) => same(d.ratio, p.bullR / p.boardR),
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 1.05 }) },
+  ],
+
+  "geometric/broken-stick-left-share": [
+    { says: "Qualifying stretch is the stick past the threshold mark",
+      holds: (p, d) => same(d.qualifying, p.stickCm - (p.sharePct / 100) * p.stickCm),
+      breaks: (_p, d) => ({ ...d, qualifying: d.qualifying + 4 }) },
+    { says: "Answer is one minus the demanded share",
+      holds: (p, d) => same(d.answer, 1 - d.shareFrac),
+      breaks: (_p, d) => ({ ...d, answer: d.shareFrac }) },
+    { says: "Threshold sits at the demanded share of full length",
+      holds: (p, d) => same(d.threshold, (p.sharePct / 100) * p.stickCm),
+      breaks: (_p, d) => ({ ...d, threshold: d.threshold * 1.04 }) },
+  ],
+
+  "geometric/border-band": [
+    { says: "Interior keeps positive room and the band stays a strict share",
+      holds: (p, d) => 2 * p.bandWidth < Math.min(p.boardW, p.boardH) && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+    { says: "Band share is one minus interior over whole",
+      holds: (p, d) => same(d.answer, 1 - d.innerArea / d.boardArea),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Interior dimensions print back from raw params",
+      holds: (p, d) => same(d.innerW, p.boardW - 2 * p.bandWidth) && same(d.innerH, p.boardH - 2 * p.bandWidth),
+      breaks: (_p, d) => ({ ...d, innerW: d.innerW + 6 }) },
+  ],
+
+  "geometric/chord-angle-cap": [
+    { says: "Answer is the cap fraction itself",
+      holds: (p, d) => same(d.answer, p.capPct / 100),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Complement covers pairings beyond the cap",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.complement) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, complement: 1 }) },
+    { says: "Caps stay within the foldable half-turn range",
+      holds: (_p, d) => P(d.answer) >= 0.1 && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.5 }) },
+  ],
+
+  "geometric/meeting-inverse-fit": [
+    { says: "The fitted wait sits inside the window",
+      holds: (p, d) => P(d.wait) > 0 && P(d.wait) < p.windowMinutes,
+      breaks: (p, d) => ({ ...d, wait: p.windowMinutes + 5 }) },
+    { says: "Reading the square back puts the miss share at the exact complement of the target",
+      holds: (p, d) => Math.abs(P(d.missProb) - (1 - p.targetPct / 100)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, missProb: d.missProb * 0.8 }) },
+    { says: "Miss legs equal window minus wait, fresh from printed values",
+      holds: (p, d) => same(d.missLeg, p.windowMinutes - d.wait),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 9 }) },
+  ],
+
+  "geometric/stick-triangle-conditional": [
+    { says: "Conditional chance is left share over right share, fresh from params",
+      holds: (p, d) => same(d.answer, (p.firstBreakPct / 100) / (1 - p.firstBreakPct / 100)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.97 }) },
+    { says: "Remainder percentage prints back as one hundred minus the first break",
+      holds: (p, d) => same(d.remainderPct, 100 - p.firstBreakPct),
+      breaks: (_p, d) => ({ ...d, remainderPct: d.remainderPct + 4 }) },
+    { says: "The unconditional sequential value sits strictly under a quarter",
+      holds: (_p, d) => P(d.seqUnconditional) < 0.25,
+      breaks: (_p, d) => ({ ...d, seqUnconditional: 0.3 }) },
+  ],
+
+  "geometric/buffon-short-needle": [
+    { says: "Crossing chance recomputes as twice the ratio over pi",
+      holds: (p, d) => Math.abs((2 * p.needleCm) / (Math.PI * p.boardCm) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.05 }) },
+    { says: "Short regime holds and the chance stays a probability",
+      holds: (p, d) => p.needleCm <= p.boardCm && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.2 }) },
+    { says: "The length-to-spacing ratio prints back from raw params",
+      holds: (p, d) => same(d.ratio, p.needleCm / p.boardCm),
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 2 }) },
+  ],
+
+  "geometric/three-points-spacing": [
+    { says: "Consumed space is twice the demanded gap",
+      holds: (p, d) => same(d.consumed, 2 * p.gapUnits),
+      breaks: (p, d) => ({ ...d, consumed: p.gapUnits }) },
+    { says: "Effective span is the stick short of the consumed space",
+      holds: (p, d) => same(d.t, (p.stickLength - d.consumed) / p.stickLength),
+      breaks: (_p, d) => ({ ...d, t: d.t * 1.02 }) },
+    { says: "The answer is that span cubed and stays inside the band",
+      holds: (p, d) => Math.abs(Math.pow((p.stickLength - 2 * p.gapUnits) / p.stickLength, 3) - d.answer) < 1e-9 && P(d.answer) >= 0.1,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+  ],
+
+  "geometric/corner-quarter-disk": [
+    { says: "Zone area is pi r-squared over four",
+      holds: (p, d) => same(d.zoneArea, (Math.PI * p.zoneR * p.zoneR) / 4),
+      breaks: (_p, d) => ({ ...d, zoneArea: d.zoneArea * 2 }) },
+    { says: "The zone stays on the lawn and its share remains a probability",
+      holds: (p, d) => p.zoneR <= Math.min(p.boardW, p.boardH) && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.1 }) },
+    { says: "The share recomputes as zone over board",
+      holds: (p, d) => same(d.answer, d.zoneArea / d.boardArea),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.95 }) },
+  ],
+
+  "geometric/disk-in-rect-complement": [
+    { says: "The disk fits on the table and the miss share stays a probability",
+      holds: (p, d) => 2 * p.diskR <= Math.min(p.boardW, p.boardH) && P(d.answer) >= 0.1,
+      breaks: (_p, d) => ({ ...d, answer: -0.5 }) },
+    { says: "Disk share is pure area over table, position-free",
+      holds: (p, d) => same(d.diskShare, (Math.PI * p.diskR * p.diskR) / (p.boardW * p.boardH)),
+      breaks: (_p, d) => ({ ...d, diskShare: d.diskShare * 1.04 }) },
+    { says: "Missing is the exact complement of the stain share",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.diskShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, answer: d.diskShare }) },
+  ],
+
+  "geometric/buffon-fit-length-inverse": [
+    { says: "Fitted needle respects the short-needle regime",
+      holds: (p, d) => P(d.ratio) <= 1 && same(d.ratio, d.needle / p.boardCm),
+      breaks: (p, d) => ({ ...d, needle: p.boardCm * 1.5 }) },
+    { says: "Needle is target times board times two-over-pi",
+      holds: (p, d) => same(d.needle, (p.targetPct / 100) * p.boardCm * (Math.PI / 2)),
+      breaks: (_p, d) => ({ ...d, needle: d.needle * 1.03 }) },
+    { says: "Feeding the ratio forward returns the target probability",
+      holds: (p, d) => Math.abs((2 * d.ratio) / Math.PI - p.targetPct / 100) < 1e-9,
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 0.9 }) },
+  ],
+
+  "geometric/triangle-parallel-cut": [
+    { says: "Top piece is the depth fraction squared",
+      holds: (p, d) => same(d.topShare, Math.pow(p.cutPct / 100, 2)),
+      breaks: (_p, d) => ({ ...d, topShare: d.topShare * 0.5 }) },
+    { says: "Below the cut takes everything else",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.topShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, answer: d.topShare }) },
+    { says: "Cutting five points deeper toward the base strictly shrinks the below-cut share",
+      holds: (p, d) => {
+        const deeperCut = 1 - Math.pow((p.cutPct + 5) / 100, 2);
+        return P(deeperCut) < P(d.answer);
+      },
+      breaks: (p, d) => ({ ...d, answer: 1 - Math.pow((p.cutPct + 5) / 100, 2) }) },
+  ],
+
+  "geometric/fit-window-then-other-window": [
+    { says: "Stage one wait recomputes from the old window and target",
+      holds: (p, d) => same(d.wait, p.firstWindow * (1 - Math.sqrt(1 - p.targetPct / 100))),
+      breaks: (_p, d) => ({ ...d, wait: d.wait * 1.05 }) },
+    { says: "Stage two legs are the new window short of the carried-over wait",
+      holds: (p, d) => same(d.missLeg, p.secondWindow - d.wait),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 6 }) },
+    { says: "The new chance recomputes from the carried wait inside the second window",
+      holds: (p, d) => Math.abs(1 - Math.pow((p.secondWindow - d.wait) / p.secondWindow, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+    { says: "The shorter window improves on the original staged-in chance",
+      holds: (p, d) => P(d.answer) > p.targetPct / 100,
+      breaks: (p, d) => ({ ...d, answer: p.targetPct / 100 }) },
+  ],
+
+  "geometric/buffon-fit-then-other-board": [
+    { says: "Fitted needle is target share of old spacing times two-over-pi",
+      holds: (p, d) => same(d.needle, (p.targetPct / 100) * p.firstBoardCm * (Math.PI / 2)),
+      breaks: (_p, d) => ({ ...d, needle: d.needle * 1.04 }) },
+    { says: "New board prints back as its percentage of the old",
+      holds: (p, d) => same(d.secondBoard, (p.secondBoardPct / 100) * p.firstBoardCm),
+      breaks: (_p, d) => ({ ...d, secondBoard: d.secondBoard + 7 }) },
+    { says: "Answer is twice the fitted needle over pi times the new spacing",
+      holds: (p, d) => Math.abs((2 * d.needle) / (Math.PI * d.secondBoard) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+    { says: "Tighter lines raise the crossing chance above the original target",
+      holds: (p, d) => P(d.answer) > p.targetPct / 100,
+      breaks: (p, d) => ({ ...d, answer: p.targetPct / 100 }) },
+  ],
+
+  "geometric/delayed-arrival-meeting": [
+    { says: "Full sweep is the window short of both delay and patience",
+      holds: (p, d) => same(d.fullSpan, p.windowMinutes - p.delayMinutes - p.waitMinutes),
+      breaks: (_p, d) => ({ ...d, fullSpan: d.fullSpan + 8 }) },
+    { says: "Answer is stripe width times untouched sweep over the square",
+      holds: (p, d) => Math.abs((2 * p.waitMinutes * (p.windowMinutes - p.delayMinutes)) / (p.windowMinutes ** 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.96 }) },
+    { says: "Extra delay minutes eat exactly two waits of area per minute",
+      holds: (p, d) => same(d.answer - (2 * p.waitMinutes * (p.windowMinutes - p.delayMinutes - 5)) / (p.windowMinutes ** 2), (2 * p.waitMinutes * 5) / (p.windowMinutes ** 2)),
+      breaks: (p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "geometric/concentric-fit-then-ring": [
+    { says: "Bullseye radius is board radius times root of its share",
+      holds: (p, d) => same(d.bullR, p.boardR * Math.sqrt(p.bullseyePct / 100)),
+      breaks: (_p, d) => ({ ...d, bullR: d.bullR * 1.05 }) },
+    { says: "Outer edge prints back at its percentage of the board",
+      holds: (p, d) => same(d.outerR, (p.outerPct / 100) * p.boardR),
+      breaks: (_p, d) => ({ ...d, outerR: d.outerR + 3 }) },
+    { says: "Ring share is outer squared share minus bullseye share",
+      holds: (p, d) => Math.abs(Math.pow(p.outerPct / 100, 2) - p.bullseyePct / 100 - d.ringShare) < 1e-9,
+      breaks: (_p, d) => ({ ...d, ringShare: d.ringShare * 0.9 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -1004,7 +1539,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

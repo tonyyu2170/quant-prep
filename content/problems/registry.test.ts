@@ -27,15 +27,34 @@ describe("problem registry invariants", () => {
     const counting = problemsFor("probability/counting").length;
     const ev = problemsFor("probability/ev-variance").length;
     const distributions = problemsFor("probability/distributions").length;
+    const ruin = problemsFor("probability/ruin").length;
+    const geometric = problemsFor("probability/geometric").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(25);
     expect(ev).toBe(30);
     expect(distributions).toBe(25);
-    expect(bayes + counting + ev + distributions).toBe(PROBLEMS.length);
+    expect(ruin).toBe(20);
+    expect(geometric).toBe(20);
+    expect(bayes + counting + ev + distributions + ruin + geometric).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
     expect(byId.get("counting/committee-selection")).toBeDefined();
+  });
+  it("geometric stays inside its 8/8/4 difficulty budget", () => {
+    const geo = PROBLEMS.filter((t) => t.id.startsWith("geometric/"));
+    expect(geo.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(8);
+    expect(geo.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(8);
+    expect(geo.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(4);
+    expect(geo.length).toBeLessThanOrEqual(20);
+  });
+  it("ruin stays inside its 8/8/4 difficulty budget", () => {
+    // An upper bound, not the equality — Task 7 adds the exact pins when the batch closes.
+    const ruin = PROBLEMS.filter((t) => t.id.startsWith("ruin/"));
+    expect(ruin.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(8);
+    expect(ruin.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(8);
+    expect(ruin.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(4);
+    expect(ruin.length).toBeLessThanOrEqual(20);
   });
   it("distributions batch hits the 10/10/5 difficulty distribution", () => {
     const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
