@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeRng } from "@qp/engine";
-import { sequenceItem, SEQ_FAMILIES } from "../src/sequences";
+import { sequenceItem, sequenceItemOfFamily, SEQ_FAMILIES } from "../src/sequences";
 
 // Independent verifiers: each re-derives the FULL series and the next term from the shown terms only.
 const verify: Record<string, (terms: number[], answer: number) => boolean> = {
@@ -89,5 +89,32 @@ describe("sequenceItem", () => {
       const n = terms.length;
       expect(item.answer).toBe(n % 2 === 1 ? terms[n - 1] + a : terms[n - 1] * b);
     }
+  });
+});
+
+describe("sequenceItemOfFamily", () => {
+  it("builds the family it is asked for, at the difficulty it is asked for", () => {
+    const rng = makeRng(11);
+    for (const family of SEQ_FAMILIES) {
+      const item = sequenceItemOfFamily(rng, family, 2);
+      expect(item.meta.family).toBe(family);
+      expect(item.id.startsWith(`seq-${family}-`)).toBe(true);
+      expect(item.meta.difficulty).toBe(2);
+    }
+  });
+
+  // Draw order is load-bearing: seeded replay of a sim depends on it (see the note in the generator).
+  // Golden ids captured from the generator BEFORE sequenceItemOfFamily was extracted — comparing two
+  // fresh rngs would pass under any refactor and prove nothing.
+  it("leaves sequenceItem's seeded output byte-identical", () => {
+    const rng = makeRng(99);
+    expect(Array.from({ length: 6 }, () => sequenceItem(rng, 2).id)).toEqual([
+      "seq-quadratic-10_18_30_46_66_90",
+      "seq-arithmetic-46_48_50_52_54_56",
+      "seq-arithmetic-12_25_38_51_64_77",
+      "seq-quadratic-7_10_15_22_31_42",
+      "seq-quadratic-9_13_19_27_37_49",
+      "seq-interleaved-9_78_15_73_21_68",
+    ]);
   });
 });

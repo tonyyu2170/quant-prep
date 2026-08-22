@@ -74,4 +74,32 @@ describe("ReviewPage", () => {
       expect(stored[0].ease).toBeCloseTo(2.3, 10); // graded wrong: ease dropped, not reset intake
     });
   });
+
+  it("lists a sequence pattern family as reviewable and runs it with fresh terms", async () => {
+    localStorage.setItem(R_KEY, JSON.stringify([row("seq-fiblike-d2", inDays(-1))]));
+    render(<ReviewPage />);
+    await screen.findByText("sequences · fiblike · L2");
+    expect(screen.getByText("1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("start-review"));
+    const prompt = screen.getByTestId("prompt").textContent!;
+    expect(prompt).toMatch(/^[\d, ]+\?$/); // regenerated terms, not the memorized instance
+
+    const input = screen.getByLabelText("answer") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "999999" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByTestId("rule")).toBeInTheDocument();
+    await waitFor(() => {
+      const stored: ReviewRow[] = JSON.parse(localStorage.getItem(R_KEY)!);
+      expect(stored[0].ease).toBeCloseTo(2.3, 10); // graded wrong, rescheduled
+    });
+  });
+
+  // Guards the family allowlist: without it, any seq-<junk>-d<n> row would reach the generator.
+  it("treats an unknown pattern family as retired rather than reviewable", async () => {
+    localStorage.setItem(R_KEY, JSON.stringify([row("seq-not-a-family-d2", inDays(-1))]));
+    render(<ReviewPage />);
+    await screen.findByText("retired problem");
+    expect(screen.queryByTestId("start-review")).not.toBeInTheDocument();
+  });
 });

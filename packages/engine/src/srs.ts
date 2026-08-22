@@ -32,3 +32,17 @@ export function review(row: ReviewRow, correct: boolean, now: Date): ReviewRow {
 }
 
 export const isDue = (row: ReviewRow, now: Date) => Date.parse(row.dueAt) <= now.getTime();
+
+/**
+ * Review-row id for a generated sequence concept.
+ *
+ * Generator items are identified per instance (`seq-fiblike-1_2_3_5_8`), which is useless as a
+ * review unit — it would store one row per draw and re-ask the memorized terms. The reviewable
+ * unit is the pattern family at a difficulty, which regenerates with fresh terms every time.
+ */
+export const sequenceReviewKey = (family: string, difficulty: 1 | 2 | 3) => `seq-${family}-d${difficulty}`;
+
+export function parseSequenceReviewKey(id: string): { family: string; difficulty: 1 | 2 | 3 } | null {
+  const m = /^seq-(.+)-d([123])$/.exec(id);
+  return m ? { family: m[1], difficulty: Number(m[2]) as 1 | 2 | 3 } : null;
+}

@@ -59,8 +59,7 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
   }
 }
 
-export function sequenceItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
-  const family = pick(rng, SEQ_FAMILIES);
+export function sequenceItemOfFamily(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): Item {
   const { terms, answer, rule, extra } = build(rng, family, difficulty);
   return {
     id: `seq-${family}-${terms.join("_")}`,
@@ -68,6 +67,10 @@ export function sequenceItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
     prompt: terms.join(", ") + ", ?",
     answer,
     rule,
-    meta: { family, terms: terms.join(","), ...(extra ?? {}) },
+    meta: { family, difficulty, terms: terms.join(","), ...(extra ?? {}) },
   };
 }
+
+// `pick` first, then `build` — the draw order sequenceItem has always used, and seeded sim replay depends on it.
+export const sequenceItem = (rng: Rng, difficulty: 1 | 2 | 3): Item =>
+  sequenceItemOfFamily(rng, pick(rng, SEQ_FAMILIES), difficulty);

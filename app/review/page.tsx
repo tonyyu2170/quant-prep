@@ -1,10 +1,23 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { isDue, review, type ReviewRow } from "@qp/engine";
+import { isDue, parseSequenceReviewKey, review, type ReviewRow } from "@qp/engine";
 import { getStore } from "@/lib/store/useStore";
+import { SEQ_FAMILIES, type SeqFamily } from "@qp/generators";
 import { byId, TOPIC_LABELS } from "@/content/problems";
+import SequenceReview from "@/components/SequenceReview";
 import { ProblemSession } from "@/components/ProblemRunner";
+
+/** A queue row is reviewable if it names a live content template or a live sequence family. */
+function resolve(problemId: string): { kind: "problem"; label: string } | { kind: "sequence"; label: string; family: SeqFamily; difficulty: 1 | 2 | 3 } | null {
+  const t = byId.get(problemId);
+  if (t) return { kind: "problem", label: `${TOPIC_LABELS[t.topic] ?? t.topic} · L${t.difficulty}` };
+  const seq = parseSequenceReviewKey(problemId);
+  if (seq && (SEQ_FAMILIES as readonly string[]).includes(seq.family)) {
+    return { kind: "sequence", label: `sequences · ${seq.family} · L${seq.difficulty}`, family: seq.family as SeqFamily, difficulty: seq.difficulty };
+  }
+  return null;
+}
 
 const fmtDue = (iso: string, now: number) => {
   const d = Math.round((Date.parse(iso) - now) / 86_400_000);
@@ -21,7 +34,7 @@ export default function Page() {
   useEffect(() => { setNonce(Math.floor(Math.random() * 2 ** 31)); load(); }, [load]);
 
   const now = Date.now();
-  const due = useMemo(() => (rows ?? []).filter((r) => byId.has(r.problemId) && isDue(r, new Date(now))), [rows, now]);
+  const due = useMemo(() => (rows ?? []).filter((r) => resolve(r.problemId) && isDue(r, new Date(now))), [rows, now]);
 
   async function remove(problemId: string) {
     setRows((rs) => (rs ?? []).filter((r) => r.problemId !== problemId));
@@ -54,12 +67,12 @@ export default function Page() {
           </p>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {rows.map((r) => {
-              const t = byId.get(r.problemId);
+              const res = resolve(r.problemId);
               return (
                 <li key={r.problemId} className="mono"
                     style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "9px 0", borderBottom: "1px solid var(--card-border)", fontSize: 13 }}>
-                  <span style={{ color: t ? "var(--ink)" : "var(--muted)" }}>
-                    {t ? `${TOPIC_LABELS[t.topic] ?? t.topic} · L${t.difficulty}` : "retired problem"}
+                  <span style={{ color: res ? "var(--ink)" : "var(--muted)" }}>
+                    {res ? res.label : "retired problem"}
                   </span>
                   <span style={{ flex: 1, color: "var(--faint)", overflow: "hidden", whiteSpace: "nowrap" }}>
                     {" "}····································································································
@@ -82,9 +95,9 @@ export default function Page() {
 function ReviewSession({ queue, nonce, onDone }: { queue: ReviewRow[]; nonce: number; onDone: () => void }) {
   const [i, setI] = useState(0);
   const row = queue[i];
-  const template = row ? byId.get(row.problemId) : undefined;
+  const res = row ? resolve(row.problemId) : null;
 
-  if (!row || !template) {
+  if (!row || !res) {
     return (
       <div className="container" style={{ padding: "48px 24px", maxWidth: 760 }}>
         <p className="microlabel">review complete</p>
@@ -96,19 +109,31 @@ function ReviewSession({ queue, nonce, onDone }: { queue: ReviewRow[]; nonce: nu
     );
   }
 
+  const grade = (correct: boolean) => { getStore().saveReview(review(row, correct, new Date())).catch(() => {}); };
+
   return (
     <div className="container" style={{ padding: "48px 24px", maxWidth: 760 }}>
       <p className="microlabel" style={{ marginBottom: 20 }}>review · {i + 1} of {queue.length}</p>
-      <ProblemSession
-        key={row.problemId}
-        template={template}
-        // Fresh seed per review so the numbers are never the memorized ones (spec §6).
-        seed={(nonce ^ Math.imul(i + 1, 2654435761)) >>> 0}
-        mode="review"
-        onGraded={(correct) => { getStore().saveReview(review(row, correct, new Date())).catch(() => {}); }}
-        onNext={() => setI((v) => v + 1)}
-        onHarder={null}
-      />
+      {res.kind === "sequence" ? (
+        <SequenceReview
+          key={row.problemId}
+          family={res.family}
+          difficulty={res.difficulty}
+          onGraded={grade}
+          onNext={() => setI((v) => v + 1)}
+        />
+      ) : (
+        <ProblemSession
+          key={row.problemId}
+          template={byId.get(row.problemId)!}
+          // Fresh seed per review so the numbers are never the memorized ones (spec §6).
+          seed={(nonce ^ Math.imul(i + 1, 2654435761)) >>> 0}
+          mode="review"
+          onGraded={grade}
+          onNext={() => setI((v) => v + 1)}
+          onHarder={null}
+        />
+      )}
     </div>
   );
 }

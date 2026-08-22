@@ -4,7 +4,7 @@ import { mergeReviews, planMerge } from "./merge";
 import { attemptRowsFromSession } from "./testAttempts";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AttemptRow, ReviewRow, Store, TestSessionRow } from "./types";
-import { enqueue, type Preset, type SessionState, type Summary } from "@qp/engine";
+import { enqueue, sequenceReviewKey, type Preset, type SessionState, type Summary } from "@qp/engine";
 
 const MERGED_FLAG = "qp.merged.v1";
 let cached: { store: Store; signedIn: boolean } | null = null;
@@ -96,10 +96,30 @@ export function getStore(): Store {
  * "regenerate from their generator ids". Queuing those would store one row per instance and
  * re-ask the identical numbers. Needs a family-key convention before it can be wired.
  */
-export async function enqueueReview(problemId: string): Promise<void> {
+export async function enqueueReviews(problemIds: string[]): Promise<void> {
+  if (!problemIds.length) return;
   const store = getStore();
-  const existing = (await store.listReviews()).find((r) => r.problemId === problemId) ?? null;
-  await store.saveReview(enqueue(problemId, new Date(), existing));
+  const queue = await store.listReviews(); // one read for the whole batch
+  const now = new Date();
+  for (const id of new Set(problemIds)) {
+    await store.saveReview(enqueue(id, now, queue.find((r) => r.problemId === id) ?? null));
+  }
+}
+
+export const enqueueReview = (problemId: string) => enqueueReviews([problemId]);
+
+/** Sequence patterns missed in a sim, deduped by family — skips never enqueue (spec §6). */
+function missedSequenceKeys(state: SessionState): string[] {
+  const keys: string[] = [];
+  state.answers.forEach((answer, i) => {
+    const item = state.items[i];
+    if (answer === null || state.grades[i] || item.topic !== "sequences") return;
+    const { family, difficulty } = item.meta;
+    if (typeof family === "string" && (difficulty === 1 || difficulty === 2 || difficulty === 3)) {
+      keys.push(sequenceReviewKey(family, difficulty));
+    }
+  });
+  return keys;
 }
 
 export async function saveRun(preset: Preset, summary: Summary, state: SessionState): Promise<void> {
@@ -113,4 +133,5 @@ export async function saveRun(preset: Preset, summary: Summary, state: SessionSt
   await store.saveSession(row);
   const attempts = attemptRowsFromSession(state, row.id, row.createdAt);
   if (attempts.length) await store.saveAttempts(attempts);
+  await enqueueReviews(missedSequenceKeys(state)).catch(() => {}); // studying never blocks
 }

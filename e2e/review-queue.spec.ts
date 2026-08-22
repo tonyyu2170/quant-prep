@@ -28,3 +28,26 @@ test("a missed problem lands in the review queue and reschedules after a review"
   await expect(page.getByText("tomorrow")).toBeVisible();
   await expect(page.getByTestId("start-review")).toHaveCount(0);
 });
+
+test("a missed sequence queues its pattern family and reviews with fresh terms", async ({ page }) => {
+  await page.goto("/drills/sequences");
+  const input = page.getByLabel("answer");
+  await expect(input).toBeVisible();
+  const missed = await page.getByTestId("prompt").textContent();
+  await input.fill("999999");
+  await input.press("Enter");
+  await expect(page.getByTestId("feedback")).toBeVisible();
+
+  await page.goto("/review");
+  await expect(page.getByText(/^sequences · [a-z-]+ · L1$/)).toBeVisible();
+  await page.getByTestId("start-review").click();
+  // Regenerated from the family, so the review is never the terms that were just missed.
+  await expect(page.getByTestId("prompt")).not.toHaveText(missed!);
+
+  const reviewInput = page.getByLabel("answer");
+  await reviewInput.fill("999999");
+  await reviewInput.press("Enter");
+  await expect(page.getByTestId("rule")).toBeVisible();
+  await page.getByTestId("feedback").press("Enter");
+  await expect(page.getByText("review complete")).toBeVisible();
+});

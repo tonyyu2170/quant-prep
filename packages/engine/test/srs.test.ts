@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EASE_MAX, EASE_MIN, EASE_START, INTERVAL_MAX_DAYS, enqueue, review, type ReviewRow } from "../src/srs";
+import { EASE_MAX, EASE_MIN, EASE_START, INTERVAL_MAX_DAYS, enqueue, parseSequenceReviewKey, review, sequenceReviewKey, type ReviewRow } from "../src/srs";
 
 const NOW = new Date("2026-08-22T12:00:00.000Z");
 const days = (a: string, b: Date) => (Date.parse(a) - b.getTime()) / 86_400_000;
@@ -74,5 +74,26 @@ describe("interval cap", () => {
     for (let i = 0; i < 60; i++) r = review(r, true, NOW);
     expect(r.intervalDays).toBe(INTERVAL_MAX_DAYS);
     expect(Number.isFinite(Date.parse(r.dueAt))).toBe(true);
+  });
+});
+
+describe("sequence review keys", () => {
+  it("round-trips a family and difficulty", () => {
+    expect(sequenceReviewKey("fiblike", 2)).toBe("seq-fiblike-d2");
+    expect(parseSequenceReviewKey("seq-fiblike-d2")).toEqual({ family: "fiblike", difficulty: 2 });
+  });
+
+  it("keeps hyphenated family names whole", () => {
+    for (const f of ["recur-linear", "alt-ops", "squares-offset"]) {
+      expect(parseSequenceReviewKey(sequenceReviewKey(f, 3))).toEqual({ family: f, difficulty: 3 });
+    }
+  });
+
+  // The queue must never mistake a per-instance drill id for a reviewable concept — that is the
+  // whole reason these keys exist, and `seq-fiblike-1_2_3_5_8` is what the generator actually emits.
+  it("rejects instance ids, content ids, and junk", () => {
+    for (const id of ["seq-fiblike-1_2_3_5_8", "seq-arithmetic-3_7_11", "arith-mul-7-13", "bayes/two-urns", "seq-fiblike", "seq-fiblike-d4", ""]) {
+      expect(parseSequenceReviewKey(id), id).toBeNull();
+    }
   });
 });
