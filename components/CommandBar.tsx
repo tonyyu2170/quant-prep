@@ -7,6 +7,7 @@ const links = [
   { href: "/drills/arithmetic", label: "Drills" },
   { href: "/review", label: "Review" },
   { href: "/test/optiver-80in8", label: "Tests" },
+  { href: "/leaderboard", label: "Board" },
   { href: "/stats", label: "Stats" },
 ];
 
