@@ -1416,10 +1416,10 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "Below the cut takes everything else",
       holds: (_p, d) => Math.abs(P(d.answer) + P(d.topShare) - 1) < 1e-4,
       breaks: (_p, d) => ({ ...d, answer: d.topShare }) },
-    { says: "Cutting deeper five points strictly grows the below-cut share",
+    { says: "Cutting five points deeper toward the base strictly shrinks the below-cut share",
       holds: (p, d) => {
-        const deeper = 1 - Math.pow((p.cutPct + 5) / 100, 2);
-        return P(deeper) > P(d.answer);
+        const deeperCut = 1 - Math.pow((p.cutPct + 5) / 100, 2);
+        return P(deeperCut) < P(d.answer);
       },
       breaks: (p, d) => ({ ...d, answer: 1 - Math.pow((p.cutPct + 5) / 100, 2) }) },
   ],
