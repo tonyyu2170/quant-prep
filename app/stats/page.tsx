@@ -11,9 +11,9 @@ import BarChart from "@/components/charts/BarChart";
 const RANGES = { "7D": 7, "30D": 30, "90D": 90, ALL: 36500 } as const;
 type RangeKey = keyof typeof RANGES;
 const TOPICS = ["All topics", "arithmetic", "sequences", "probability"] as const;
-const SIM_PRESETS = ["optiver-80in8", "sequences-sprint"] as const;
+const SIM_PRESETS = ["optiver-80in8", "optiver-mc-80in8", "sequences-sprint"] as const;
 type SimPreset = (typeof SIM_PRESETS)[number];
-const SIM_LABELS: Record<SimPreset, string> = { "optiver-80in8": "80-in-8 scores", "sequences-sprint": "Seq-sprint scores" };
+const SIM_LABELS: Record<SimPreset, string> = { "optiver-80in8": "80-in-8 scores", "optiver-mc-80in8": "80-in-8 MC scores", "sequences-sprint": "Seq-sprint scores" };
 
 interface Benchmark { preset: string; label: string; value: number }
 

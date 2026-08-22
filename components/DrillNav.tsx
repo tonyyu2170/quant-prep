@@ -3,6 +3,7 @@ import Link from "next/link";
 const DRILLS = [
   { href: "/drills/arithmetic", label: "arithmetic" },
   { href: "/drills/sequences", label: "sequences" },
+  { href: "/drills/missing-operand", label: "missing operand" },
   { href: "/drills/probability", label: "probability" },
 ];
 

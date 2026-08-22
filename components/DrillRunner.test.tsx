@@ -65,7 +65,15 @@ describe("DrillRunner", () => {
     fireEvent.change(screen.getByLabelText("answer"), { target: { value: "1" } });
     fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });
     fireEvent.keyDown(screen.getByTestId("feedback"), { key: "Enter" });
-    expect(screen.getByTestId("prompt").textContent!.split(",").length).toBe(7); // L2 shows 6 terms + "?"
+    // Term count is no longer a difficulty signal: the fast-growing sequence families show five
+    // terms at every level (packages/generators/src/sequences.ts SHORT), because six terms of a
+    // climbing-multiplier rule put the answer in the hundreds of thousands. What the difficulty
+    // control must still guarantee is that it takes effect on the NEXT question, not this one.
+    const q2 = screen.getByTestId("prompt").textContent!;
+    expect(q2).not.toBe(q1);
+    expect([6, 7]).toContain(q2.split(",").length);
+    expect(screen.getByText("L2")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("L1")).toHaveAttribute("aria-pressed", "false");
   });
   it("ignores auto-repeated Enter on the feedback panel", async () => {
     render(<DrillRunner topic="arithmetic" />);

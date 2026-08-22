@@ -1,13 +1,18 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { answerCurrent, makeRng, parseAnswer, skipCurrent, startSession, summarize, type Item, type Preset, type SessionState, type Summary } from "@qp/engine";
-import { arithmeticItem, sequenceItem } from "@qp/generators";
+import { arithmeticItem, missingOperandItem, sequenceItem } from "@qp/generators";
+import ChoiceGrid from "./ChoiceGrid";
 import Results from "./Results";
 
 function generate(preset: Preset, seed: number): Item[] {
   const rng = makeRng(seed);
-  const make = (i: number) =>
-    preset.topic === "arithmetic" ? arithmeticItem(rng, preset.difficulty(i)) : sequenceItem(rng, preset.difficulty(i));
+  const make = (i: number) => {
+    const d = preset.difficulty(i);
+    if (preset.topic === "arithmetic") return arithmeticItem(rng, d);
+    if (preset.topic === "missing-operand") return missingOperandItem(rng, d);
+    return sequenceItem(rng, d);
+  };
   const items: Item[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < preset.count; i++) {
@@ -53,17 +58,21 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
 
+  function commit(parsed: number | null) {
+    const elapsed = Date.now() - qStart.current;
+    qStart.current = Date.now();
+    setState((s) => (parsed === null ? skipCurrent(s, elapsed) : answerCurrent(s, parsed, elapsed)));
+    setValue("");
+    setShowHint(false);
+  }
+
   function submit() {
     const parsed = parseAnswer(value);
     if (value.trim() !== "" && parsed === null) {
       setShowHint(true); // typo — do not burn the question (no backtracking)
       return;
     }
-    const elapsed = Date.now() - qStart.current;
-    qStart.current = Date.now();
-    setState((s) => (parsed === null ? skipCurrent(s, elapsed) : answerCurrent(s, parsed, elapsed)));
-    setValue("");
-    setShowHint(false);
+    commit(parsed);
   }
 
   return (
@@ -76,18 +85,27 @@ export default function TestRunner({ preset, seed, onDone }: { preset: Preset; s
           {mm}:{ss} · Q{state.index + 1}/{preset.count} · +{preset.scoring.correct} / {preset.scoring.wrong}
         </p>
         <p data-testid="prompt" className="mono" style={{ fontSize: 40, fontWeight: 600, margin: "22px 0 8px" }}>{item.prompt}</p>
-        <input
-          aria-label="answer"
-          autoFocus
-          inputMode={preset.topic === "sequences" ? "text" : "decimal"}
-          value={value}
-          onChange={(e) => { setValue(e.target.value); setShowHint(false); }}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) submit(); }}
-          className="mono"
-          style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, padding: "6px 0", color: "var(--ink)" }}
-        />
-        <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
-        <p className="microlabel" style={{ marginTop: 20 }}>Enter submits · empty Enter skips · no backtracking</p>
+        {item.options ? (
+          <>
+            <ChoiceGrid options={item.options} onPick={(v) => commit(v)} onSkip={() => commit(null)} />
+            <p className="microlabel" style={{ marginTop: 20 }}>1–4 answers · Enter skips · no backtracking</p>
+          </>
+        ) : (
+          <>
+            <input
+              aria-label="answer"
+              autoFocus
+              inputMode={preset.topic === "sequences" ? "text" : "decimal"}
+              value={value}
+              onChange={(e) => { setValue(e.target.value); setShowHint(false); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) submit(); }}
+              className="mono"
+              style={{ border: "none", borderBottom: "2px solid var(--teal)", background: "transparent", textAlign: "center", fontSize: 24, width: 220, padding: "6px 0", color: "var(--ink)" }}
+            />
+            <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
+            <p className="microlabel" style={{ marginTop: 20 }}>Enter submits · empty Enter skips · no backtracking</p>
+          </>
+        )}
       </div>
     </div>
   );

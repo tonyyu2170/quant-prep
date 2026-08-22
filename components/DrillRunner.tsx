@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { grade, makeRng, parseAnswer, type Item, type Topic } from "@qp/engine";
-import { arithmeticItem, sequenceItem } from "@qp/generators";
+import { arithmeticItem, missingOperandItem, sequenceItem } from "@qp/generators";
+import ChoiceGrid from "./ChoiceGrid";
 import { getStore } from "@/lib/store/useStore";
 
 type Feedback = { ok: boolean; item: Item } | null;
@@ -17,7 +18,10 @@ export default function DrillRunner({ topic }: { topic: Topic }) {
 function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
   const rng = useMemo(() => makeRng(seed), [seed]);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
-  const next = () => (topic === "arithmetic" ? arithmeticItem(rng, difficulty) : sequenceItem(rng, difficulty));
+  const next = () =>
+    topic === "arithmetic" ? arithmeticItem(rng, difficulty)
+    : topic === "missing-operand" ? missingOperandItem(rng, difficulty)
+    : sequenceItem(rng, difficulty);
   const [item, setItem] = useState<Item>(next);
   const [value, setValue] = useState("");
   const [showHint, setShowHint] = useState(false);
@@ -32,10 +36,15 @@ function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
       if (value.trim() !== "") setShowHint(true);
       return;
     }
+    record(parsed);
+  }
+
+  function record(parsed: number) {
     const ok = grade(parsed, item.answer);
     getStore().saveAttempts([{
       problemId: item.id, problemVersion: 1, seed, mode: "practice",
-      topic, answer: value, correct: ok, timeMs: Date.now() - qStart.current,
+      // multiple choice never fills the text input, so fall back to the picked number
+      topic, answer: value || String(parsed), correct: ok, timeMs: Date.now() - qStart.current,
       sessionId: null, createdAt: new Date().toISOString(),
     }]).catch(() => {});
     setFeedback({ ok, item });
@@ -73,6 +82,9 @@ function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
       </div>
       <p id="drill-prompt" data-testid="prompt" className="mono" style={{ fontSize: 32, fontWeight: 600, margin: "34px 0 16px" }}>{item.prompt}</p>
       {feedback === null ? (
+        item.options ? (
+          <ChoiceGrid options={item.options} onPick={(v) => record(v)} />
+        ) : (
         <>
           <input
             ref={inputRef}
@@ -84,6 +96,7 @@ function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
           />
           <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
         </>
+        )
       ) : (
         <div data-testid="feedback" style={{ borderTop: `2px solid ${feedback.ok ? "var(--good)" : "var(--bad)"}`, paddingTop: 12 }}
              onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat) advance(); }} tabIndex={0} ref={(el) => el?.focus()}>

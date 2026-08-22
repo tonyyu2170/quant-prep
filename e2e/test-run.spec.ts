@@ -44,3 +44,27 @@ test("probability drill unfolds a walkthrough and re-rolls", async ({ page }) =>
   await expect(page.getByLabel("answer")).toBeVisible();
   await expect(page.getByLabel("answer")).toHaveValue(""); // fresh roll, cleared input
 });
+
+test("missing-operand drill answers by keyboard and records the pick", async ({ page }) => {
+  await page.goto("/drills/missing-operand");
+  const choices = page.getByTestId("choices");
+  await expect(choices).toBeVisible();
+  await expect(choices.getByRole("button")).toHaveCount(4);
+  const prompt = await page.getByTestId("prompt").textContent();
+  expect(prompt).toContain("?");
+  await page.keyboard.press("1"); // pressing 1–4 answers
+  await expect(page.getByTestId("feedback")).toBeVisible();
+  await page.keyboard.press("Enter"); // and Enter moves on
+  await expect(page.getByTestId("choices")).toBeVisible();
+});
+
+test("optiver MC sim runs four-way choice to results", async ({ page }) => {
+  await page.goto("/test/optiver-mc-80in8?count=3&seed=7");
+  await expect(page.getByTestId("choices")).toBeVisible();
+  // ?seed= makes this page server-renderable, so the grid is painted before hydration and an
+  // early keypress is swallowed. Wait for the clock to tick — that only happens once the client
+  // is live and the keyboard listener is attached.
+  await expect(page.locator("p.mono").first()).not.toContainText("08:00");
+  for (let i = 0; i < 3; i++) await page.keyboard.press("2");
+  await expect(page.getByTestId("score")).toBeVisible();
+});

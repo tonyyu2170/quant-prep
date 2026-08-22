@@ -1,4 +1,4 @@
-export type Topic = "arithmetic" | "sequences";
+export type Topic = "arithmetic" | "sequences" | "missing-operand";
 
 export interface Item {
   id: string;
@@ -6,6 +6,7 @@ export interface Item {
   prompt: string;            // e.g. "47 × 83" or "2, 5, 11, 23, ?"
   answer: number;
   rule?: string;             // sequences: human explanation, revealed post-answer
+  options?: readonly number[]; // missing-operand: the four shuffled choices, answer included
   meta: Record<string, number | string>; // operands/family for independent verification
 }
 

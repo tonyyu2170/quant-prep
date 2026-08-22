@@ -10,6 +10,18 @@ export const PRESETS: Record<string, Preset> = {
     scoring: { correct: 1, wrong: -2, skip: 0 },
     difficulty: (i) => (i < 20 ? 1 : i < 55 ? 2 : 3),
   },
+  // Their real Optiver 80-in-8 is four-way multiple choice with a blanked slot, not free entry —
+  // see docs/research/quantprof-2026-08/optiver-80.txt. `optiver-80in8` above is a Zetamac-style
+  // sprint that predates that finding; both are kept so stored runs stay comparable.
+  "optiver-mc-80in8": {
+    id: "optiver-mc-80in8",
+    title: "Optiver 80 in 8 (multiple choice)",
+    topic: "missing-operand",
+    count: 80,
+    durationS: 480,
+    scoring: { correct: 1, wrong: -2, skip: 0 },
+    difficulty: (i) => (i < 20 ? 1 : i < 55 ? 2 : 3),
+  },
   "sequences-sprint": {
     id: "sequences-sprint",
     title: "Sequences Sprint (20 in 8)",

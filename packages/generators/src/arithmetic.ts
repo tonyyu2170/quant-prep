@@ -4,10 +4,12 @@ export const ARITH_OPS = ["add", "sub", "mul", "div", "pct", "dec"] as const;
 export type ArithOp = (typeof ARITH_OPS)[number];
 
 // Difficulty tunes operand sizes, mirroring how the real tests ramp.
-const RANGES: Record<1 | 2 | 3, { small: [number, number]; big: [number, number]; mul: [number, number] }> = {
-  1: { small: [2, 30], big: [11, 99], mul: [2, 12] },
-  2: { small: [11, 99], big: [101, 999], mul: [11, 29] },
-  3: { small: [21, 99], big: [101, 999], mul: [31, 99] },
+// div bounds come from 515 played QuantProf Zetamac questions (their divisors reach 98 at hard;
+// ours used to stop at 19). docs/research/quantprof-2026-08/zetamac.txt
+const RANGES: Record<1 | 2 | 3, { small: [number, number]; big: [number, number]; mul: [number, number]; div: [number, number] }> = {
+  1: { small: [2, 30], big: [11, 99], mul: [2, 12], div: [3, 12] },
+  2: { small: [11, 99], big: [101, 999], mul: [11, 29], div: [3, 49] },
+  3: { small: [21, 99], big: [101, 999], mul: [31, 99], div: [12, 99] },
 };
 
 export function arithmeticItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
@@ -27,7 +29,7 @@ export function arithmeticItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
       a = randInt(rng, ...r.mul); b = randInt(rng, ...r.mul);
       answer = a * b; prompt = `${a} × ${b}`; break;
     case "div": {
-      b = randInt(rng, 3, difficulty === 1 ? 12 : 19);
+      b = randInt(rng, ...r.div);
       const q = randInt(rng, ...r.small);
       a = b * q; answer = q; prompt = `${a} ÷ ${b}`; break;
     }

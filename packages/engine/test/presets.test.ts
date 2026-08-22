@@ -6,6 +6,9 @@ describe("presets", () => {
     const p = getPreset("optiver-80in8");
     expect(p).toMatchObject({ count: 80, durationS: 480, topic: "arithmetic", scoring: { correct: 1, wrong: -2, skip: 0 } });
   });
+  it("optiver-mc-80in8 mirrors the real four-way-choice format", () => {
+    expect(getPreset("optiver-mc-80in8")).toMatchObject({ count: 80, durationS: 480, topic: "missing-operand", scoring: { correct: 1, wrong: -2, skip: 0 } });
+  });
   it("difficulty curves are monotonically non-decreasing", () => {
     for (const p of Object.values(PRESETS)) {
       let prev = 0;
