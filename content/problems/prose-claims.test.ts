@@ -1062,6 +1062,121 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.answer) <= P(d.oneLower) && P(d.oneLower) <= 1,
       breaks: (_p, d) => ({ ...d, oneLower: 0 }) },
   ],
+
+  "ruin/complement-ruin-first": [
+    { says: "Take the complement: the bust chance is exactly one minus the printed reach chance",
+      holds: (_p, d) => Math.abs(P(d.success) + P(d.ruinProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ruinProb: d.ruinProb * 0.5 }) },
+    { says: "Reach chance recomputes fresh from the odds ratio and the raw barriers",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.startChips) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Buying in one chip deeper strictly raises the bust probability",
+      holds: (_p, d) => P(d.nextRuin) > P(d.ruinProb),
+      breaks: (_p, d) => ({ ...d, nextRuin: d.ruinProb * 0.9 }) },
+  ],
+
+  "ruin/fit-capital-fair": [
+    { says: "Round up: the achieved share clears the target percentage",
+      holds: (p, d) => P(d.achieved) >= p.targetPct / 100,
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "One chip less sits at or below the target while the answer clears it",
+      holds: (p, d) => P(d.below) <= P(p.targetPct / 100) && P(d.achieved) >= P(p.targetPct / 100),
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "The raw requirement recomputes from the printed literals",
+      holds: (p, d) => same(d.need, (p.targetPct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, need: d.need * 1.05 }) },
+    { says: "The answer is exactly the ceiling of the raw requirement",
+      holds: (_p, d) => d.capital === Math.ceil(d.need),
+      breaks: (_p, d) => ({ ...d, capital: d.capital * 1.02 }) },
+  ],
+
+  "ruin/fit-capital-unfair": [
+    { says: "Round up: the fitted stack clears the promise and one chip less does not",
+      holds: (p, d) => P(d.achieved) >= P(p.targetPct / 100) && P(d.below) < P(d.achieved),
+      breaks: (_p, d) => ({ ...d, achieved: d.below }) },
+    { says: "Adverse edges demand at least the fair linear share; favorable ones at most",
+      holds: (p, d) => p.winPct < 50 ? P(d.capital) >= P(d.fairNeed) : P(d.capital) <= P(d.fairNeed),
+      breaks: (p, d) => ({ ...d, capital: p.winPct < 50 ? d.fairNeed - 1 : d.fairNeed + 1 }) },
+    { says: "The odds ratio against you exceeds one exactly when the edge is negative",
+      holds: (p, d) => (p.winPct < 50 ? P(d.ratio) > 1 : P(d.ratio) < 1),
+      breaks: (p, d) => ({ ...d, ratio: p.winPct < 50 ? d.ratio * 0.5 : d.ratio * 2 }) },
+    { says: "The fitted stack is exactly the log-inversion ceiling recomputed from raw params",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        const rn = r ** p.goalChips;
+        return d.capital === Math.ceil(Math.log(1 - (p.targetPct / 100) * (1 - rn)) / Math.log(r));
+      },
+      breaks: (_p, d) => ({ ...d, capital: d.capital * 1.02 }) },
+  ],
+
+  "ruin/doubling-strategy": [
+    { says: "Ruin path: the streak probability recomputes fresh as q to the rounds",
+      holds: (p, d) => Math.abs((1 - p.winPct / 100) ** p.rounds - d.streakProb) < 1e-9,
+      breaks: (_p, d) => ({ ...d, streakProb: d.streakProb * 1.02 }) },
+    { says: "Success side: the session win chance is the exact complement of the streak",
+      holds: (_p, d) => Math.abs(P(d.winSession) + P(d.streakProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, winSession: d.streakProb }) },
+    { says: "One more round strictly shrinks the ruin tail",
+      holds: (_p, d) => P(d.nextStreak) < P(d.streakProb),
+      breaks: (_p, d) => ({ ...d, nextStreak: d.streakProb * 2 }) },
+  ],
+
+  "ruin/fit-goal-from-duration-fair": [
+    { says: "Invert the parabola: stake plus average-over-stake reproduces the target",
+      holds: (p, d) => same(d.goalFit, p.stake + d.avgSession / p.stake),
+      breaks: (_p, d) => ({ ...d, goalFit: d.goalFit + 3 }) },
+    { says: "Reading the parabola back reproduces the stated average exactly",
+      holds: (p, d) => same(d.avgSession, p.stake * (d.goalFit - p.stake)),
+      breaks: (_p, d) => ({ ...d, avgSession: d.avgSession * 1.02 }) },
+    { says: "Both clean exits are shorter than the measured average session",
+      holds: (_p, d) => P(d.avgSession) > P(d.straightLoss) && P(d.avgSession) > P(d.straightWin),
+      breaks: (_p, d) => ({ ...d, avgSession: Math.min(d.straightLoss, d.straightWin) - 1 }) },
+  ],
+
+  "ruin/stake-rescale": [
+    { says: "The scrip-unit share equals the original share — invariance checked from raw params",
+      holds: (p, d) => same(d.frac, p.startChips / p.goalChips) && same(d.scaledFrac, d.frac),
+      breaks: (_p, d) => ({ ...d, scaledFrac: d.frac * 1.02 }) },
+    { says: "The rescaled stacks print back as scale times the originals",
+      holds: (p, d) => same(d.bigStart, (p.scalePct / 100) * p.startChips) && same(d.bigGoal, (p.scalePct / 100) * p.goalChips),
+      breaks: (_p, d) => ({ ...d, bigStart: d.bigStart + 1 }) },
+    { says: "The share stays a strict probability inside the band",
+      holds: (_p, d) => P(d.frac) >= 0.01 && P(d.frac) <= 0.99,
+      breaks: (_p, d) => ({ ...d, frac: 1.5 }) },
+  ],
+
+  "ruin/restart-after-survival": [
+    { says: "Restart: the fresh reach chance recomputes from the current level alone",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.reachedLevel) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Remaining climb equals goal minus current level",
+      holds: (p, d) => same(d.remaining, p.goalChips - p.reachedLevel),
+      breaks: (_p, d) => ({ ...d, remaining: d.remaining + 2 }) },
+    { says: "The updated chance is a strict probability inside the band",
+      holds: (_p, d) => P(d.success) >= 0.01 && P(d.success) <= 0.99,
+      breaks: (_p, d) => ({ ...d, success: 0 }) },
+  ],
+
+  "ruin/drift-one-sided-duration": [
+    { says: "Drain rate: expected periods equal reserve over the per-period edge",
+      holds: (p, d) => same(d.duration, p.reserve / d.edge),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "Twice the cushion takes twice as long",
+      holds: (p, d) => same(d.doubleReserve, (p.reserve * 2) / d.edge),
+      breaks: (_p, d) => ({ ...d, doubleReserve: d.duration * 3 }) },
+    { says: "The adverse edge recomputes from the raw win percentage",
+      holds: (p, d) => same(d.edge, (100 - p.winPct) / 100 - p.winPct / 100),
+      breaks: (_p, d) => ({ ...d, edge: d.edge * 0.5 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

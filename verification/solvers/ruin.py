@@ -5,6 +5,8 @@ brute()/simulate(): recompute the ANSWER by an independent path per spec §5 (as
 plan constraint 1) — a numpy absorption-system solve for two-barrier probabilities, Monte
 Carlo walkers for durations, drift touches, and doubling sessions."""
 
+import itertools
+
 import numpy as np
 
 
@@ -245,4 +247,188 @@ SOLVERS.update({
     "ruin/unfair-expected-duration": {"exact": unfair_expected_duration_exact, "simulate": unfair_expected_duration_sim},
     "ruin/drift-touch-downside": {"exact": drift_touch_downside_exact, "brute": drift_touch_downside_brute},
     "ruin/adverse-drift-reach-upside": {"exact": adverse_drift_reach_upside_exact, "brute": adverse_drift_reach_upside_brute},
+})
+
+
+def complement_ruin_first_exact(p):
+    prob = p["winPct"] / 100
+    q = 1 - prob
+    ratio = q / prob
+    i, n = int(p["startChips"]), int(p["goalChips"])
+    ri = ratio**i
+    rn = ratio**n
+    rin = ratio ** (i - 1)
+    success = (1 - ri) / (1 - rn)
+    return {
+        "prob": prob, "q": q, "ratio": ratio, "success": success,
+        "ruinProb": 1 - success, "nextRuin": 1 - (1 - rin) / (1 - rn),
+        "prevStack": i - 1,
+    }
+
+
+def complement_ruin_first_brute(p):
+    """Solve the top-exit chance numerically and take the complement — the answer is the
+    failure side, never the closed form itself."""
+    i, n = int(p["startChips"]), int(p["goalChips"])
+    top = _absorption_solve(n, i, p["winPct"] / 100)
+    return 1.0 - top
+
+
+def fit_capital_fair_exact(p):
+    c = p["targetPct"] / 100
+    n = int(p["goalChips"])
+    need = c * n
+    capital = int(np.ceil(need))
+    achieved = capital / n
+    below = (capital - 1) / n
+    return {"need": need, "capital": capital, "achieved": achieved, "below": below, "oneLess": capital - 1}
+
+
+def fit_capital_fair_brute(p):
+    """Scan whole stacks upward until the share clears the target — exact rational
+    cross-multiplication, no ceil() anywhere."""
+    c = int(p["targetPct"])
+    n = int(p["goalChips"])
+    k = 1
+    while 100 * k < c * n:
+        k += 1
+    return k
+
+
+def fit_capital_unfair_exact(p):
+    prob = p["winPct"] / 100
+    q = 1 - prob
+    ratio = q / prob
+    c = p["targetPct"] / 100
+    n = int(p["goalChips"])
+    rn = ratio**n
+    raw = np.log(1 - c * (1 - rn)) / np.log(ratio)
+    capital = int(np.ceil(raw))
+
+    def success_at(k):
+        return (1 - ratio**k) / (1 - rn)
+
+    return {
+        "prob": prob, "q": q, "ratio": ratio, "rawNeed": raw, "capital": capital,
+        "achieved": success_at(capital), "below": success_at(capital - 1),
+        "oneLess": capital - 1, "fairNeed": int(np.ceil(c * n)),
+    }
+
+
+def fit_capital_unfair_brute(p):
+    """Integer bisection over the stack, each candidate evaluated by a fresh absorption
+    solve — never by the power formula the template inverts."""
+    prob = p["winPct"] / 100
+    n = int(p["goalChips"])
+    c = p["targetPct"] / 100
+    lo, hi = 1, n
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if _absorption_solve(n, mid, prob) >= c:
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+
+
+def doubling_strategy_exact(p):
+    prob = p["winPct"] / 100
+    q = 1 - prob
+    rounds = int(p["rounds"])
+    streak_prob = q**rounds
+    return {
+        "prob": prob, "q": q, "streakProb": streak_prob,
+        "winSession": 1 - streak_prob, "nextStreak": q ** (rounds + 1),
+    }
+
+
+def doubling_strategy_brute(p):
+    """Enumerate all 2^n win/loss sequences of the streak window and sum the weight of the
+    all-loss sequence — the B4 binomial enumeration pattern, independent of pow()."""
+    n = int(p["rounds"])
+    prob = p["winPct"] / 100
+    total = 0.0
+    for seq in itertools.product((0, 1), repeat=n):
+        if sum(seq) == 0:
+            total += (1 - prob) ** n
+    return total
+
+
+def fit_goal_from_duration_fair_exact(p):
+    i, gap = int(p["stake"]), int(p["gap"])
+    avg = i * gap
+    return {"avgSession": avg, "straightLoss": i, "straightWin": gap, "goalFit": i + gap}
+
+
+def fit_goal_from_duration_fair_brute(p):
+    """Scan targets upward until the integer product matches the stated average exactly."""
+    i = int(p["stake"])
+    avg = i * int(p["gap"])
+    n = i + 1
+    while i * (n - i) != avg:
+        n += 1
+    return n
+
+
+def stake_rescale_exact(p):
+    scale = p["scalePct"] / 100
+    i, n = int(p["startChips"]), int(p["goalChips"])
+    big_start = round(i * scale)
+    big_goal = round(n * scale)
+    frac = i / n
+    return {"scale": scale, "bigStart": big_start, "bigGoal": big_goal,
+            "frac": frac, "scaledFrac": big_start / big_goal, "houseStack": n - i}
+
+
+def stake_rescale_brute(p):
+    """Solve the rescaled chain numerically — invariance is checked, not assumed."""
+    scale = p["scalePct"] / 100
+    i, n = int(p["startChips"]), int(p["goalChips"])
+    return _absorption_solve(round(n * scale), round(i * scale), 0.5)
+
+
+def restart_after_survival_exact(p):
+    prob = p["winPct"] / 100
+    q = 1 - prob
+    ratio = q / prob
+    j, n = int(p["reachedLevel"]), int(p["goalChips"])
+    success = (1 - ratio**j) / (1 - ratio**n)
+    return {"prob": prob, "q": q, "ratio": ratio, "success": success, "remaining": n - j}
+
+
+def restart_after_survival_brute(p):
+    j, n = int(p["reachedLevel"]), int(p["goalChips"])
+    return _absorption_solve(n, j, p["winPct"] / 100)
+
+
+def drift_one_sided_duration_exact(p):
+    prob = p["winPct"] / 100
+    q = 1 - prob
+    edge = q - prob
+    b = int(p["reserve"])
+    return {
+        "prob": prob, "q": q, "edge": edge, "duration": b / edge,
+        "doubleReserve": (2 * b) / edge, "doubleReserveUnits": 2 * b,
+    }
+
+
+def drift_one_sided_duration_sim(p, rng):
+    """Adaptive lockstep walkers with downward drift: the touch is certain, so a plain
+    sample mean of hitting times is well-defined (plan constraint 4 sizing). Walkers that
+    wander up to reserve+160 are censored; with winPct <= 45 that miss probability is
+    (p/q)^160 < 1e-14, and the time it steals is bounded well inside the MC comparison."""
+    b = int(p["reserve"])
+    prob = p["winPct"] / 100
+    return _adaptive_walk_mean(b, b + 160, prob, rng)
+
+
+SOLVERS.update({
+    "ruin/complement-ruin-first": {"exact": complement_ruin_first_exact, "brute": complement_ruin_first_brute},
+    "ruin/fit-capital-fair": {"exact": fit_capital_fair_exact, "brute": fit_capital_fair_brute},
+    "ruin/fit-capital-unfair": {"exact": fit_capital_unfair_exact, "brute": fit_capital_unfair_brute},
+    "ruin/doubling-strategy": {"exact": doubling_strategy_exact, "brute": doubling_strategy_brute},
+    "ruin/fit-goal-from-duration-fair": {"exact": fit_goal_from_duration_fair_exact, "brute": fit_goal_from_duration_fair_brute},
+    "ruin/stake-rescale": {"exact": stake_rescale_exact, "brute": stake_rescale_brute},
+    "ruin/restart-after-survival": {"exact": restart_after_survival_exact, "brute": restart_after_survival_brute},
+    "ruin/drift-one-sided-duration": {"exact": drift_one_sided_duration_exact, "simulate": drift_one_sided_duration_sim},
 })

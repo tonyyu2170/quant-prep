@@ -117,6 +117,14 @@ import { fairExpectedDuration } from "./ruin/fair-expected-duration";
 import { unfairExpectedDuration } from "./ruin/unfair-expected-duration";
 import { driftTouchDownside } from "./ruin/drift-touch-downside";
 import { adverseDriftReachUpside } from "./ruin/adverse-drift-reach-upside";
+import { complementRuinFirst } from "./ruin/complement-ruin-first";
+import { fitCapitalFair } from "./ruin/fit-capital-fair";
+import { fitCapitalUnfair } from "./ruin/fit-capital-unfair";
+import { doublingStrategy } from "./ruin/doubling-strategy";
+import { fitGoalFromDurationFair } from "./ruin/fit-goal-from-duration-fair";
+import { stakeRescale } from "./ruin/stake-rescale";
+import { restartAfterSurvival } from "./ruin/restart-after-survival";
+import { driftOneSidedDuration } from "./ruin/drift-one-sided-duration";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -237,6 +245,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   unfairExpectedDuration,
   driftTouchDownside,
   adverseDriftReachUpside,
+  complementRuinFirst,
+  fitCapitalFair,
+  fitCapitalUnfair,
+  doublingStrategy,
+  fitGoalFromDurationFair,
+  stakeRescale,
+  restartAfterSurvival,
+  driftOneSidedDuration,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
