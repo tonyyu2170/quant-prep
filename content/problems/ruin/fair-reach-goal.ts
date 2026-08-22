@@ -36,7 +36,7 @@ export const fairReachGoal: ProblemTemplate = {
     { title: "Sanity check", body: `Your opponent sweeps with probability ${fmtNum(d.ruinProb)} — the exact complement of your share: $\\frac{${fmtNum(p.startChips)}}{${fmtNum(p.goalChips)}}+\\frac{${fmtNum(d.oppStack)}}{${fmtNum(p.goalChips)}}=${fmtNum(1)}$. Exactly one of the two endings must happen.` },
   ],
   keyInsight: "In a fair game your expected stack never moves, so the chance of ending up with everything is simply your share of the chips on the table.",
-  commonTrap: "Reaching for streak arguments or betting systems — fairness pins the odds at your starting share, and no scheme moves it.",
+  commonTrap: "Reaching for streak arguments or betting systems — fairness pins the odds at your starting share, and no scheme moves a single digit of it.",
   expectedPaceS: 40,
   verify: { method: "brute-force" },
   constants: [0, 1, 2],
