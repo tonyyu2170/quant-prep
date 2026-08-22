@@ -7,7 +7,23 @@ import { PROBLEMS, byId, problemsFor } from "./index";
 describe("problem registry invariants", () => {
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
-    for (const t of PROBLEMS) expect(t.topic.startsWith("probability/")).toBe(true);
+    // Two families now: probability/* and brainteasers/*. The prefix is still pinned — an id
+    // must declare which family it belongs to — but brainteasers are not a probability sub-topic.
+    const FAMILIES = ["probability/", "brainteasers/"];
+    for (const t of PROBLEMS) expect(FAMILIES.some((f) => t.topic.startsWith(f)), `${t.id}: unknown topic family "${t.topic}"`).toBe(true);
+  });
+  // `firms` is a free-form string rendered raw to users at ProblemRunner.tsx. Two spellings of one
+  // firm (`sig`/`susquehanna`, `flow`/`flow-traders`) shipped before this guard existed.
+  it("firm tags come from the canonical slug set, with no firm listed twice", () => {
+    const CANON = new Set([
+      "akuna", "citadel", "citadel-securities", "de-shaw", "drw", "flow", "hrt",
+      "imc", "jane-street", "jump", "millennium", "optiver", "sig", "two-sigma",
+    ]);
+    for (const t of PROBLEMS) {
+      const slugs = t.firms.map((f) => f.firm);
+      for (const s of slugs) expect(CANON.has(s), `${t.id}: unknown firm slug "${s}"`).toBe(true);
+      expect(new Set(slugs).size, `${t.id}: duplicate firm in ${slugs.join(",")}`).toBe(slugs.length);
+    }
   });
   it("every problem draws, derives, and answers finitely across 50 seeds", () => {
     for (const t of PROBLEMS) {
@@ -29,13 +45,19 @@ describe("problem registry invariants", () => {
     const distributions = problemsFor("probability/distributions").length;
     const ruin = problemsFor("probability/ruin").length;
     const geometric = problemsFor("probability/geometric").length;
+    const markov = problemsFor("probability/markov").length;
+    const symmetry = problemsFor("probability/symmetry").length;
+    const brainteasers = problemsFor("brainteasers/logic").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(25);
     expect(ev).toBe(30);
     expect(distributions).toBe(25);
     expect(ruin).toBe(20);
     expect(geometric).toBe(20);
-    expect(bayes + counting + ev + distributions + ruin + geometric).toBe(PROBLEMS.length);
+    expect(markov).toBe(8);
+    expect(symmetry).toBe(8);
+    expect(brainteasers).toBe(8);
+    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

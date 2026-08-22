@@ -28,6 +28,10 @@ const P = (x: number) => Number(fmtNum(x));
 /** Two printed quantities render to the same string. */
 const same = (a: number, b: number) => fmtNum(a) === fmtNum(b);
 const EPS = 1e-9;
+/** Half a step of fmtNum's 4-significant-figure display — the most a printed value can differ
+ *  from its true value. A "these add back to N" claim is about what the page shows, so its
+ *  slack has to be the display's, not a constant guessed at the small end of the range. */
+const shown = (v: number) => (v === 0 ? 0 : Math.pow(10, Math.floor(Math.log10(Math.abs(v))) - 3) / 2);
 /** Shared C(n,k), for distributions claims that recompute a binomial/Poisson term fresh from
  *  params rather than trusting the template's own derived value. */
 const comb = (n: number, k: number): number => {
@@ -1477,6 +1481,303 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(Math.pow(p.outerPct / 100, 2) - p.bullseyePct / 100 - d.ringShare) < 1e-9,
       breaks: (_p, d) => ({ ...d, ringShare: d.ringShare * 0.9 }) },
   ],
+
+  // ---- B6 markov batch. Every answer was also confirmed against a Monte-Carlo simulation of
+  // the chain itself; these claims guard the prose that no other gate reads.
+  "markov/deuce-win-by-two": [
+    { says: "Solve: the game probability recomputed fresh from the raw point counts matches the printed value",
+      holds: (p, d) => same(d.answer, (p.pointsWon * p.pointsWon) / (p.pointsWon * p.pointsWon + (p.pointsPlayed - p.pointsWon) * (p.pointsPlayed - p.pointsWon))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: winning by two amplifies the per-point edge, so the game sits at least as far from a coin flip as the point does",
+      holds: (_p, d) => Math.abs(P(d.answer) - 0.5) >= Math.abs(P(d.prob) - 0.5) - EPS,
+      breaks: (_p, d) => ({ ...d, answer: 0.5 }) },
+    { says: "The split that returns to deuce and the two deciding pairs exhaust the next two points",
+      holds: (_p, d) => Math.abs(P(d.splitProb) + P(d.decidedProb) - 1) < 1e-3,
+      breaks: (_p, d) => ({ ...d, splitProb: d.splitProb * 2 }) },
+  ],
+
+  "markov/machine-uptime-stationary": [
+    { says: "Solve: expected live days recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.days * p.fixPct) / (p.failPct + p.fixPct)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: repair outpaces failure here, so more than half the horizon is live",
+      holds: (p, d) => P(d.answer) > p.days / 2,
+      breaks: (p, d) => ({ ...d, answer: p.days / 4 }) },
+    { says: "Live and stalled days account for the whole horizon",
+      holds: (p, d) => Math.abs(P(d.answer) + P(d.stalledDays) - p.days) <= shown(d.answer) + shown(d.stalledDays) + EPS,
+      breaks: (_p, d) => ({ ...d, stalledDays: d.stalledDays + 1 }) },
+  ],
+
+  "markov/maze-food-before-trap": [
+    { says: "Solve: the food probability recomputed fresh from door counts matches the printed value",
+      holds: (p, d) => same(d.answer, p.doorsB / (p.doorsA + p.doorsB - 1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the equal-door case named in the prose is above a coin flip, because the mouse starts nearer the food",
+      holds: (p, d) => same(d.equalDoorCase, p.doorsA / (2 * p.doorsA - 1)) && P(d.equalDoorCase) > 0.5,
+      breaks: (_p, d) => ({ ...d, equalDoorCase: 0.4 }) },
+    { says: "Read the shape: one more door in room B strictly raises the food probability",
+      holds: (p, d) => (p.doorsB + 1) / (p.doorsA + p.doorsB) > d.answer,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+  ],
+
+  "markov/tunnel-doors-escape": [
+    { says: "Solve: the expected escape time is every tunnel time added together, recomputed from params",
+      holds: (p, d) => same(d.answer, p.exitHours + p.loopOneHours + p.loopTwoHours),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the mean single-tunnel time printed is a third of the total",
+      holds: (_p, d) => same(d.meanStep, d.answer / 3),
+      breaks: (_p, d) => ({ ...d, meanStep: d.meanStep * 2 }) },
+    { says: "Sanity: the expected wait exceeds walking straight out, since the exit is not found first every time",
+      holds: (p, d) => P(d.answer) > p.exitHours,
+      breaks: (p, d) => ({ ...d, answer: p.exitHours / 2 }) },
+  ],
+
+  "markov/switching-coins-share": [
+    { says: "Solve: coin A's long-run share recomputed fresh from the two heads rates matches the printed value",
+      holds: (p, d) => same(d.answer, (100 - p.headsBPct) / (200 - p.headsAPct - p.headsBPct)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the heads-heavier coin is the one held more often",
+      holds: (p, d) => (p.headsAPct > p.headsBPct ? P(d.answer) > 0.5 : P(d.answer) < 0.5),
+      breaks: (_p, d) => ({ ...d, answer: 0.5 }) },
+    { says: "The two coins' shares account for every flip",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.shareB) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, shareB: d.shareB / 2 }) },
+  ],
+
+  "markov/system-days-to-failure": [
+    { says: "Solve: expected days to failure recomputed fresh from the three rates matches the printed value",
+      holds: (p, d) => same(d.answer, (100 * (p.breakPct + p.wearPct + p.repairPct)) / (p.wearPct * p.breakPct)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: starting worn is strictly shorter than starting new, by exactly the wait to wear out",
+      holds: (p, d) => P(d.fromWorn) < P(d.answer) && Math.abs(d.answer - d.fromWorn - 100 / p.wearPct) < 1e-9,
+      breaks: (_p, d) => ({ ...d, fromWorn: d.answer * 2 }) },
+    { says: "The printed wait to wear out is the reciprocal of the wear rate",
+      holds: (p, d) => same(d.daysToWear, 100 / p.wearPct),
+      breaks: (_p, d) => ({ ...d, daysToWear: d.daysToWear * 2 }) },
+  ],
+
+  "markov/consecutive-run-wait": [
+    { says: "Solve: the expected wait recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.outOf * (d.nk - d.wk)) / (d.wk * (p.outOf - p.hitsPer))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the wait strictly exceeds the reciprocal of the run probability, because failed attempts also cost trials",
+      holds: (_p, d) => P(d.answer) > P(d.nk / d.wk),
+      breaks: (_p, d) => ({ ...d, answer: d.wk / d.nk }) },
+    { says: "Sanity: the wait cannot be shorter than the run itself",
+      holds: (p, d) => P(d.answer) > p.runLength,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+  ],
+
+  "markov/two-state-after-k-days": [
+    { says: "Solve: the k-step calm probability recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.returnPct * d.pk + p.leavePct * d.lk) / ((p.leavePct + p.returnPct) * d.pk)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: starting calm can only help, so the finite-horizon answer sits strictly above the long-run share",
+      holds: (_p, d) => P(d.answer) > P(d.stationary),
+      breaks: (_p, d) => ({ ...d, answer: d.stationary }) },
+    { says: "The long-run share printed in step one recomputes from the raw switching rates",
+      holds: (p, d) => same(d.stationary, p.returnPct / (p.leavePct + p.returnPct)),
+      breaks: (_p, d) => ({ ...d, stationary: d.stationary * 1.5 }) },
+  ],
+
+
+  // ---- B6 symmetry batch. Formulas confirmed against simulation, and the three rare-event ones
+  // (all-wins-before-loss, relative-order, friends-together) against exhaustive enumeration.
+  "symmetry/all-wins-before-loss": [
+    { says: "Solve: expected successes recomputed fresh from the face counts matches the printed value",
+      holds: (p, d) => { let c = 1; for (let i = 0; i < p.good; i++) c = (c * (p.good + p.bad - i)) / (i + 1); return same(d.answer, p.rounds / Math.round(c)); },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "A single round succeeds with one over the number of interleavings",
+      holds: (_p, d) => same(d.prob, 1 / d.ways),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 2 }) },
+    { says: "Sanity: the mirrored question counts the same interleavings, so the count is symmetric in the two labels",
+      holds: (p, d) => { let c = 1; for (let i = 0; i < p.bad; i++) c = (c * (p.good + p.bad - i)) / (i + 1); return Math.round(c) === d.ways; },
+      breaks: (_p, d) => ({ ...d, ways: d.ways + 1 }) },
+  ],
+
+  "symmetry/first-ace-position": [
+    { says: "Solve: the expected first-ace position recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.cards + 1) / (p.aces + 1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Every gap holds the same expected number of non-aces",
+      holds: (p, d) => same(d.gapSize, (p.cards - p.aces) / (p.aces + 1)),
+      breaks: (_p, d) => ({ ...d, gapSize: d.gapSize * 1.5 }) },
+    { says: "Sanity: the last ace is as far from the end of the deck as the first is from the start",
+      holds: (p, d) => Math.abs((p.cards + 1 - d.lastAce) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, lastAce: d.lastAce * 1.1 }) },
+  ],
+
+  "symmetry/ballot-always-ahead": [
+    { says: "Solve: the always-ahead probability recomputed fresh from the vote counts matches the printed value",
+      holds: (p, d) => same(d.answer, (p.votesA - p.votesB) / (p.votesA + p.votesB)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: leading throughout and touching a tie are complements",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.tieAtSomePoint) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, tieAtSomePoint: d.tieAtSomePoint / 2 }) },
+    { says: "The tie probability printed is twice the losing candidate's share",
+      holds: (p, d) => same(d.tieAtSomePoint, (2 * p.votesB) / (p.votesA + p.votesB)),
+      breaks: (_p, d) => ({ ...d, tieAtSomePoint: d.tieAtSomePoint + 0.1 }) },
+  ],
+
+  "symmetry/last-ball-colour": [
+    { says: "Solve: expected red endings recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.trials * p.red) / (p.red + p.blue)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The last-ball probability is exactly the starting red share",
+      holds: (p, d) => same(d.share, p.red / (p.red + p.blue)),
+      breaks: (_p, d) => ({ ...d, share: d.share * 1.3 }) },
+    { says: "Sanity: red and blue endings account for every trial",
+      holds: (p, d) => Math.abs(P(d.answer) + P(d.blueEnds) - p.trials) <= shown(d.answer) + shown(d.blueEnds) + EPS,
+      breaks: (_p, d) => ({ ...d, blueEnds: d.blueEnds + 1 }) },
+  ],
+
+  "symmetry/standing-table-legs": [
+    { says: "Solve: expected standing tables recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, p.tables * (1 - p.legs / Math.pow(2, p.legs - 1))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Standing and falling are complements",
+      holds: (_p, d) => Math.abs(P(d.stands) + P(d.falls) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, falls: d.falls * 2 }) },
+    { says: "The semicircle denominator doubles with every extra leg",
+      holds: (p, d) => d.half === Math.pow(2, p.legs - 1),
+      breaks: (_p, d) => ({ ...d, half: d.half * 2 }) },
+  ],
+
+  "symmetry/beat-every-rival": [
+    { says: "Solve: expected wins recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, p.rounds / (p.rivals + 1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Every desk in the field holds an equal share of the wins",
+      holds: (p, d) => same(d.prob, 1 / (p.rivals + 1)),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 1.5 }) },
+    { says: "Sanity: your wins and the rivals' wins account for every auction",
+      holds: (p, d) => Math.abs(P(d.answer) + P(d.rivalWins) - p.rounds) <= shown(d.answer) + shown(d.rivalWins) + EPS,
+      breaks: (_p, d) => ({ ...d, rivalWins: d.rivalWins + 1 }) },
+  ],
+
+  "symmetry/friends-together-round-table": [
+    { says: "Solve: expected successful dinners recomputed fresh from params matches the printed value",
+      holds: (p, d) => { let b = 1; for (let i = 2; i <= p.friends; i++) b *= i; let f = 1; for (let i = 1; i <= p.friends - 1; i++) f *= p.seats - i; return same(d.answer, (p.parties * b) / f); },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The per-dinner chance is the block orderings over the falling seat product",
+      holds: (_p, d) => same(d.prob, d.blockWays / d.falling),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 1.4 }) },
+    { says: "Sanity: it is a probability, so it never reaches 1",
+      holds: (_p, d) => P(d.prob) < 1 && P(d.prob) > 0,
+      breaks: (_p, d) => ({ ...d, prob: 1.5 }) },
+  ],
+
+  "symmetry/relative-order-of-picks": [
+    { says: "Solve: expected matches recomputed fresh from params matches the printed value",
+      holds: (p, d) => { let o = 1; for (let i = 2; i <= p.picked; i++) o *= i; return same(d.answer, p.rounds / o); },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "One named ordering out of all of them",
+      holds: (_p, d) => same(d.prob, 1 / d.orders),
+      breaks: (_p, d) => ({ ...d, prob: d.prob * 2 }) },
+    { says: "Sanity: the orderings you did not name are all the rest",
+      holds: (_p, d) => d.wrongOrders === d.orders - 1,
+      breaks: (_p, d) => ({ ...d, wrongOrders: d.orders }) },
+  ],
+
+  // ---- B6 brainteasers batch. Every answer was checked against an independent brute force
+  // (toggling every bulb, solving the pirate game backward, Dijkstra over bridge states, an
+  // event-driven ant simulation); two formulas were wrong before that check and are fixed.
+  "brainteasers/clock-hands-angle": [
+    { says: "Solve: the angle recomputed from both hand positions in degrees matches the printed value",
+      holds: (p, d) => { const raw = Math.abs((30 * (p.hour % 12) + 0.5 * p.minute) - 6 * p.minute); return same(d.answer, Math.min(raw, 360 - raw)); },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the smaller angle always lies between 0 and 180 degrees",
+      holds: (_p, d) => P(d.answer) >= 0 && P(d.answer) <= 180,
+      breaks: (_p, d) => ({ ...d, answer: 200 }) },
+    { says: "The minute hand sits six degrees per minute past twelve",
+      holds: (p, d) => same(d.minuteDeg, 6 * p.minute),
+      breaks: (_p, d) => ({ ...d, minuteDeg: d.minuteDeg + 10 }) },
+  ],
+
+  "brainteasers/light-switches-left-on": [
+    { says: "Solve: the lit count recomputed fresh from the row length matches the printed value",
+      holds: (p, d) => same(d.answer, Math.floor(Math.sqrt(p.bulbs))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 2 }) },
+    { says: "Sanity: the printed squares bracket the row length, which is what pins the count",
+      holds: (p, d) => d.square <= p.bulbs && p.bulbs < d.nextSquare,
+      breaks: (_p, d) => ({ ...d, square: d.nextSquare * 4 }) },
+    { says: "The bracketing squares really are consecutive squares",
+      holds: (_p, d) => d.square === d.root * d.root && d.nextSquare === (d.root + 1) * (d.root + 1),
+      breaks: (_p, d) => ({ ...d, nextSquare: d.nextSquare + 1 }) },
+  ],
+
+  "brainteasers/trailing-zeros-factorial": [
+    { says: "Solve: the zero count recomputed fresh from the three tiers matches the printed value",
+      holds: (p, d) => same(d.answer, Math.floor(p.n / 5) + Math.floor(p.n / 25) + Math.floor(p.n / 125)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 2 }) },
+    { says: "Sanity: the count exceeds one per multiple of five, because 25 and 125 contribute extras",
+      holds: (p, d) => P(d.answer) >= p.n / 5,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+    { says: "Twos are strictly in surplus, which is why only the fives are counted",
+      holds: (p, d) => d.byTwo === Math.floor(p.n / 2) && d.byTwo > d.byFive,
+      breaks: (_p, d) => ({ ...d, byTwo: 0 }) },
+  ],
+
+  "brainteasers/pirates-gold-split": [
+    { says: "Solve: the proposer's take recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, p.coins - Math.floor((p.pirates - 1) / 2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The bought votes plus the proposer's own reach a tie, which passes",
+      holds: (p, d) => d.votesNeeded === d.bribes + 1 && 2 * d.votesNeeded >= p.pirates,
+      breaks: (_p, d) => ({ ...d, votesNeeded: 0 }) },
+    { says: "Sanity: bribes are one coin each, so the proposer keeps the clear majority of the gold",
+      holds: (p, d) => P(d.answer) > p.coins / 2,
+      breaks: (p, d) => ({ ...d, answer: p.coins / 4 }) },
+  ],
+
+  "brainteasers/egg-drop-min-trials": [
+    { says: "Solve: the drop count recomputed fresh from the floor count matches the printed value",
+      holds: (p, d) => same(d.answer, Math.ceil((Math.sqrt(8 * p.floors + 1) - 1) / 2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "Sanity: the building is covered by this many drops but not by one fewer",
+      holds: (p, d) => d.shortOf < p.floors && p.floors <= d.reach,
+      breaks: (_p, d) => ({ ...d, reach: 0 }) },
+    { says: "The reach printed is the triangular number of the drop count",
+      holds: (_p, d) => d.reach === (d.answer * (d.answer + 1)) / 2,
+      breaks: (_p, d) => ({ ...d, reach: d.reach + 1 }) },
+  ],
+
+  "brainteasers/ants-pole-collisions": [
+    { says: "Solve: expected collisions recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, (p.trials * p.ants * (p.ants - 1)) / 8),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Each of the pairs meets a quarter of the time — the factor the first draft got wrong",
+      holds: (_p, d) => Math.abs(d.perTrial - d.pairs / 4) < 1e-9,
+      breaks: (_p, d) => ({ ...d, perTrial: d.pairs / 2 }) },
+    { says: "The pair count is the number of unordered ant pairs",
+      holds: (p, d) => d.pairs === (p.ants * (p.ants - 1)) / 2,
+      breaks: (_p, d) => ({ ...d, pairs: d.pairs + 1 }) },
+  ],
+
+  "brainteasers/bridge-crossing-time": [
+    { says: "Solve: the optimum recomputed fresh from the four times matches the printed value",
+      holds: (p, d) => same(d.answer, Math.min(2 * p.fastest + p.second + p.third + p.slowest, p.fastest + 3 * p.second + p.slowest)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the answer is the better of the two named plans and beats neither of them",
+      holds: (_p, d) => P(d.answer) <= P(d.shuttle) && P(d.answer) <= P(d.pairSlow),
+      breaks: (_p, d) => ({ ...d, answer: d.shuttle + d.pairSlow }) },
+    { says: "The printed saving is the gap between the two plans",
+      holds: (_p, d) => Math.abs(d.saving - Math.abs(d.shuttle - d.pairSlow)) < 1e-9,
+      breaks: (_p, d) => ({ ...d, saving: d.saving + 1 }) },
+  ],
+
+  "brainteasers/frog-well-escape": [
+    { says: "Solve: the escape day recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.answer, Math.ceil((p.depth - p.climb) / (p.climb - p.slip)) + 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "Sanity: dropping the final slide never makes the escape slower than the naive division",
+      holds: (_p, d) => P(d.answer) <= P(d.naive),
+      breaks: (_p, d) => ({ ...d, answer: d.naive + 5 }) },
+    { says: "The net daily gain is the climb less the slide",
+      holds: (p, d) => d.net === p.climb - p.slip,
+      breaks: (_p, d) => ({ ...d, net: d.net + 1 }) },
+  ],
+
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -1539,7 +1840,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

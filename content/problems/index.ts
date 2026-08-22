@@ -150,6 +150,33 @@ import { buffonFitThenOtherBoard } from "./geometric/buffon-fit-then-other-board
 import { delayedArrivalMeeting } from "./geometric/delayed-arrival-meeting";
 import { concentricFitThenRing } from "./geometric/concentric-fit-then-ring";
 
+import { deuceWinByTwo } from "./markov/deuce-win-by-two";
+import { machineUptimeStationary } from "./markov/machine-uptime-stationary";
+import { mazeFoodBeforeTrap } from "./markov/maze-food-before-trap";
+import { tunnelDoorsEscape } from "./markov/tunnel-doors-escape";
+import { switchingCoinsShare } from "./markov/switching-coins-share";
+import { systemDaysToFailure } from "./markov/system-days-to-failure";
+import { consecutiveRunWait } from "./markov/consecutive-run-wait";
+import { twoStateAfterKDays } from "./markov/two-state-after-k-days";
+
+import { allWinsBeforeLoss } from "./symmetry/all-wins-before-loss";
+import { firstAcePosition } from "./symmetry/first-ace-position";
+import { ballotAlwaysAhead } from "./symmetry/ballot-always-ahead";
+import { lastBallColour } from "./symmetry/last-ball-colour";
+import { standingTableLegs } from "./symmetry/standing-table-legs";
+import { beatEveryRival } from "./symmetry/beat-every-rival";
+import { friendsTogetherRoundTable } from "./symmetry/friends-together-round-table";
+import { relativeOrderOfPicks } from "./symmetry/relative-order-of-picks";
+
+import { clockHandsAngle } from "./brainteasers/clock-hands-angle";
+import { lightSwitchesLeftOn } from "./brainteasers/light-switches-left-on";
+import { trailingZerosFactorial } from "./brainteasers/trailing-zeros-factorial";
+import { piratesGoldSplit } from "./brainteasers/pirates-gold-split";
+import { eggDropMinTrials } from "./brainteasers/egg-drop-min-trials";
+import { antsPoleCollisions } from "./brainteasers/ants-pole-collisions";
+import { bridgeCrossingTime } from "./brainteasers/bridge-crossing-time";
+import { frogWellEscape } from "./brainteasers/frog-well-escape";
+
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
   twoUrns,
@@ -301,6 +328,30 @@ export const PROBLEMS: ProblemTemplate[] = [
   buffonFitThenOtherBoard,
   delayedArrivalMeeting,
   concentricFitThenRing,
+  deuceWinByTwo,
+  machineUptimeStationary,
+  mazeFoodBeforeTrap,
+  tunnelDoorsEscape,
+  switchingCoinsShare,
+  systemDaysToFailure,
+  consecutiveRunWait,
+  twoStateAfterKDays,
+  allWinsBeforeLoss,
+  firstAcePosition,
+  ballotAlwaysAhead,
+  lastBallColour,
+  standingTableLegs,
+  beatEveryRival,
+  friendsTogetherRoundTable,
+  relativeOrderOfPicks,
+  clockHandsAngle,
+  lightSwitchesLeftOn,
+  trailingZerosFactorial,
+  piratesGoldSplit,
+  eggDropMinTrials,
+  antsPoleCollisions,
+  bridgeCrossingTime,
+  frogWellEscape,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
@@ -316,4 +367,7 @@ export const TOPIC_LABELS: Record<string, string> = {
   "probability/distributions": "distributions",
   "probability/ruin": "ruin & walks",
   "probability/geometric": "geometric",
+  "probability/markov": "markov chains",
+  "probability/symmetry": "symmetry",
+  "brainteasers/logic": "brainteasers",
 };

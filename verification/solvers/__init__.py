@@ -4,5 +4,8 @@ from .ev_variance import SOLVERS as _ev_variance
 from .distributions import SOLVERS as _distributions
 from .ruin import SOLVERS as _ruin
 from .geometric import SOLVERS as _geometric
+from .markov import SOLVERS as _markov
+from .symmetry import SOLVERS as _symmetry
+from .brainteasers import SOLVERS as _brainteasers
 
-SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric}
+SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric, **_markov, **_symmetry, **_brainteasers}
