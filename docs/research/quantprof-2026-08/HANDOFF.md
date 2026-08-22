@@ -1,26 +1,44 @@
 # Handoff — integrating the QuantProf findings
 
-## NEXT SESSION STARTS HERE (paused 2026-08-22)
+## NEXT SESSION STARTS HERE (resumed and landed 2026-08-22)
 
-**Nothing from this work is committed.** `main` is at `a2960ae`, level with
-`origin/main`, carrying 30 modified and 9 untracked paths. Everything below is
-verified green at that working tree: typecheck, **368 unit tests / 23 files**,
-**5/5 e2e**, `next build` clean, and `npm run verify:emit` reporting
-**Emitted 174 problems x 100 instances — all static gates green**.
+**This work is now committed.** `main` carries four commits on top of `a2960ae`,
+in the order the earlier draft of this section proposed:
 
-First decision next session: commit this. Suggested split, in dependency order —
+1. `3bcf19d` feat(generators): weighted sequence families + missing-operand drill
+2. `93329bd` fix(content): merge duplicate firm slugs
+3. `725cd46` content(b6): markov, symmetry and brainteasers — 24 problems +
+   Python counterparts, bank at 174
+4. `5c98986` docs(research): quantprof harvest + coverage analysis
 
-1. `feat(generators): weighted sequence families + missing-operand drill`
-   — `packages/generators/*`, `packages/engine/src/{types,presets}.ts`,
-   `components/{ChoiceGrid,DrillRunner,TestRunner,DrillNav}.tsx`,
-   `app/drills/missing-operand/`, `app/stats/page.tsx`, `e2e/`,
-   `components/DrillRunner.test.tsx`.
-2. `fix(content): merge duplicate firm slugs` — `content/problems/*/*.ts`
-   plus the `registry.test.ts` guard.
-3. `content(b6): markov, symmetry and brainteasers — 24 problems, bank at 174`
-   — `content/problems/{markov,symmetry,brainteasers}/`, `index.ts`, and the
-   four gate files.
-4. `docs(research): quantprof harvest + coverage analysis` — `docs/research/`.
+Nothing is pushed. `origin/main` is still at `a2960ae`.
+
+**The Python gate has now been run and is green.** It was the one gate this work
+had never exercised, and the reason was concrete rather than incidental: all 24
+new problems were missing their `verification/solvers/*` counterpart, and
+`verify.py` treats a missing counterpart as a failure, so CI would have gone red
+on the first push. The three new solver modules close that.
+
+Writing them surfaced two header comments that contradicted their own verified
+code — both leftovers from the factor-of-two and mis-costing fixes made when the
+answers were first checked. `ants-pole-collisions` claimed `C(n,2)/2` where the
+code correctly has `C(n,2)/4`, and `bridge-crossing-time` named both strategy
+costs wrong. The code was right in both cases; only the comments changed.
+
+The counterparts were themselves checked rather than merely written: `brute()`
+matches `exact()` across the full legal parameter space (20,940 draws, against
+the 25 `verify.py` samples), a 2% perturbation of `exact()` is caught on every
+one of those draws, and perturbing one emitted answer per problem makes
+`verify.py` report exactly 48 failures and exit 1. That last one matters most —
+before it, nobody had watched this gate fail.
+
+**Open next, in rough value order.** Nothing below is started.
+
+- Push, and watch CI go green on a runner rather than only locally.
+- Handoff item 3, four-term sequence display, still blocked on the answer
+  checker accepting any rule consistent with the shown terms.
+- Combinatorial-game brainteasers, still blocked on a non-numeric answer type.
+- The `optiver-80in8` naming collision described at the end of this file.
 
 **Also still open from before this work:** branch `phase-d-review-queue` holds
 3 unmerged commits (tip `b69fbb1`) in `.worktrees/phase-d-review-queue` —
@@ -34,16 +52,15 @@ param, a derived value, or a declared `constants` entry. Fixed by promoting
 printed intermediates into `derived` and declaring structural literals. One
 case was subtler than the rest: a zero-padded clock minute renders "09", which
 the tokenizer reads as a number that can never be traceable, so that template
-now never draws a single-digit minute.
-
-Still NOT run: the Python side (`verification/verify.py`). `instances.json` is
-regenerated and the TS static gates pass, but the double-entry numeric check
-has only ever seen the pre-B6 bank. That is the one gate still unexercised.
+now never draws a single-digit minute. The Python double-entry check has since
+been run too, and now covers the whole bank rather than only the pre-B6
+problems.
 
 ---
 
-Research done 2026-08-22. Nothing in `app/`, `packages/` or `content/` was
-touched. This directory is untracked; commit it or delete it.
+Research done 2026-08-22. The section above records what was integrated from
+it; this directory is committed as `5c98986` and is raw data plus analysis, not
+anything the app imports.
 
 Report: https://claude.ai/code/artifact/955f78ec-bdcd-409f-89ec-4c0834d15803
 Data inventory and collection method: `INDEX.md` in this directory.
