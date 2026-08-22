@@ -1,0 +1,19 @@
+family                              easy        medium          hard   in yours?
+quadratic                    111 (32.6%)   34 (14.3%)    4 ( 3.7%)   YES
+arithmetic                    83 (24.4%)   11 ( 4.6%)    4 ( 3.7%)   YES
+ratio-linear-offset            0 ( 0.0%)   36 (15.2%)   58 (53.7%)   GAP
+geometric                     72 (21.2%)   17 ( 7.2%)    4 ( 3.7%)   YES
+mult-plus-linear              21 ( 6.2%)   35 (14.8%)    7 ( 6.5%)   GAP
+recur-linear                  22 ( 6.5%)   30 (12.7%)    6 ( 5.6%)   YES
+divisor-arith                 11 ( 3.2%)   20 ( 8.4%)    1 ( 0.9%)   GAP
+diff-squares-offset            7 ( 2.1%)   22 ( 9.3%)    3 ( 2.8%)   GAP
+ratio-arith                    7 ( 2.1%)   15 ( 6.3%)    2 ( 1.9%)   GAP
+diff-cubes-offset              0 ( 0.0%)    6 ( 2.5%)   14 (13.0%)   GAP
+cubes-offset                   5 ( 1.5%)    5 ( 2.1%)    2 ( 1.9%)   GAP
+interleaved(arith+geom)        0 ( 0.0%)    1 ( 0.4%)    3 ( 2.8%)   YES
+power-offset                   1 ( 0.3%)    2 ( 0.8%)    0 ( 0.0%)   GAP
+fiblike                        0 ( 0.0%)    1 ( 0.4%)    0 ( 0.0%)   YES
+alt-ops                        0 ( 0.0%)    1 ( 0.4%)    0 ( 0.0%)   YES
+diff-recur-linear              0 ( 0.0%)    1 ( 0.4%)    0 ( 0.0%)   GAP
+
+totals: {'easy': 340, 'medium': 237, 'hard': 108}

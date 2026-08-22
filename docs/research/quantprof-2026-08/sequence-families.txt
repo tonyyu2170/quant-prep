@@ -1,0 +1,37 @@
+unique sequences: 652
+  easy     quadratic          111   e.g. 657, 630, 604, 579             2nd diff=1
+  easy     arithmetic          83   e.g. 406, 339, 272, 205             -67
+  easy     geometric           72   e.g. 15625, 3125, 625, 125          x1/5
+  easy     recur-linear        22   e.g. 12, 68, 348, 1748              x5+8
+  easy     mult-plus-linear    21   e.g. 14, 52, 203, 806               x4 then -4 stepping -1
+  easy     divisor-arith       11   e.g. 10440, 1740, 348, 87           divide by [6, 5, 4] step -1
+  easy     diff-squares-offset     7   e.g. 7, 32, 68, 117                 n^2+0 from n=5
+  easy     ratio-arith          7   e.g. 5, 10, 30, 120                 ratios [2, 3, 4] step +1
+  easy     cubes-offset         5   e.g. 343, 512, 729, 1000            n^3+0 from n=7
+  easy     power-offset         1   e.g. 4, 12, 28, 60                  2^n-4
+  hard     ratio-linear-offset    57   e.g. 18, 33, 95, 375                x(2+1i) then -3 stepping -1
+  hard     diff-cubes-offset    13   e.g. 19, 144, 360, 703              n^3+0 from n=5
+  hard     mult-plus-linear     7   e.g. 13, 54, 219, 880               x4 then +2 stepping +1
+  hard     recur-linear         6   e.g. 15, 53, 167, 509               x3+8
+  hard     arithmetic           4   e.g. 49, 53, 57, 61                 +4
+  hard     geometric            3   e.g. 7, 28, 112, 448                x4
+  hard     diff-squares-offset     3   e.g. 29, 38, 54, 79                 n^2+0 from n=3
+  hard     recur-2term-frac     3   e.g. 14, 8, 20, 24                  22/27*p1+26/27*p2
+  hard     divisor-arith        1   e.g. 3360, 420, 60, 10              divide by [8, 7, 6] step -1
+  hard     quadratic            1   e.g. 18, 16, 13, 9                  2nd diff=-1
+  hard     ratio-arith          1   e.g. 10, 40, 200, 1200              ratios [4, 5, 6] step +1
+  medium   ratio-linear-offset    36   e.g. 6, 30, 157, 950                x(4+1i) then +6 stepping +1
+  medium   mult-plus-linear    32   e.g. 14, 14, 28, 84                 x3 then -28 stepping +14
+  medium   recur-linear        29   e.g. 16, 88, 448, 2248              x5+8
+  medium   quadratic           27   e.g. 64, 81, 100, 121               2nd diff=2
+  medium   diff-squares-offset    20   e.g. 19, 35, 60, 96                 n^2+0 from n=4
+  medium   divisor-arith       19   e.g. 2640, 528, 132, 44             divide by [5, 4, 3] step -1
+  medium   geometric           14   e.g. 13, 65, 325, 1625              x5
+  medium   ratio-arith         14   e.g. 5, 25, 150, 1050               ratios [5, 6, 7] step +1
+  medium   arithmetic          10   e.g. 18, 21, 24, 27                 +3
+  medium   diff-cubes-offset     6   e.g. 30, 38, 65, 129                n^3+0 from n=2
+  medium   power-offset         2   e.g. 12, 28, 60, 124                2^n-4
+  medium   fiblike              1   e.g. 16, 25, 41, 66                 sum of prev two
+  medium   recur-2term-frac     1   e.g. 19, 9, 23, 27                  153/178*p1+143/178*p2
+  medium   alt-ops              1   e.g. 8, 4, 12, 8                    +-4,*3
+  medium   diff-recur-linear     1   e.g. 8, 10, 11, 30                  x-18+37

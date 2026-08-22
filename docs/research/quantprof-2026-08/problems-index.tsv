@@ -1,0 +1,976 @@
+1	vLdfKriwhLUMSeLEHKAt	Non-empty Intersection	probability	7	JaneStreet|JumpTrading	FREE
+2	nfD5Mq9YdCoUhyePXGXb	Standing Table I	probability	7	AkunaCapital|Citadel|FiveRings|JaneStreet	FREE
+3	ynmCNn6SCa6JVawYqE1m	Game Of Chords	brainteasers	5	Citadel	FREE
+4	7cVbcRx4j4RbuF50absC	Unequal Neighbors	brainteasers	10	SusquehannaInternationalGroup	FREE
+5	etfoMVgVDRsYWbX5zr9Y	Find The Units Digit	brainteasers	8	Citadel	FREE
+6	LEz6IssOj9ucRuFEhWTp	Ship Destroyer	probability	4	Citadel	FREE
+7	0RMlz7xCnMaOFyVAuWnz	Moving The Piece I	brainteasers	7	Citadel|Optiver	FREE
+8	4BK31wmvCMk6mmkqeJgr	Even Marbles Everywhere	probability	6	Citadel|TwoSigma	FREE
+9	YEnNX7eZV5DaXNmSPz4P	Hard Grid Arrangement	combinatorics	8	AkunaCapital	FREE
+10	VRbixpKrhiSOLGNJXJAX	All Odds Before Even	probability	3	Citadel|IMCTrading|SusquehannaInternationalGroup	FREE
+11	MLTiU6nMqczf3E7x9b7G	Standing Table II	probability	8	Citadel|JaneStreet	FREE
+12	kZoqS05qoc0HojGf8hIt	10 Consecutive Heads	probability	5	Citadel|IMCTrading|JaneStreet|SusquehannaInternationalGroup|TwoSigma	FREE
+13	rIt7Q1MHbdLNpYq7XWof	Chords Intersection I	probability	5	FiveRings|HudsonRiverTrading|JumpTrading	FREE
+14	aHfLAix1Y8MakxncRe28	1 Leftward Jump	probability	6	JaneStreet	FREE
+15	o47TcFdyo7lXGOQ6haQt	Marble Swap II	probability	4	Citadel	FREE
+16	oEhBkc828kHy9h0glUG8	Scary Permutation	combinatorics	8	Citadel	FREE
+17	vyBOIEvY5nmpJUwxqfRF	Grid Frog I	combinatorics	8	Citadel	FREE
+18	jWzbKaVmrVjeX5ynIeM4	At Least Six I	probability	4	Citadel	FREE
+19	6CtZ2xP3S2xqnChrtu8O	Game Of Placing Knights	brainteasers	5	Graviton|SusquehannaInternationalGroup	FREE
+20	qb5p2f7OejdhswMqyk2r	Same Arc I	probability	8	Citadel	FREE
+21	aemGJfNz4FhaAY9oCETM	Increasing Dice Rolls III	probability	1		FREE
+22	ExynrsbJIdqrJeUpG10E	Fill In The Blanks	probability	4	DRW	FREE
+23	hVvQJF4xziXTFC9Zx0Vd	Exponent Perfect Square	brainteasers	3	Graviton	FREE
+24	HxEr4QbtQKuih65DRQmA	Odd Heads II	probability	4	AkunaCapital|Citadel|JaneStreet	FREE
+25	YK6Lt9yYGlBlo0FjIN1y	Dice Rolls Product	probability	10		FREE
+26	JbNIftTgNc5esaoW0yXL	Jumping Frog V	combinatorics	4	DRW|FiveRings|Optiver	FREE
+27	2XcBo9tU50BvdNeSLaum	Dot Product	probability	5	Citadel	FREE
+28	fcBjWTOh8G7XWqk6hnPF	Marble Swap I	probability	6	HudsonRiverTrading	FREE
+29	uMrsZFmuMpZiLY6Kay3M	Monster Escape I	probability	7	HudsonRiverTrading	FREE
+30	QKKFg6JdOUP701x05Drm	Chords Forming Quadrilateral	probability	3		FREE
+31	o4qVwvMnII8PdAC6RLuv	Monster Escape II	probability	5	Optiver	FREE
+32	DZt5ssEtl9xylFhqk1R0	Matrix Attack III	probability	9	HudsonRiverTrading	FREE
+33	KUF1oXX5y4ulgloRcs8c	Bulbs In A Grid	probability	5	JaneStreet	FREE
+34	AixrWODjq1By7lcySbre	Chess Tournament III	probability	5	Citadel	FREE
+35	mv8rQteiWf1RP7FUrsV0	Count Paths II	combinatorics	4	Citadel	FREE
+36	sn53QramErrKcaN9nGem	Five Light Bulbs	probability	4	JaneStreet	FREE
+37	edvspNN4ck9iRbEM31FJ	Letter-envelope Pairing	probability	8	JaneStreet	FREE
+38	AYNN1PcYgMs55tgUulO4	Frog Return	probability	4	IMCTrading	FREE
+39	gMPfjR3OkoHLA13Oqn2L	Direction Change I	probability	5	Citadel	FREE
+40	9o5CSpeSfjSHP6Gz9lXm	3 Dice Minimum	probability	7	JaneStreet	FREE
+41	escwebu4m7EXrrNg7f8U	Game On Divisors III	brainteasers	5	SusquehannaInternationalGroup	FREE
+42	qJeDfIasw5TvL30cMut4	Jumping Frog IV	combinatorics	4	Optiver	FREE
+43	TEgMMpbVu74PugKzBxci	Dice Game III	probability	6	Citadel	FREE
+44	hnwrduyZF32Tj9KciR57	105 Pebbles	brainteasers	8	JaneStreet	FREE
+45	z4WOf7OAs1gwEZDxmcL1	Missing Pairwise Product	brainteasers	3	SusquehannaInternationalGroup	FREE
+46	pnb5ahpuG7yp1ZTeyaz3	Constrained Subsets II	combinatorics	6	JaneStreet	FREE
+47	oBEV7DTEfCcAAJvqmRim	Fifth Card	brainteasers	10		FREE
+48	go2O0Tb4MGhBlbkEcsXZ	Expected Area	probability	1		FREE
+49	NpvwCzfvQStXmKQ84ItI	Difficult Die Constraints	Probability	8		FREE
+50	HjnEoCTRyFCj3jZMxuF7	Game Of Discarding Cards	probability	3	JaneStreet	FREE
+51	ACCZZsJnsV0zpa8JFgWg	Normal Inequality IV	probability	3	AkunaCapital|FiveRings|HudsonRiverTrading	FREE
+52	vhaHnfbQ0LbgDa82zOCl	Ants On A Circle I	probability	4	Citadel	FREE
+53	fsAyc91BFAgUfrrxFNUq	Ants On A Circle II	probability	10	Citadel	FREE
+54	pGtV7PU5ZREIu0DIWUgU	Ants On A Circle III	probability	10		FREE
+55	A8wk94JnqXADdeUzgxmW	Game Of Evaluation	brainteasers	6		FREE
+56	WwInzW03EaILF5FJU0Sn	Ant On A Cube I	probability	5	AkunaCapital	FREE
+57	y8KWlZw34p0fbBQjDGDp	Dice Game VII	probability	6	DRW|HudsonRiverTrading|Optiver	FREE
+58	tuXWAEze3geTBmp3EWbk	Duck Escape	brainteasers	5		FREE
+59	PQMFKOCpwRQVGb85Ihvn	Count Regions I	combinatorics	5	JaneStreet	FREE
+60	Bj2IfH9hxnWyvNfXvYT0	Count Regions III	combinatorics	10	JaneStreet	FREE
+61	2judus9GWAbol63q0qbt	Square Intersection I	probability	2		PAID
+62	N0VRzcbO6ckub8UUbSMc	Couple I	probability	5		PAID
+63	RzvpFpRpHDK0vbr1wZpL	Even Ratio	probability	10		PAID
+64	e10EKLv4zfSwoUwiroNy	2 Eggs	brainteasers	6	AkunaCapital|Optiver	PAID
+65	JOKO6kiw9eJePnlSG2ad	Heads Run I	probability	5		PAID
+66	7YvCWVe7HYyM4eUqnU4P	Smallest Set	brainteasers	9		PAID
+67	L4KkUVEjxdU0S04VjyNn	Variable Game	probability	4		PAID
+68	H8MUvPrkpSA1yNYQxlUA	Chess Tournament II	probability	6	FiveRings	PAID
+69	8e8NFjfHsriFpSYOgoUQ	Game Of Smaller Number	probability	5	JaneStreet	PAID
+70	wbhbbI3temyZMonOIX1o	Missing Sequence	combinatorics	4		PAID
+71	Tk4wIHHMk0l5iJsZFyEs	Passing The Coin II	probability	3		PAID
+72	kHUQABnxuqe5DTXvvXa4	Remove The Subtree	probability	7	Graviton	PAID
+73	le7ZoR3yZMVoHVJJKRhg	Interesting Summation I	brainteasers	7		PAID
+74	qx4XM1ic1heg4VQf7cSz	Interesting Summation II	brainteasers	6		PAID
+75	FYpKBF37JPApiCNfLDnd	Pair Partition I	combinatorics	9		PAID
+76	EpmShdGV5skxkMdWcMXn	Last One Off	probability	7		PAID
+77	iBzs0KTSTxVu1DaOy6Uo	Strictly Within	probability	7		PAID
+78	6m6SSe4UCrrIfab77csE	Get King And Ace	probability	6		PAID
+79	RWHO6SXfh53UiopKVpbD	Max Equals Min	probability	3		PAID
+80	WnxSywonwNhZMxvA7eNB	Uniform Sum Probability	probability	7		PAID
+81	Sn9ruZToLMMujjmhRGSD	Stop Or Continue	probability	3	JaneStreet|JumpTrading|SusquehannaInternationalGroup	PAID
+82	tJaubrRSuv5U9xo5Dnit	Greedy Pirates I	brainteasers	3	SusquehannaInternationalGroup	PAID
+83	APoCC6TAjQFhHp83wjGE	Coin Toss Game V	probability	6	Graviton	PAID
+84	9Pg61Q7PiqtSNYYd0FyP	Expected Ones In Binary	probability	9		PAID
+85	DqBIBxb3djI6lQDIoxPA	Points On The Same Face	probability	5		PAID
+86	yjPx2OKrqMMIG5HMuIx4	Product Of Cards	brainteasers	8	JaneStreet	PAID
+87	GrWGdeaLqBLylu0FA4OB	Gold Auction	probability	5	SusquehannaInternationalGroup	PAID
+88	k4gS3P9TjihCPVDcwFUC	Cutting Cube	brainteasers	4		PAID
+89	YxY2mEYYY2PXwgrReGdP	Three Pegs	brainteasers	9		PAID
+90	MeIa8FaXbzUtLfbEZ8zO	Chocolate Problem	probability	7		PAID
+91	uIV5Dh2xzmEVAwHT4efH	Fixed Points I	probability	3	Citadel	PAID
+92	eDkxol7Y3ZAiyFmepVii	Reaching 50	brainteasers	4	SusquehannaInternationalGroup	PAID
+93	1VbTiCDb2c2LTjpf7u7s	Game On Divisors I	brainteasers	8	JaneStreet	PAID
+94	pG9qMJk9eT7WUZ2J95Wb	At Least Six II	probability	8	Citadel|JumpTrading	PAID
+95	FOMprcljuB57dxAxNOxv	Painted Cube III	probability	4		PAID
+96	T8SZXAKqC5UHHL2hn6mr	Sufficient Sum I	probability	9	AkunaCapital|IMCTrading	PAID
+97	Q7RVc7RQ5r9xvvwW7gPe	Interesting Summation III	brainteasers	7		PAID
+98	RzRQLS1IdoALGK4xrviu	Random Pairing	probability	4		PAID
+99	apaIkVbTKyxL3QhcaFNl	Odd Heads I	probability	2	AkunaCapital	PAID
+100	skdZmSe2Qv3NgAkHlRKI	Tetrahedral Die II	probability	8		PAID
+101	cE4m8g63hZsCZV0fYL6q	Greedy Pirates II	brainteasers	10	SusquehannaInternationalGroup	PAID
+102	rx9Vsy4WzQiXWfTJFBtK	Horse Racing	brainteasers	6	IMCTrading|Optiver	PAID
+103	sUKsx9of9cSOv2NIuAZ0	3 Heads 3 Tails I	probability	5	SusquehannaInternationalGroup	PAID
+104	i0KWwcl3Y2fLxge5GnMt	Going In Circles	probability	6		PAID
+105	8aD7O7Ekx6JdXmYh4l05	Even Majority	probability	4		PAID
+106	vpMaaZUz81NMGgsENM9r	Candy Distribution	brainteasers	6	SusquehannaInternationalGroup	PAID
+107	XgFXLUwBZpBPfJFTLvIs	Roll Till Even	probability	1	IMCTrading	PAID
+108	idrOXFDoo8atWv7lz1SM	Triangle Inside Circle I	probability	4	Graviton	PAID
+109	CSUrSVGDqcHyXUPbtMwR	Lily Pad	brainteasers	2	AkunaCapital	PAID
+110	1jw4YHB0rz9M5GUwHgXz	Passing The Bottle	probability	8		PAID
+111	JgM9aMPMxIkMH0nqJ2Jn	Jumping Frog I	probability	6	DRW|FiveRings	PAID
+112	XanBfHcdE0k4yIXQFae0	Penguin Walk II	probability	4		PAID
+113	63OLg1n3zpk6o95pePG4	Interview I	probability	9	Citadel	PAID
+114	zY4KRBMRgKU5QKkt5Hef	Free Throws I	probability	4		PAID
+115	KDHkbsXVqua2YPwPNiyH	Starting With Heads	probability	5	FiveRings|Graviton	PAID
+116	uZzimJcho24FbXuNsoTf	Circular Table	probability	6		PAID
+117	Lx9sgVgNwA93TQ9beork	Gold Thief	brainteasers	1	JaneStreet	PAID
+118	qdqKRu1bIu6vwI6KutB9	Hanging Chain	brainteasers	4		PAID
+119	N0DJdmQ9OA23RrxNnmgr	Coin Sequence Guess	probability	6		PAID
+120	yLviBBePiTeE8xOqJb2v	Higher Roll I	probability	4		PAID
+121	DunzfFtgFXxpBTf7k1fL	Dice Game IV	probability	5	DRW	PAID
+122	GIJhta0I2EvIwyGcANLR	Half Right Hats	brainteasers	6	Graviton	PAID
+123	dAPC43ShGSTGC5MOc3ib	Pppower	brainteasers	4		PAID
+124	UHIhd8vBtPqxN0v0sa6v	Grid Arrangement II	combinatorics	5		PAID
+125	wQGM99svVOJC82MW0ADW	Distant Points	probability	6		PAID
+126	XL4i2ZiqBdjhgAUpNWdl	Probabilistic Strategy III	probability	6	HudsonRiverTrading	PAID
+127	TU2gemj1ccDPC1ELStxX	Optimal Card Guessing	probability	6	FiveRings	PAID
+128	hVD5N846XRLILTDt1RDH	k-inversions	probability	6		PAID
+129	lPC4j6KTJEFDQ1HgvClb	Five In Numerator	probability	3		PAID
+130	HG61AEJaODQYvMdbIkKR	W-permutation	probability	5		PAID
+131	c3s2PPNackflJJATT3XK	Prisoner Hats	brainteasers	6		PAID
+132	sZ5V8gngsSiFOcYLQt1q	Contiguous THTH	probability	6	JaneStreet	PAID
+133	Of8aM57f509GqnquBIFD	50 Wise Men	brainteasers	8		PAID
+134	5DMYjpLjAWAnpF9Cc7pj	Rolling Everything I	probability	5	AkunaCapital|DRW|HudsonRiverTrading|IMCTrading|Optiver|TwoSigma	PAID
+135	y9qyeHjXcHiJifyrm5W0	Socks Remaining I	probability	7	JumpTrading|JaneStreet	PAID
+136	tBObqkSqrHLSe1Fc2OBv	Consecutive Envelopes I	probability	6	Optiver	PAID
+137	C4p32I53Z6pp1JA3qryg	Trailing Zeros I	brainteasers	3	DRW|SusquehannaInternationalGroup	PAID
+138	kvjEF6xI0y0tED9rmIG4	Expected Minimum Till 5	probability	5		PAID
+139	KVci5WB4zkwAkUZQkVFK	Palindrome Summation	brainteasers	4	DRW	PAID
+140	3ZTkwrkCxMVbXvRy4ju4	Matrix Attack II	brainteasers	10	Graviton	PAID
+141	rPoGdKa09BJ0yzBD1onB	Consecutive 1s	probability	2		PAID
+142	vZ2rl1NozCnFN00nBz0J	Ball With Maximum Value	probability	6		PAID
+143	I6KVv2ypKWIbVizkoPrx	Digit Multiply I	brainteasers	5		PAID
+144	5s1R0O0hY00HYlDLMo61	Regular Octagon	probability	6		PAID
+145	FOO2QTEGNesPImSqUSq4	Payment	probability	4		PAID
+146	iLuOcf1oYunt2bosugoz	Rock Paper Scissors	brainteasers	3		PAID
+147	c6InbPL51kGQGoM7q0RM	Party Groups I	probability	8	JaneStreet	PAID
+148	px6Cz2mGXeDTD0zl72Ds	Min, Median, Max Guess	probability	7		PAID
+149	kf0KiN8s3i9HaLqDqH9J	Normal Inequality III	probability	6	AkunaCapital	PAID
+150	N1dTlTpOIZzO2rpsQ0UD	Permutation Variance	probability	8		PAID
+151	UK09zbk7PiYCI0045bgg	Probabilistic Strategy II	probability	4	Graviton	PAID
+152	iW4576b7zqryAZhBgdGk	3D Tic-tac-toe	combinatorics	4	JumpTrading	PAID
+153	yFzGnW30AHuDACVROetF	Color And Roll	probability	2	JaneStreet	PAID
+154	fCireeojqLuwhX4dtmZw	Expected 2s	probability	4	Citadel	PAID
+155	tBkE8zSUhxfJYLzhVVh8	Drunk Passenger I	probability	8	IMCTrading	PAID
+156	cu3bs1rDPC084X4yGbaJ	Broken Calculator	brainteasers	8		PAID
+157	OoFOqh72rDwUNoFvqsPr	Square Fitting II	probability	6		PAID
+158	F5mPYn36xIhZ6ViQhqid	Increasing Dice Rolls II	probability	7	Graviton|HudsonRiverTrading|IMCTrading	PAID
+159	4oFIuRifh7Zmm56ONaVS	Direction Change II	probability	6	Citadel|Graviton|TwoSigma	PAID
+160	FYrqlpK5FO8YbZRMdGm4	Close Factors	brainteasers	3	Optiver	PAID
+161	d9kWxPHVfNoLkIvVp2El	Non-absorbing Random-walk	probability	4		PAID
+162	RmaojtWJZ3QIieU5HIrL	Equal Logarithms	probability	3		PAID
+163	gDLEBSfMoZS4raI7JtdJ	Mathematical Expression III	combinatorics	3	IMCTrading	PAID
+164	aFC2M8mJFSeMpDGgl5Uk	Dice Multiple I	probability	5		PAID
+165	5alsO3AOk1yIjhX9bHT9	Self-avoiding Paths	combinatorics	8	JaneStreet	PAID
+166	xM02iBRPJoibumnbaydK	SOS Game	brainteasers	10		PAID
+167	afbI9Loy69NCmKqpdoOI	Moving Ants I	probability	1		PAID
+168	ShVWfm2RaEQxRUGlpbuA	Moving Ants III	probability	7	HudsonRiverTrading	PAID
+169	tEgvciWZHcpr0iQTMhCt	Constrained Subsets I	combinatorics	3		PAID
+170	jrRNg5LG5Ojwjl68kE2g	Sufficient Sum IV	probability	10	AkunaCapital	PAID
+171	5xlaA5ZRBkAC9eaxiJMy	Numerator I	brainteasers	4		PAID
+172	4cRp3ym9Fti8xBTtxE0c	Predicting King Draws	probability	6		PAID
+173	xiHl4niUFs9EWogvDT05	40-sided And 60-sided Die	probability	2	DRW	PAID
+174	SwerGyB9hmVzskfGBNT4	Count Bitonic Permutations	combinatorics	5	Graviton|IMCTrading	PAID
+175	EXR1HFJczvot6cs5KiC5	Uniform Number Bet I	probability	9		PAID
+176	K9YpWGlQc6d5ivmM005F	Asset Price	probability	2		PAID
+177	30TWChEdLsewPYnUqdUb	Prism Count	combinatorics	3		PAID
+178	2vVzcR8xxDCqS9ufAEdc	Bulb Factory	probability	2	JaneStreet	PAID
+179	nhLC4p0xFBtfB79VMg6m	Moving Checker	probability	5	Citadel|Graviton	PAID
+180	dKKfuprqWGqSKAyyDo5Z	XXYYYYZZ	combinatorics	4		PAID
+181	enQ6KblKZucAeBG5hmtr	Factorial Factor	probability	4	Optiver	PAID
+182	nR2tgqx2E1viHodEIvx1	Interesting Division	brainteasers	3		PAID
+183	nOBiAzkbv5VILAsk9duV	Bulb Toggle III	brainteasers	7	Citadel|SusquehannaInternationalGroup	PAID
+184	KyKVgYgnlu4YI9ZmH8q2	Broken Stick I	probability	5	Citadel	PAID
+185	OK5hTR3GLIM6cIQNoVoA	Factorial Vs Exponent	brainteasers	4	JumpTrading	PAID
+186	alXLhr2ak6xTkF2P2KHb	Expected Arc Length III	probability	8		PAID
+187	uLYMpistgx2VZUVmCGSs	Heavy Group	probability	3	IMCTrading	PAID
+188	JxtZtwsQL2msxkm2m55D	First And Last Flip	probability	6		PAID
+189	2j4YA5SC7TOJbmcjKcWO	Integral Angles	combinatorics	3		PAID
+190	iylIFgdcwVghnprV0SEk	Perfect Ratio	probability	10		PAID
+191	RqLm9AKzQMYQBJgjZnet	Winning Odds	probability	3		PAID
+192	hQp8ahRDbQOCKLJCnrTl	Biased Coin Game I	probability	5		PAID
+193	ZC6WPs2sWQs83lOeG7YO	3 Marbles Remaining	probability	3		PAID
+194	RVwBsPsMWdkHeK26aS37	Infinite Notes	brainteasers	5		PAID
+195	Qks0eYZsrNU0J65FI9dr	Polynomial Coefficient	brainteasers	9	JumpTrading	PAID
+196	RDt68bw7kzPOpbONxnNP	Game On Prime Numbers	brainteasers	8		PAID
+197	aInMTAB3Cc6dU3GTCMZd	Double Headed Coin I	probability	1	AkunaCapital|DRW|FiveRings|HudsonRiverTrading|TwoSigma	PAID
+198	dbKt91JO7MxkKcALpCsh	Tic Tac Toe	probability	4		PAID
+199	dng2Cy1WO10DaymFry0s	Dominant Flip	probability	6	Citadel	PAID
+200	V9zsN5AaF6vhpX5ZZIU0	Queen Before King	probability	2		PAID
+201	M0lHcii7gFEA5PEbeiNN	Expected Arc Length II	probability	8		PAID
+202	LKNx60pYqqThsmeQmk1s	Normal Inequality II	probability	5		PAID
+203	TctfGcxLRpXq6QUfxbBU	Draw A Spade	probability	5		PAID
+204	Nfwj98am0VdVN4iaQ27B	Median Roll	probability	3		PAID
+205	WkXPpZ7K0R1RpL1I38bq	Permutation Return	probability	6		PAID
+206	OuW5QsxPdqAJVBnUAKcM	Getting Singular Matrix	probability	6		PAID
+207	rMW1jsWmThyvio3we5bo	Chess Tournament V	probability	5		PAID
+208	5jF4sEZkvE3wAXvCyXcg	Gambler's Ruin II	probability	7	AkunaCapital	PAID
+209	7rcKaMJGsqWae1nQllz0	Sum Of Divisor Ratio	brainteasers	3		PAID
+210	VjhgIBmJExYd7iXOqdY7	No Intersections	probability	4	FiveRings	PAID
+211	zvkV3bAz4cjhvmoDsbOE	Expected Area Of Intersection	probability	7		PAID
+212	wNatB3tMxVbZywKiYPKI	Blue, Ugly And Special	probability	5		PAID
+213	5gi7ayCfw5sbAAYvoMEz	Card Picking III	probability	4	Optiver|TwoSigma	PAID
+214	iuWUOMyCA1hrBQpELiyO	Probability Of Subset	probability	8	HudsonRiverTrading	PAID
+215	akfCc2WmDqZKi9dVcVVH	Circle Fitting II	probability	5		PAID
+216	qqULzunLvKHeXiOrEuaA	Triangle Inside Circle II	probability	6		PAID
+217	2OK7ZamE10N2Nh10BDuF	Game Of Subtracting Digits	brainteasers	5		PAID
+218	4LzuTSgLLJe67o5TVUjS	Count Rankings	combinatorics	4	Graviton	PAID
+219	eNT8Twpk1Ku8ydMkeN5u	Count Rectangles I	combinatorics	3		PAID
+220	Y6eVhEUnRvKq5VfMTTwG	Line Splits I	probability	5	SusquehannaInternationalGroup	PAID
+221	au9np3WyAcQT4ZDP90gR	Sharing A Secret	combinatorics	6		PAID
+222	ustjrSin6VOKLv04DQt9	Falling Ants	brainteasers	4	IMCTrading	PAID
+223	FjlLypE6Pev4g5uJqypk	Random Segments	probability	6		PAID
+224	WeHcgaoehzA97WVhZqxf	Even Squares	brainteasers	4		PAID
+225	I3ymDcBA5RhzDIer0O9n	Triangle Formation II	probability	6	AkunaCapital	PAID
+226	zrNmFS2rkAmhtthrVdu7	Get Heads	probability	4	SusquehannaInternationalGroup	PAID
+227	bSIaGi5bgxquLECcvkHr	Distinct Faces	probability	5	FiveRings	PAID
+228	T53X1Xvd6XQaPLlPHtyy	Initial Roll	probability	3		PAID
+229	30GJaOQBm1GK9SsAvsGW	Digit Sum I	combinatorics	5		PAID
+230	yjDnn14D63IXyhNB3cRS	Baseball Series	probability	3		PAID
+231	zAtthBViCLsFWQivzjwa	Collinear Integer Points	brainteasers	5	Graviton|SusquehannaInternationalGroup	PAID
+232	va8NokfSzdXKypGuVNLm	Gambler's Ruin I	probability	4	HudsonRiverTrading	PAID
+233	j0TeqVqDaE9OrA7nSd38	Local Maxima	probability	6	FiveRings|JaneStreet	PAID
+234	ODTrx82wNY2pFyGJvyE0	Expected Collisions	probability	7	DRW	PAID
+235	JEIuiuEhDT2LA8eSbelK	Only Consecutive Heads	probability	4		PAID
+236	VMKhAAZTqkPuu2awkl6t	Constrained Digits	combinatorics	3		PAID
+237	hLQWUerLHjXVpehphJbU	Max Fill	brainteasers	5	JumpTrading	PAID
+238	21A4RNjzWry1dZFVbFFv	Up, Right And Diagonal	probability	6		PAID
+239	XGHIXcO1yt1jeBEGEDYz	Product Of Solutions	combinatorics	10		PAID
+240	xly9tlJRtE6Bxt5LiL1e	Ranged Guess	probability	10		PAID
+241	c3aP0uvTtwxoJWEptONl	Circular Regions	probability	2	SusquehannaInternationalGroup	PAID
+242	WtT2bk5byrBZ9aLlKelM	Integer Selection	probability	4		PAID
+243	IvY3xV11oMGTYWDQMB2J	Double Headed Coin II	probability	2	AkunaCapital|DRW|FiveRings	PAID
+244	mAfryNOOCPM905TjUgjX	M,P,F,G	probability	1		PAID
+245	4qivEFL0eSVxu7Q5K9Ca	Tetrahedral Dice Game	probability	5	DRW	PAID
+246	bo18o0EzC41tuXesGyx0	Probabilistic Strategy I	probability	3	JumpTrading	PAID
+247	GHWHnisQQuCdN9eBGlI6	Coin Toss Game I	probability	5	AkunaCapital|Citadel|SusquehannaInternationalGroup	PAID
+248	iPeGFVk12rl8aE3JZD4X	Adding 1 Or 2	probability	5		PAID
+249	zBuJtJAifUGieUjZM7Mw	Positive Product	probability	6		PAID
+250	plmeUOBLinjCGjNd96YS	Not That Easy	probability	3	AkunaCapital|HudsonRiverTrading	PAID
+251	FLvonwQM1PLkuZQ6Nrzv	Measuring Everything I	brainteasers	6	SusquehannaInternationalGroup	PAID
+252	QD3RA7JNGsYMeDmQXSmg	Count Solutions	combinatorics	3		PAID
+253	TM2UldZL0wcuGqu6EtFJ	Dice Pattern Game I	probability	5	SusquehannaInternationalGroup	PAID
+254	b0GjBv7ua7KIDKHdZ69I	Power Distance I	probability	6		PAID
+255	1oZ7PFohWo4lYWtvtvs8	Power Factor	probability	4	AkunaCapital	PAID
+256	2hbSvfRnTDxV2J6vKnCG	Training Sessions	combinatorics	3	IMCTrading	PAID
+257	eoluzhzJQZQcp0UJVVw5	Same Cards	probability	5		PAID
+258	4wa9z2aH1PIUmSD6Jch3	Ant On A Cube II	probability	5	AkunaCapital	PAID
+259	6n3W4cfgJXnEbvFStojm	2 Or 11	probability	4	SusquehannaInternationalGroup	PAID
+260	LDUGcZVKlClfyUJrJRQh	Geometric Progression	probability	7		PAID
+261	hU18mMqhTsfHg8fxIO8Q	Sensor Signal	probability	5		PAID
+262	BE11X74c38tpoP0n4r0T	Uniform Random Variables II	probability	2		PAID
+263	9lArpMNq9oWqnMjTzwFX	Russian Roulette I	probability	3	JaneStreet	PAID
+264	tidIaBmKUHskaUqokpIw	Drunk Passenger II	probability	9		PAID
+265	p2wZ6NN6rMp2AN51JZJ4	Binary Cards Removal	brainteasers	9	JumpTrading	PAID
+266	BDioARpcPXKN6odtzkbr	Early 5s	probability	5		PAID
+267	AJmDAMZbeNx6GrUZKrpc	Bacteria Population	probability	2		PAID
+268	m3VoO30vdkTV4SMsklAN	Cube Fitting I	brainteasers	3		PAID
+269	QClNz0O5CeBRnpLijMbR	Nine Children	brainteasers	6		PAID
+270	rxo7KzHzFC4j6dvpHXpD	Unit Digit Probability II	probability	5		PAID
+271	SRuj4WU1ETsUeQyNkqSb	Grid Paint I	brainteasers	7		PAID
+272	r1yi6oYTqdzaN0hV480A	Dice Game V	probability	4	AkunaCapital|Citadel|DRW|Optiver|SusquehannaInternationalGroup	PAID
+273	Y38hjLvw1GbUP6XW7Rel	No Rocks Allowed	probability	4	JaneStreet	PAID
+274	guxZuVx7VJl81iromofq	Expected Remainder	probability	8		PAID
+275	Dmns22eofPNVlSWQAUUp	Coin Inside Square	probability	3	Graviton|JumpTrading|Optiver|TwoSigma	PAID
+276	BM6iufJYJO4zBYVJNpfD	Coin Toss Game IV	probability	4	AkunaCapital	PAID
+277	M3NB09Raf8iyKfkmpV2N	Vote Counting	probability	7		PAID
+278	ykRkGb5B9ynbq15ebSvD	Unique Ids	combinatorics	4		PAID
+279	MsDXFvUVO6ikR7LE93MU	Functional Equation	brainteasers	4		PAID
+280	fN7LLD3e6vppGWHvHIWA	Expected Wait Time I	probability	1	JaneStreet	PAID
+281	LdZlW1BfNjS6gTUuN3ig	Weighing Coins I	brainteasers	3	Citadel|IMCTrading|SusquehannaInternationalGroup	PAID
+282	LWz7NnXAuVTi0cT0URJ5	Coin Toss Game III	probability	4	Graviton	PAID
+283	05XMjBxwMRsmbwXGAKzR	Card Flipping Game	brainteasers	6		PAID
+284	VXLYpW2Vn1t2Adre4rYT	Divisible By 5	brainteasers	4		PAID
+285	Z5mSdTGdmyhYgcyZTxsK	Get More Heads	probability	8	AkunaCapital|Citadel|HudsonRiverTrading	PAID
+286	GHhmZ43ZN7RY9lqYhQza	To Infinity And Beyond I	probability	5	JumpTrading	PAID
+287	G8XbHoScQd1bmWjbat3b	Tails Removal	probability	6		PAID
+288	0mqgcXvIiq5hYHQfTTKe	1 Dot Removed	probability	1	JaneStreet	PAID
+289	eHUa459yOYLaT0vYa7eu	Even Head Stop II	probability	4	FiveRings|IMCTrading	PAID
+290	UQEF5y2jzPc8JfDc5Sp9	Normal Inequality I	probability	6	AkunaCapital|HudsonRiverTrading|JumpTrading	PAID
+291	w2iRucpnTRNw7XEsavSJ	Simple Game I	probability	6	JaneStreet	PAID
+292	bbjX6nevEf1AIsxa5qJa	Boat And Steamer	brainteasers	1	HudsonRiverTrading	PAID
+293	MfExlmKCMU0jfEUM8dbt	King, Queen, Ace I	probability	6		PAID
+294	JY3Cv3mlFGpVcdjwN3u0	Coin Toss Game VII	probability	3		PAID
+295	EDGBNMsMlZI2LbicZJA6	Interview II	probability	9		PAID
+296	37VKFP372gN94GXBGxyv	Plus One, Minus One	brainteasers	7	Graviton|IMCTrading	PAID
+297	CAXkM8oI2r0r0u6ExVfq	Largest Sum Subset	brainteasers	8	JaneStreet	PAID
+298	cOQ0v1te1PGq6eKPFEgL	Careful Soldiers	brainteasers	9	Graviton	PAID
+299	hW9bIsNVXilW5W3jyuL0	Dice Difference I	probability	5	Graviton	PAID
+300	yqQumZTenG7hzos8qskP	Two Coins Remaining I	brainteasers	3	TwoSigma	PAID
+301	BguRVkJlNk76UVHaj1gS	Conditional Expected Rolls	probability	6	SusquehannaInternationalGroup	PAID
+302	1EPxeqeaKzUd98vykohm	Maximising Heads II	probability	2	HudsonRiverTrading|SusquehannaInternationalGroup	PAID
+303	2zBhbrSI8nuIeEHYBENk	Green Ball Draw	probability	2		PAID
+304	eBj76wFIX4bXG4yjRSsY	Same Values On Dice	probability	5		PAID
+305	5CXktJhZgpFidIdgUiNY	Meeting Probability	probability	4		PAID
+306	ChYA9NB8N7TtJSHlB9i3	Knight Return	probability	8		PAID
+307	A7SckUWiepxIhVTu1h4H	Rolling Everything II	probability	7		PAID
+308	u9SptuG4xqzSVCo0VgpQ	No Empty Bucket	probability	5		PAID
+309	qVuNJZQ2flx4IX8vlkns	Painted Cube II	probability	4	Citadel|JaneStreet	PAID
+310	ifDjJ1gZ5383HgCgHDHV	Random Point On Disc	probability	2		PAID
+311	Wmuviz73uxfxSJoTxnDc	14 Marbles	probability	6	Graviton	PAID
+312	35b8rEEJ9y3RmphIVcnC	Heaven Or Hell	probability	10		PAID
+313	UboX7c1frKgOg9wD6NWD	Largest Area Expectation	probability	7		PAID
+314	QUyHmdBePkTHohQQiBfP	No Fives	probability	2		PAID
+315	X5OwyRgTa3kBtVDQYanU	Maximum Rolled Value	probability	4		PAID
+316	APs93FGYhymWukz2Idq0	Random Knight Movement	probability	7		PAID
+317	nvjGBPV0wTL4y5CPMqRN	Game On 1-10	brainteasers	4	IMCTrading	PAID
+318	uHX81vX5uiDAUIXCwsEO	Easy Card Expectation	probability	3	AkunaCapital|Optiver	PAID
+319	U8Vx0fi6wVq5ORAg2d5g	Bot Move	probability	6	Citadel	PAID
+320	MZHr4VOmNdhoJo0Vi2HH	Rigged Game	probability	4		PAID
+321	iEaYGraZ9maoOpS0iTLK	Maximising Heads I	probability	2		PAID
+322	G5x8ZXa7qiqvl6D1FfYP	Distinct Number Count	probability	5		PAID
+323	WHt1GaJnt3Tae1jLy0F4	Non-linearity Of Expectation	probability	7		PAID
+324	jgAmmRWEE2EOe2cQXPx8	Noodle Loop I	probability	7	Citadel|HudsonRiverTrading|IMCTrading|JaneStreet	PAID
+325	P29eZkUXIOjoW4UyQyYm	Dice Sum Parity	probability	4	HudsonRiverTrading|Optiver	PAID
+326	a06R5u0ljyRiUG8NYJnd	Nearest Diagonal I	probability	3		PAID
+327	b0Ibe9eljzyVtGjloAnV	No Adjacent Standing Pair	probability	8		PAID
+328	OhhCpw1zg8Se7ztdsM9K	Odd Heads III	probability	5		PAID
+329	TKTGQiqkYmIatJLTDclM	Handshakes On A Chessboard	probability	5		PAID
+330	jQfqDPJUbtq4FbIMVBzG	Erase	brainteasers	3		PAID
+331	Dm0kkpRWpgWeCJ1vL8eV	Permutation Blocks	probability	9		PAID
+332	2zxZL3li2U4QUblo19wD	Count Paths III	combinatorics	8		PAID
+333	lOfMLi948YNo0aCwaVRX	Tigers And The Sheep	brainteasers	2	Citadel	PAID
+334	0rxWdRieGUvxyEHl9S83	Unique Birthdays Expectation	probability	6		PAID
+335	HTdB19KbyZcoMUDvuzuT	Simpson's Paradox	brainteasers	4	Optiver	PAID
+336	Q95ZZUIfRRz40bR8WoNC	2014 Stones	brainteasers	5		PAID
+337	gGsIf13ABFZNV10nKeLb	Chess Tournament IV	probability	6		PAID
+338	fQO1F2gCcIUf6pflRPAq	Interesting Summation IV	probability	10		PAID
+339	khGjqIPDn1QegXxahoCh	Chess Tournament I	probability	6	FiveRings	PAID
+340	eqovBBiJFNphxYTXc6nn	How Many 5s	probability	6		PAID
+341	fBySyHTDoNKxAHkJjPPD	Sphere Variance	probability	5	Graviton|TwoSigma	PAID
+342	I6jZAYFyP6DqiPavP2WN	B Before O I	combinatorics	4		PAID
+343	1DnrOTEhdd2bJ2utAbqv	Count Regions II	combinatorics	5		PAID
+344	IpFltLjHVXb1cwdq1zlr	Square Fitting I	probability	4	JumpTrading	PAID
+345	ZnE0loT2P2tqPfwZluNM	Ant On An Icosahedron	probability	8		PAID
+346	7yvmQtgnt9gLKdxKIk70	Count 9s	brainteasers	3	AkunaCapital	PAID
+347	N5HynOj12lF2nh0eJTlE	Grid Travel I	combinatorics	5		PAID
+348	tRBb5e9uvtLN6KpobFf4	Jumping Frog III	combinatorics	3		PAID
+349	zF0Nc7hF5TAKbpruMI9r	Seven Colors I	probability	2		PAID
+350	TcR5ymdCl0meW3gfrBgf	Triangle Angle I	probability	1		PAID
+351	VkuUUXgwVSBtwYEWNomf	Ant On A Cube III	probability	6		PAID
+352	2eWki8YQUX1B0EfDrjHF	Odd Sum	probability	4		PAID
+353	iRr9CDmbYlW690EUsOLN	Coin Equalizer	probability	7	Citadel	PAID
+354	gq8rL08yMP1LBy8dSLtZ	Combining Turtles	probability	3		PAID
+355	5IJcxFFwcnHyrYriR69l	Roll Die Till 65	probability	4		PAID
+356	Sv87y5RtFSleBwiC4yBN	Assigning Numbers To Dice	combinatorics	4	DRW	PAID
+357	JLirzBNAh1SKcvV152tJ	Diagonal Cut I	brainteasers	4	SusquehannaInternationalGroup	PAID
+358	VkakZdkQuTE1iraGmhUb	Meet Again	brainteasers	1	AkunaCapital|IMCTrading	PAID
+359	UaYSy6600mAs9DAIDTwe	Non-empty Buckets	probability	3		PAID
+360	JuoKoGwh3s9Yymk0KwYK	Maximize Product	brainteasers	5		PAID
+361	rfpwSNOivdwMeaOlwVql	End With 2018	probability	3		PAID
+362	RMD2Il5OzvWjDpPpLDZC	Balls In Garbage Bag	probability	7	HudsonRiverTrading	PAID
+363	VnkrbuqPTxjx0sul5Brr	Coin Coloring Game	probability	7		PAID
+364	PvNZH8dV0Uqdlq6mDWQ9	Sufficient Sum II	probability	9	AkunaCapital|IMCTrading	PAID
+365	as3sUaaI0gve1Nktxl0B	Asking For A Date	probability	7		PAID
+366	XcnkZG57WOxPnR1K2YW8	Digit Picking	probability	5		PAID
+367	2dnYsbGGklbCyG3DTy8q	Equal Heads	probability	1		PAID
+368	SjcOSWSP9XamTXvxmbDK	Car Crash	probability	2	FiveRings|JumpTrading|Optiver|SusquehannaInternationalGroup	PAID
+369	UXt72plqIMHRs5HfS1cD	Interesting Average II	brainteasers	5		PAID
+370	MiBEg6F8h0kW6WrsMoqZ	Dice Permutation	probability	6		PAID
+371	Qf11pqT77ngurIDcasBq	Is It A Perfect Square?	brainteasers	4	TwoSigma	PAID
+372	QNmYlJk3P8e7oUz0alBU	Die Roll LCM	probability	7		PAID
+373	wZVktmWujRh3FKb7G4kM	Higher Roll II	probability	4		PAID
+374	r95iLjNk29WxF4ZjwM2H	N Point Variance	probability	4	SusquehannaInternationalGroup	PAID
+375	bTIf5YebWCPPUGBWIUh2	Game Of Cuts	brainteasers	5	SusquehannaInternationalGroup	PAID
+376	rx9iFEkCyqS1qB6ijxQ5	Next Date I	brainteasers	4		PAID
+377	ZSh3KO3hb7eQggg5Q4OB	Dice Game I	probability	4	AkunaCapital|Citadel|DRW|HudsonRiverTrading|Optiver|SusquehannaInternationalGroup	PAID
+378	2ggty4JtNUFf4UvtFr9H	Poisoned Wine II	brainteasers	10	FiveRings|JaneStreet|SusquehannaInternationalGroup|TwoSigma	PAID
+379	qx7S7t4dNyCnDeEfhFnI	Poisson Cards	probability	8		PAID
+380	JMK7LJpxLNuCXcOOl6r2	Min Collinearity	brainteasers	4		PAID
+381	xn0zh2Rv6zxJlP26dz0y	Losing It All	probability	2	JumpTrading	PAID
+382	5cCUjvD72bfr7qyMtzho	Handy Subsets	combinatorics	10		PAID
+383	Xe17vfzKYrjADgxE1bSE	Last To Front	probability	5	Graviton	PAID
+384	bd0ifaxbuUmAycG9pS8F	Coin Toss Movement	probability	4		PAID
+385	vvoD0ZIprotTdahT4jPd	1s And 9s	probability	5		PAID
+386	q4vn89IiyYnqxrZATSkC	Low Median	probability	1	IMCTrading	PAID
+387	4r19Glqcd8U94yfX5cVC	Connected Components I	probability	4	JumpTrading	PAID
+388	O8g5E0WZ27iWBQvNAnME	3 Heads 3 Tails II	probability	4		PAID
+389	s7iDd2WxrE4ERolyRLHi	Keep The GCD High	brainteasers	10		PAID
+390	xSHCP01tkoGBpy3yW1b8	Moth On A Cube	combinatorics	4		PAID
+391	Fy1nDZ40nQdQx8sU8URf	Expected Arc Length I	probability	5		PAID
+392	aMe3RBXk44xl4i5KqyDG	Dice Difference II	probability	4		PAID
+393	zchmKExFDmfPduDPXsaN	Game On 2 Piles	brainteasers	4		PAID
+394	EE8MuyzoyGtsRhMKhg95	5-runs	probability	10		PAID
+395	UsRRxZEJj1SmwkRMQkTq	Dice Difference III	probability	5	AkunaCapital	PAID
+396	4aQeNLL6XcZAMsh8GAnq	7994 Stones	brainteasers	8		PAID
+397	gosmhi4ITWmybONqM44u	Measuring Everything II	brainteasers	9	SusquehannaInternationalGroup	PAID
+398	QUVDJRKghBSJpQ4Weplf	Ending At 1	probability	4		PAID
+399	ZuNj8BHMYreQivF8X6Uj	Points On A Square	probability	5	HudsonRiverTrading	PAID
+400	83MJZT60FU8IhH3o2hPg	Standing Table III	probability	8	Citadel|JaneStreet	PAID
+401	lY5MBRkuKH8mY8IRpD5v	Hungry Driver	brainteasers	8	AkunaCapital|Optiver	PAID
+402	CixfBmSPN9ECz33F9hqf	Sufficient Sum III	probability	9	AkunaCapital	PAID
+403	yvN9EoJvMbUjHK74Owtx	Conditional One	probability	2		PAID
+404	3vrR2eonRchCIwYkdGTg	Average Drawn	probability	3		PAID
+405	GKUiCz1ek7iGdhvt7Iq5	Too Many Hats	brainteasers	10	SusquehannaInternationalGroup	PAID
+406	TvKOcgftvLkZWq3ToTXr	Watermelon Weight	brainteasers	1		PAID
+407	uwZQSzKrjaDTRC5cEKj0	Intersecting Subsets	probability	5		PAID
+408	PEApvHle3fYlsRU73uQj	Bernoulli Matrix	probability	2	JumpTrading	PAID
+409	iI0fs3lqTyIQSenIq6LZ	B Before O II	combinatorics	4		PAID
+410	sj4Pvo6TSJwYiprg8tEh	Bacteria Population III	brainteasers	6		PAID
+411	tI1arFsBEK8dXhCtX2HW	Sorted Rows	probability	6		PAID
+412	myso4T5yuOcE1GJBRgVm	Coin Reflip Game	probability	2		PAID
+413	CHDK9w7BXzhAUL5DJf9E	Large Language Model	combinatorics	7	Graviton	PAID
+414	ZJfL4DmHNwvomvPqakdQ	Strange Die	probability	5		PAID
+415	Ul30VDOe3HriGifiBfxk	Cannons	combinatorics	2	IMCTrading	PAID
+416	JAQ2X4VwCSEscgb27hjK	Field Construction	probability	2		PAID
+417	uUqHfzgdIRBxNjNOge5c	Chocolate Bar	brainteasers	3		PAID
+418	8DQS19ZdITcTpSTDm94Y	Unfair Rock Paper Scissors	probability	5		PAID
+419	8nuV5EUFNSlPexVTeYb8	Sum Over One I	probability	7		PAID
+420	tMTwUNf8Q9b7tRCHuq0b	Exactly 2 Consecutive Heads	probability	4		PAID
+421	PKLwZlMs2xuGYZKg1wce	Reach Multiple Of 7	probability	3		PAID
+422	v1adNVzPMJERoxrlB6NI	Painted Cube I	probability	4	FiveRings|HudsonRiverTrading|JaneStreet|SusquehannaInternationalGroup	PAID
+423	zNsQzUgbWYJLG7IZjOiQ	Nearest Circular Neighbor	probability	5		PAID
+424	b7qdp4MJNOOAdjQbqfgC	Free Throws II	probability	9	Citadel|Optiver	PAID
+425	pVLvtaxjIHYUUiv9dpdo	Same Sum Subsets	brainteasers	10	Optiver	PAID
+426	wCXjOJzHheeBcy1IrAUn	Pistol Shots	brainteasers	3		PAID
+427	KWR7z46sgAQq65vIAdK2	Buying Tickets	probability	8		PAID
+428	UM40zQIsIWEn8u5xfLhG	First Ace	probability	6	AkunaCapital|Citadel|HudsonRiverTrading|IMCTrading|Optiver	PAID
+429	RxayxLSm6M24Ylfjo0KT	Inflating Balloon	brainteasers	2		PAID
+430	RZOjA6bjqgSjcbC3ubAB	Expected Squared Area	probability	8		PAID
+431	zBpvBkXqYRTN62UEUcud	Singer's Location	probability	2	Citadel	PAID
+432	LbxvcO2mqKN9TF7DQhbr	Probability Of Everything	probability	6		PAID
+433	qDZGX3H6oj13Oo0XLtbJ	Party Groups II	probability	7	JaneStreet	PAID
+434	25niUit0bFocwJehETHU	Heads Run II	probability	10		PAID
+435	Kglkw2FzJ6aJH4dVoB7L	Largest 2 Factor	probability	6		PAID
+436	2kIlhMArcx3k0exvzBgU	Trailing Zeros II	brainteasers	5	SusquehannaInternationalGroup	PAID
+437	bJLE2epA7DPEfCjhGozK	Sum Of Products	brainteasers	7		PAID
+438	iqYYJ28jGFq6CJ9pmarI	Ants On An Octahedron	probability	7		PAID
+439	Cid2cutZpFs5m0jrNB9f	Broken Stick II	probability	5	JumpTrading	PAID
+440	hHq1Kkr9ZLIS8Urxy6o7	Prime Sum	probability	1	JaneStreet	PAID
+441	HwXYK7gxxrmqiquWQEfx	Double Factorial	brainteasers	6		PAID
+442	hiStb2FXNdB5ShxFqJ0N	Jumping Frog II	probability	6	IMCTrading	PAID
+443	sT4tcft8KtBujl2znoWe	Graph Travel I	probability	5	AkunaCapital	PAID
+444	Wfndf2lU8nEJTfR0j8Xh	Never Divisible By 3	probability	8	Graviton	PAID
+445	az35nttbY1QcT77jziE5	Expected Minimum Distance	probability	4		PAID
+446	5sYUPQM2ccLQI9YXo7Mb	800 Marbles	probability	2		PAID
+447	bfxqkcyrAd6sOR6AHXIR	Set Intersection	probability	4		PAID
+448	QVptg4PZZCxC4DSGkz4j	Remainders	brainteasers	4		PAID
+449	LMl4oM5EsAXYrtlHjgYl	Exactly 6	probability	1		PAID
+450	CYfZx2GM0hlrSJZo6kVG	Jumping Frog VII	probability	6	FiveRings	PAID
+451	6TYt64tjsyMcb6Fb4fL9	Russian Roulette II	probability	3	JaneStreet	PAID
+452	rR21H3oGBEkrvs3yIXFj	Segment Overlap	probability	4	AkunaCapital|Graviton	PAID
+453	sGg6A9Z4w8jAnFzDf2Zy	4 Die Sum	probability	3		PAID
+454	Uju0guulAzU9bIZcGnpC	Poisoned Chocolates	brainteasers	8	IMCTrading|JumpTrading	PAID
+455	FQVTyfIpPhilNvdIe8l4	Green And Yellow Dice	probability	3	DRW	PAID
+456	67rFR7KVhOv0HDFekkS5	Count Handshake Pairs	combinatorics	6		PAID
+457	wpqHkdFBPBewJxyjDnfl	2x3 Grid	probability	3		PAID
+458	qGfxJVpfjewpRpvSIiIn	Forming Quadratic Polynomial III	probability	8		PAID
+459	NFFsV2T8anHfoZSkxWip	2D Jumps	probability	6	JumpTrading	PAID
+460	bZK8OThsTovFy9ESqp29	Digit Sum II	combinatorics	5		PAID
+461	8ZrRgrdz4wgy2dYTDbYy	Conditional Inequality	probability	3	FiveRings	PAID
+462	11hULO9KnALrXvl7Yk8y	Yet Another Game	brainteasers	10		PAID
+463	2IYCQbMJHety6u5Nne2D	Same Color Corners	brainteasers	5		PAID
+464	TbvenmoAatkFFq1LMdXQ	No Chords Intersecting	probability	6		PAID
+465	oDhQRymQzkV1tNvuVK7h	Drunk Passenger III	probability	10		PAID
+466	JUoRa7guiqHdGT5Dh8Rs	Last Number Deleted	brainteasers	7	Citadel	PAID
+467	8XePDYaWyxqBHTzH2wmU	Digit Sum III	brainteasers	4		PAID
+468	zYNKhJFi9UpZ9rTj7WBT	Digit Multiply II	brainteasers	5		PAID
+469	z8Ec7xpscOnEQ7LlrpNC	Dice Multiple II	probability	5	Graviton|HudsonRiverTrading|SusquehannaInternationalGroup	PAID
+470	eU64qDufpcRRJmKK9TNn	Moving The Piece II	brainteasers	8	Citadel	PAID
+471	U2zH1iWGNUJs19S9TyZN	Grid Arrangement I	combinatorics	5		PAID
+472	uCRR8w8iJoXDn2cSbMhk	Information Transfer	probability	5		PAID
+473	ceLwZ79TzZ5p9aoFA8jJ	Chain Link	brainteasers	4	FiveRings	PAID
+474	dUMamdroC4TGEscOrcDy	Pandemic I	brainteasers	2		PAID
+475	rjz0YQfVywgOY2uDj3Sh	Expected Absolute Difference	probability	2	DRW|JaneStreet	PAID
+476	TSjlNsLKOAxbLhjRWWsD	Game On Jar	probability	8	AkunaCapital|JaneStreet	PAID
+477	X5iSoBcNWmfZGD71iXuX	3 Bus Stops	brainteasers	3	JaneStreet	PAID
+478	7YtnWxWvUbobsz16dcCU	Least Multiple Of 15	brainteasers	2	JaneStreet	PAID
+479	dzt9fdru5YeazzHzZCLY	Password	combinatorics	5		PAID
+480	9Qzf0bJ2PHnEzrhGgvWR	Bridge Crossing	brainteasers	5		PAID
+481	jQFlHcUFbjPfFPhIZ5Fq	Grid Conversion	brainteasers	4	Graviton	PAID
+482	n1SKwDovF1LJRLnswAAc	Ants On A Circle IV	probability	10		PAID
+483	r8dBCEEIpNBMXAFto8jG	Largest 3	probability	2	JaneStreet|TwoSigma	PAID
+484	UalJSdRBfshIGtsNGUoA	Increasing Game	brainteasers	4	DRW	PAID
+485	1w09EAG2bfTb6iZMkbcx	Learning To Walk	probability	8	TwoSigma|JumpTrading	PAID
+486	pVE2Z6QV3mWnhTIqpuNc	Penguin Walk I	probability	4		PAID
+487	AnPIQQv5DICkRslqHZ4r	Circle In 3 Quadrants	probability	7		PAID
+488	MrlI2hPq2KSYcnQI1pKA	Passing The Parcel	probability	4	DRW	PAID
+489	mj8OeGPLjFMFbbc3Eu0j	Hands Interchange	brainteasers	4	SusquehannaInternationalGroup	PAID
+490	DXlbzPadSU8KjqA5DMJ6	Creating Zero	brainteasers	4		PAID
+491	cuRysBQTP7mKHeBfr0Ps	Two Coins Remaining II	brainteasers	10		PAID
+492	0f30CKsYNgrUKmHRufEa	Uniform Random Variables I	probability	3		PAID
+493	KwQo65AWJo5y3VGAxOPr	Jumping Frog VIII	probability	7	JaneStreet	PAID
+494	5PBxN56wwzKU1PFl2dBm	Even Or Odd	probability	3		PAID
+495	L3uUgTuYPapH4Me2ImdY	Additional Info Coin Flips I	probability	6	JumpTrading|IMCTrading	PAID
+496	4dCSZppujEErTt3b8wxC	Bulb Toggle II	brainteasers	5	Graviton	PAID
+497	CBf3UjDFrWAxRCRBbXsD	Game On Grid	brainteasers	8		PAID
+498	Q96Y3xE83UeXNMIXdGoA	Remove Neighbor	brainteasers	5		PAID
+499	vHzUPMsnU1milvFn6ngi	Double Value	probability	1		PAID
+500	A7Ux3oYm7eH496YOjX2A	Coin Toss Game II	probability	5	Graviton	PAID
+501	4c6u0BmNQK5ox5kkgYn8	Apples And Oranges	probability	5		PAID
+502	APeAX0pwNb1rbIMqOJUc	King, Queen, Ace II	probability	6		PAID
+503	sNWs88SkYorh8ajjiPsl	One Colored Face	probability	4	Citadel|JaneStreet	PAID
+504	rSWy3MvWAvjgGP76RLpl	Same Arc II	probability	8	Citadel|Graviton	PAID
+505	59AU96BDYlpTYUdeJvs5	Count Digits I	brainteasers	6		PAID
+506	2A4OSA17uoQQ8MvO8V9u	Truck Parking	probability	7		PAID
+507	HonlacvwWDTOfOe2aF3s	Unknown Balls	probability	6		PAID
+508	sDwb2qhNrXHUAdQokKAi	Coin Transactions	probability	8		PAID
+509	Umxp14yCkXgO3l3wyrnW	Red Blue Game	probability	8		PAID
+510	XbvJb4XThm0JCPRLrlFg	Hard Card Expectation	probability	7	Citadel|FiveRings|JumpTrading|Optiver	PAID
+511	H0KvS0C84FcTEdgRK7vR	Poisoned Wine I	brainteasers	7	FiveRings|SusquehannaInternationalGroup|TwoSigma	PAID
+512	H3QS9FUmQ98jSzOyLKp2	Non-negative Expectation	probability	3	JaneStreet	PAID
+513	GVBMw5wXbX6G6EpKC6ZA	Regular 21-gon	probability	5	Optiver	PAID
+514	B9Mq4tfD8j0a8X9CfbiN	Maximum Till Now I	probability	6	AkunaCapital|Citadel|FiveRings|HudsonRiverTrading	PAID
+515	pKOIJfWP6EemKfPnyEE5	Home Run	probability	4		PAID
+516	9bV84WUPaKe9evNPS9hQ	Game Of Placing Kings	brainteasers	5	JumpTrading	PAID
+517	PytuiLHCCvPSlDmXuQMU	Same Temperature	brainteasers	7		PAID
+518	2pr1TL2ALzfvJ2jO4kDH	4x4 Array	combinatorics	4		PAID
+519	h81J1oZ7kMjt0D39DFWD	Chess Tournament VII	probability	6		PAID
+520	xFGrh8igWERzglouqWVl	Final Number Possibilities I	brainteasers	6	Graviton	PAID
+521	WXo3tdCYD1p6E93WnZzY	Car Clusters	probability	8	Citadel|Optiver	PAID
+522	8BonEPwautznmkg0kRxT	Strange Party	brainteasers	3	JaneStreet	PAID
+523	RwnxYmCzYocJNfiSUJJA	Blackboard	probability	9	JaneStreet	PAID
+524	uUlIvDEQxEwwVM7Whqav	Phone Connection	brainteasers	4		PAID
+525	tZAtPxAXu3TwuuAkKZVl	Triangle Formation I	probability	6	AkunaCapital	PAID
+526	u8ogdJFLTKvb9RnFm4hO	3 Consecutive Heads II	probability	2	JaneStreet	PAID
+527	H7egMHBqPvU07tVYl240	Too Many Unknowns	probability	10		PAID
+528	csWWB5bv2PkYGIuqEV75	Dice Triangle	probability	3		PAID
+529	gwzF7kEH1q1bl1yWULJ1	Triangle Sum	combinatorics	5	AkunaCapital	PAID
+530	SOZjM7dbRjmqI5FYsAOc	Is It Fibonacci?	brainteasers	5		PAID
+531	q30T6TcWlV5fVsubJBtx	Dice Triangle II	probability	8		PAID
+532	YZ8VhKVJ7r49xCNHVEOU	Marble Swap III	probability	5		PAID
+533	bQGDlLxSsge4I2BOOzrM	Jet Trail Intersection	probability	7		PAID
+534	9iR8cMMSiQOHl4CSRF63	Increasing Decreasing I	combinatorics	4		PAID
+535	uSXGgdBaf9zuNtkqKEeJ	Game On Circle	brainteasers	5		PAID
+536	TDPyworzIO6xekPwuogT	Tetrahedral Die I	probability	5		PAID
+537	zWrZ315W3eNs5V7nGwNw	Highest Roll EV	probability	5		PAID
+538	r5S811TFNILlQyTqbqZ5	Chords Intersection II	probability	8	Graviton|HudsonRiverTrading|JumpTrading	PAID
+539	gO4el4QOHEEg1IeVt9Vn	Increasing Birthdays	probability	2	AkunaCapital|IMCTrading|JaneStreet|JumpTrading	PAID
+540	elgKRnppx8iKzdS33V1A	Binary Trailing Zeros	brainteasers	5	FiveRings	PAID
+541	UXObAwHdBMkjyFqWaMO0	Vertical Hit	probability	3		PAID
+542	AniO6YFaVcfFgMgW5rsP	Bacteria Population I	probability	4		PAID
+543	h1jMvTMsTkVVXLNDSvuX	Count Regions IV	combinatorics	10		PAID
+544	uHwPlqMtF49vyvbRsyDu	Expected Ping-pong Games	probability	3		PAID
+545	wNh5FHeZCKmX5tFUe8qq	Small Chords	probability	8		PAID
+546	bV1GdimLSoDcQdPi1uHB	Large Cycles	probability	8		PAID
+547	auuviCZHnpaVYjxE3fd2	Cheating Husbands	brainteasers	4		PAID
+548	fAGaRrFVBFjcdFYjyYJy	Largest Prime Probability	probability	6	DRW	PAID
+549	7wKjBhE2wynDt5MHqqaD	Jumping Frog VI	probability	3	DRW|FiveRings	PAID
+550	k5KKmmMfpREWDHjnCMHA	Dice Game VIII	probability	6		PAID
+551	TW3P7KgdPzWfp2ZKF3KF	Simulate 1/3	probability	2	AkunaCapital|Optiver	PAID
+552	TJ0O1xzj7rKf1A8UGYVP	Count Sequences I	combinatorics	4	DRW	PAID
+553	YFeUn5mLsqGwlG5r4Ypu	Diagonal Cut II	brainteasers	4	SusquehannaInternationalGroup	PAID
+554	D1DrlEe4lCsEMEjafajD	Last Ball	brainteasers	4		PAID
+555	6C6f0uIuHEnBK7m7oiHn	Treasure Island	brainteasers	6		PAID
+556	zRTxCHrwkhVAJBgO08AX	Vector Toggle	probability	10	JumpTrading	PAID
+557	Ugd0iY1e8tcY9ssk2YPL	Prisoner Hats-multicolor	brainteasers	10	IMCTrading|SusquehannaInternationalGroup	PAID
+558	29TLhkSzkmhEMFcdep2d	Tennis Odds	probability	5	Citadel|Optiver|SusquehannaInternationalGroup	PAID
+559	au3lKclAy3nj1yyIIo9C	Pizza Standard Deviation	probability	1	Citadel	PAID
+560	8jaYJxMIyTR5YpsYqeuR	Circuit	probability	5	Citadel|JaneStreet	PAID
+561	lNAQxPsmHq3KG5mGvsKh	Expected Number Of Rectangles	probability	6	JaneStreet	PAID
+562	NcnOl9Y72A7G3hAydYoR	Triangles Inside Triangle	combinatorics	3		PAID
+563	LFenn2WhNHRmSLhSzIga	Divisible By 37	brainteasers	6		PAID
+564	oAS6PjgzYSSehWYJjXqP	3 Heads 3 Tails III	probability	2	SusquehannaInternationalGroup	PAID
+565	ke4fMIelyHlx2BQJgwQN	Unlucky Seven	probability	5	JaneStreet	PAID
+566	oWucHtN9ndT7OJaf1HdC	Toss Exceedance	probability	4		PAID
+567	oi7eQ7GfsenDYEq93xyn	Tennis Tournament	probability	3		PAID
+568	gLhUruTlT6a4LBBksztJ	Chess Tournament VI	probability	3	DRW	PAID
+569	ELTk8FwPAnI1Fz0RMQlB	Expected Wait Time II	probability	4	JaneStreet|TwoSigma	PAID
+570	Yb4PwLqarfowLKCDhL1C	Weighted Die	probability	6		PAID
+571	4rNAf0eQGhNq3vKntBRK	Ordered Pairs In Permutation	probability	7		PAID
+572	uzPkv54P8JMv6qYlItuc	Variance Maximum	probability	5	SusquehannaInternationalGroup	PAID
+573	MNg0mw6zt9d2yAP0XORW	Additional Info Die Rolls	probability	6		PAID
+574	cEkxqRPQd99fEI6WxoIP	Word Problem I	probability	4	IMCTrading	PAID
+575	t8NLOC9DrLUQLDnRNNNF	Truth	brainteasers	4	JaneStreet	PAID
+576	WcotDuKXIfYPc0mNv7gf	Normal Distributions	probability	6	AkunaCapital|Citadel|JaneStreet|TwoSigma	PAID
+577	hqsnVEmDapf08MU6ybhV	Sports Betting	probability	2		PAID
+578	Ss9ndqiaXUy50YaffK9L	Even Head Stop I	probability	4		PAID
+579	uxua5mVBHKII1CXUiHKb	Interesting Constraints	brainteasers	6		PAID
+580	ospO3jtpV0JX0mqDVIZA	Mathematical Expression I	probability	7	AkunaCapital	PAID
+581	vbFGlhzL2uPbKHIlbIgc	Inside The Range	combinatorics	6	FiveRings|JumpTrading	PAID
+582	cEiHiwE4SHSQMeuhTvfr	Increasing Rolls Expectation	probability	5	JumpTrading	PAID
+583	hIkifAhVvLlTxajxWR4X	Card Picking II	probability	6		PAID
+584	gKhQi4bDP2fAoRhRZsWh	Prime Dice	probability	2	JaneStreet	PAID
+585	99bjzYJs3NJqRhIoaHdn	Fish Estimate	brainteasers	1	SusquehannaInternationalGroup	PAID
+586	xjLj0tQWuNIrpHRJv7Y3	Proportional Dice	probability	3		PAID
+587	daLaiebHQNnRo6OQUYyi	Moving Ants II	probability	2		PAID
+588	CgyZRR0u5eCgqiupYlNs	Card Prediction I	probability	6	JumpTrading	PAID
+589	bbe8DNzeZSxXV45M8pNE	Infection Spread	brainteasers	6		PAID
+590	KR16TLvFvkosdpuucZEM	Win-win	probability	5		PAID
+591	X7ex8qnsJkjgZ7s09zMg	Parking Lot	probability	7	DRW|Graviton|TwoSigma	PAID
+592	gd18SWeTY5xNLm46u6Zq	Head-tail Product	probability	3	Graviton|JumpTrading	PAID
+593	esHk4hoZo08dIwalXrFX	Guess The End	probability	10		PAID
+594	9QhG1fapde5ML2Oqz9bX	Optimal Die Choice	probability	5	JaneStreet	PAID
+595	QOunlCkxyvn10BY9eLVl	Two Random Points	probability	6		PAID
+596	qBPugWXHAcFceZx7Ehar	Passing The Coin I	probability	3		PAID
+597	6rDkl8NI8kNaVV2xA9mf	Jumping Frog IX	probability	5		PAID
+598	8NfuarfjfJ0DvGgdpShh	Determinant Expectation	probability	6	IMCTrading	PAID
+599	pxvK0GzBr6FyMlSC9CsF	Least N	brainteasers	5		PAID
+600	bqEBhSW0nZcSY7PAsja1	Forming Quadratic Polynomial II	probability	7		PAID
+601	lJjikyXQyiz68Sc67pnI	Crazy Weights Arrangement	combinatorics	8	JaneStreet	PAID
+602	XS8hKYoqPXg9fREpQPHU	Vending Machine I	probability	5	Optiver	PAID
+603	VBhKw2CKpcfhaVsQc2SF	Early Head Probability	probability	4		PAID
+604	ysbRzUgogSovGGdACdON	Shadow	brainteasers	4		PAID
+605	zD7NvGvfQdhmw9v87urs	Rabbit On A Square Grid	combinatorics	5		PAID
+606	4jvYUXDKwTcWUtPVD55t	Game Of Moving Rooks	brainteasers	4		PAID
+607	2ggSpbMrpB3GMowY0u3r	Origin In Between	probability	1	Optiver	PAID
+608	vuVRTki9n0QwGUuOeejj	Increasing Dice Rolls I	probability	4	IMCTrading	PAID
+609	Xdkyp7suh2M00hfONjGx	Tenth Toss	probability	7	Graviton	PAID
+610	uxHJRxkpkP2L3vANPJ55	Three In A Line	brainteasers	6		PAID
+611	RuEN6N6h4h8BBinKhFed	Matching Cards Removal	probability	6	SusquehannaInternationalGroup	PAID
+612	4FdzKqTja5PR3SPjHQ1g	Blue Marble Remaining	probability	6		PAID
+613	U70memuL7PgKXowM1HPi	Capture The Flag I	probability	7	IMCTrading	PAID
+614	ennNqYHjoDNBhp26vmiT	Minimum Correlation	probability	4		PAID
+615	0Maku0UgN5WfAqAswP2o	Complex Circle	probability	4		PAID
+616	4WK8IHxioESuNCpNusXj	Higher Sum	probability	2	FiveRings	PAID
+617	0wgLax8u7KE6uoXcj1YS	5 Points On A Sphere	probability	10		PAID
+618	CJ1rU2aKvEZBEa18V6ZR	Count Sequences II	combinatorics	4		PAID
+619	tIio1iMyuUXh4Nh5ZziT	Remove Or Flip	brainteasers	5	Graviton	PAID
+620	KvwkDuvoamBs8PCTY5sd	Unit Digit Probability I	probability	1		PAID
+621	7sObIs3acx0kR7156NRr	Interview III	probability	9		PAID
+622	mCtZEdfqMqt9LHgu7Dt8	Expected Value	probability	9		PAID
+623	ouQou5BjdeV9hMb5cW0v	Forming Quadratic Polynomial I	probability	8		PAID
+624	un5H56E04q9eu9qCNhWc	Rope Variance	probability	4	FiveRings	PAID
+625	OtSXzZkY1wyiJnyz6xBx	Triangular Grid	probability	6		PAID
+626	CapqEFzaiUcfUWwAmpOq	Strange Comparison I	brainteasers	4		PAID
+627	GL4uXdATuW3fmFG82Nmn	Mathematical Expression II	probability	5		PAID
+628	neqXhARpxKWz7ZIgPpZx	Boy-girl Adjacent Pairs	probability	4		PAID
+629	JLvEL56eKwDoY8A0YifD	Optimal Bid	probability	4		PAID
+630	E02wfjr1spuw6dH3RvH3	3 Consecutive Heads I	probability	2		PAID
+631	x5rxjAMpSNALaagTTYlJ	Two Rolls Reward	probability	3		PAID
+632	vlCXq0UP7lmii5KFkf09	Broken Elevator	probability	10		PAID
+633	wMjlVxlp9Rt9HLlDlbh8	3 Lights	probability	5		PAID
+634	FxUXmILhJKZ8wBKZHoan	Dice Game II	probability	4	AkunaCapital|Citadel|DRW|HudsonRiverTrading|Optiver	PAID
+635	NqZBZIhxYiocplec80W2	Checks	probability	5		PAID
+636	H6ZmdGlnlBC7u9fU06Es	Arrange Teams	brainteasers	5	SusquehannaInternationalGroup	PAID
+637	82V3Rc58nP6YpsGzt1no	Interview IV	probability	9	Citadel	PAID
+638	fp56HhZCO039QGqkWeaw	Coin And Die Together	probability	2		PAID
+639	hiqWJlI3Xkl2MFiKzCyj	Finding Seven	probability	7		PAID
+640	lRNHEPACJ1zr05xgJl9z	Choose Values III	probability	5		PAID
+641	bzay26iqLwmdbEVb8uky	Cherries	probability	4		PAID
+642	IaJvZZIAcTQA8BgXdLMs	Even Tails Run	probability	6		PAID
+643	qMuGBYwmIRYVte8FMLvX	Same Birthday Probability	probability	4		PAID
+644	W22HWWZTxmOufbM9pjsK	Matrix Attack I	probability	4		PAID
+645	gWFI90ainCRcXopw34Sg	Count Of Rational Numbers	combinatorics	3		PAID
+646	brzXsTEMKTEWNu6hibpo	Shooting Arrows I	probability	1	Citadel|DRW	PAID
+647	DcE5vWZwq2I9Bq307ES9	Card Picking I	probability	4		PAID
+648	Ytj0yLedicROPnW4H4b1	Game On 753 Coins	brainteasers	4		PAID
+649	sQgP3MxLFaHzXSUyvWY1	Triangle Inside Circle III	probability	7		PAID
+650	Uc1b4eXUkamDyAtbhVXi	Coin Toss Game VI	probability	3		PAID
+651	znhinju1TYNIs5oMot3z	Count Paths I	combinatorics	3		PAID
+652	NkRSkUgInqC0oHX6ZUut	Game On Divisors II	brainteasers	9	SusquehannaInternationalGroup	PAID
+653	3xaoKYord597QomK98Ip	Polygon Triangle	probability	6		PAID
+654	si4rQM2fceUirlsvT0kC	Ants On A Wire	brainteasers	3		PAID
+655	Bu4JnQ7nv5Ks615qPLiK	Clock Angle	brainteasers	1	AkunaCapital|DRW	PAID
+656	jAkcAlGDR47txWZJlQ0t	Weighted Coins	probability	7		PAID
+657	bQvxqu82bprC9cXOlA5h	5000 Sets	combinatorics	6		PAID
+658	Qk1uuOmVJ45ViXBOSIW0	Three Steps	probability	8		PAID
+659	h8yIj3CM9QqNo9LbikAA	Just Even Stop	probability	4		PAID
+660	gtLJfRABlB8Q9ISovIOz	Shooting Stacks	combinatorics	3	Optiver	PAID
+661	L2nw3JMLY5XmI2mek6Fv	Segments Inside Square I	probability	7		PAID
+662	sggqBoRZ1U4NzEO7Epsd	Dice Game VI	probability	5	Optiver	PAID
+663	o8NirwLCDxO1eT2bgqJo	Fibonnaci Error	brainteasers	5		PAID
+664	fkTMYKu7BtGHsTfqV7FU	Digit Sum IV	brainteasers	3		PAID
+665	J5lXKOdTZCrPpzWqVjab	Expected Swaps	probability	10	TwoSigma	PAID
+666	iDNinkojGFpvr1jw3IK8	Interesting Average I	probability	6		PAID
+667	xmfStoNxwDcwFfPSVXNb	Changing Number	brainteasers	7	JaneStreet	PAID
+668	QTG90L05f372ofSiObQ6	Acute Triangle I	probability	8	JaneStreet|SusquehannaInternationalGroup	PAID
+669	TAuCa825LCqPorhLixsx	Segment Intersection	brainteasers	4		PAID
+670	pAYw8bRHif0N3JPzeGG7	Powerful Three	brainteasers	5		PAID
+671	Q6cWw9TXk16HphBJzIpJ	Socks Remaining II	probability	8	JaneStreet	PAID
+672	XU0WaJOgeMjNr3Xm6Cdm	Tetrahedron Coloring I	combinatorics	2		PAID
+673	hBxZgycJOHj6ns9GUYk6	Domino Tiling I	combinatorics	4		PAID
+674	oiiwuBZJsKydVWxLC6nf	Domino Tiling II	combinatorics	8		PAID
+675	0kCIRF5IDxAAacO30Gc2	Largest Mean Median Difference	brainteasers	2		PAID
+676	PglSMgUgfOarIpJ7s1ug	New Language	combinatorics	1		PAID
+677	ATkAIHEpXSks5Xmuw1km	Constrained Subsets III	combinatorics	4		PAID
+678	LzPB00a6mAvR88DzO8o6	Count Rectangles II	combinatorics	4		PAID
+679	HdcAezDhMsCcVraE9cHF	Tricky Palindrome I	combinatorics	2		PAID
+680	9am1jETB598UxYQIKHEH	Tricky Palindrome II	combinatorics	4		PAID
+681	4Jdkv092AzlL5A8zz7YB	Tricky Palindrome III	combinatorics	7		PAID
+682	EbHAZoBJeTQU6pMP6uyd	Skipping 2s	combinatorics	6	Citadel	PAID
+683	6joR5Wcn9kGDglFryh8q	Arrow On Dice	combinatorics	5		PAID
+684	7bFvAMHOzr9GbjcOIsR7	Grid Arrangement III	combinatorics	6		PAID
+685	c1NOSrWOwloFEYtMzP4w	Tetrahedron Coloring II	combinatorics	3		PAID
+686	9wvCGYdrOC3v2hNzwypM	Logarithm Comparison	brainteasers	4	HudsonRiverTrading	PAID
+687	woG8WKS2qRE1zeGIuIj0	Circular Frog I	probability	7	Citadel|JumpTrading	PAID
+688	TbPgOsMCeeNKmZwXyFSi	Square Factor	probability	3		PAID
+689	Sy12VhNues4KYQ2o49Kv	Sum Sum Sum	brainteasers	7	Citadel	PAID
+690	ZILGV2KNQBbKxefVPuQs	Constrained Combinatorics	combinatorics	4		PAID
+691	5CvzEVDBOZx0IgHoY39T	Evenbin I	brainteasers	4		PAID
+692	I6UtzL28q0rC5ah7prf4	Prime Set	brainteasers	3		PAID
+693	VU8MEpz8etQkPgpGW9AK	Catch Me If You Can I	brainteasers	4		PAID
+694	iXL79Ai0ho3v9qYi8Khh	Catch Me If You Can II	brainteasers	8		PAID
+695	ybyTbxZ1Bp829O6tqWPC	Game On Divisors IV	brainteasers	7		PAID
+696	ADv3P5ufIeUUS4XjfZiP	Evenbin II	brainteasers	4		PAID
+697	qgD0r1lL3Ih6i7hwUxxF	Hexagon Inside Hexagon	probability	5	Citadel	PAID
+698	lKwC7dI7lXJZUXMo1kDu	Subset Chain	combinatorics	4		PAID
+699	lrPNFHMMaonH3S95nRRG	Triangle Tiling	combinatorics	5		PAID
+700	QfsycCM7FqyMdpdyIs9A	Constrained Subsets IV	brainteasers	4		PAID
+701	ZbvNW9DHjuiPyBGOhCcm	Rook Moves	probability	5		PAID
+702	0olGe8XNbWK42XHsSn7P	Real Addition I	brainteasers	3		PAID
+703	6BjWuf4uTu8Ekc3TlF68	Real Addition II	brainteasers	3		PAID
+704	Lweq2xcTsHfzNung36BN	Strange Comparison II	brainteasers	4		PAID
+705	wwKLuZYqXq0bDMaX3SFm	GCD Expectation	probability	5	JumpTrading	PAID
+706	i0krz9MFVmPwdpuM9v2h	Expected Good Points	probability	6		PAID
+707	y0sn5MGwYb05NaRhsHNF	Count Triangular Regions I	combinatorics	3		PAID
+708	udYDLNI8Xn80U9zHLx73	Count Triangular Regions II	combinatorics	4		PAID
+709	L3w3obGIcq1VlaBxrnWL	Repeated Erase	probability	9		PAID
+710	o7WVB6NK3pEutpAIL3B8	Everything Odd	probability	5		PAID
+711	5FewUueaTdeRdeXbU4Yb	Expectation Lower Bound	probability	5		PAID
+712	wWk6n3dUejYbGXwceK0l	Expected Stock Price	probability	3	Citadel	PAID
+713	T8RjsGgy0FHFWmrWHJeA	Even Lattice Points	probability	5		PAID
+714	OlRlTFiNm7C8bZ5JV90C	Polygon Constraints	brainteasers	4		PAID
+715	JzdS3GlNdFYZid5kspi1	Divisible Permutation	combinatorics	5		PAID
+716	PU9bQb3Nkb2ZyyzVUHE7	Lottery 	probability	4		PAID
+717	spYLvAKLuasNOMe6Voib	Central Cities	combinatorics	3		PAID
+718	56llCxyXhSvOUuyZNQcP	Expected Wait Time III	probability	4		PAID
+719	u568e6cXUjJA7ii6jAhy	Expected Wait Time IV	probability	5		PAID
+720	grSSrf0QgDhFOxcOoYXS	Expected Occupied Seats	probability	6		PAID
+721	n3hnSmNo9rrTmgsSBKrm	N-Palindrome	brainteasers	3		PAID
+722	hVaSDtCMyvlWqhjWWmjX	Maximum Fraction Sum	brainteasers	3		PAID
+723	CjlNUV4NZSlBKwyALWto	Circular Seating	probability	4		PAID
+724	IzhvQMWhiWwFJfJ7A4tA	2, 4 and 6	brainteasers	6		PAID
+725	l5mqpwnM2NiRmHu5XuTw	Half Permutation	probability	4		PAID
+726	EEU7Dq7qCgIch96TicaB	Proportional Coordinates	probability	5		PAID
+727	ohNDySRl9ulqbCzNZgmG	Grid Frog II	combinatorics	8	Citadel	PAID
+728	vOQ1x2f47gs3dBfC85k9	Max Min Ratio	probability	5		PAID
+729	xDvHI44Vv4aUcne5BpUW	Increasing Random Variables	probability	6	JaneStreet	PAID
+730	qDDdKs1KvQSx530WoL4A	Largest In Smallest	probability	4		PAID
+731	NMjwsJCXQwV3IuOFbkCO	Alice Rolled The 6	probability	4		PAID
+732	z7lQkKPt5PGKWWiazGJ6	Given LCM	combinatorics	3		PAID
+733	6wr0a8xS6jMVvqIRXsiM	Conditional Normal I	probability	3		PAID
+734	etWrjXn4V4WpVJTjkgd5	Conditional Normal II	probability	4		PAID
+735	h8VDVRmeZcdQPRd1QdjI	Conditional Normal III	probability	4		PAID
+736	NFDnBemeH9IvhyTI8uvm	Triangle Formation III	probability	5		PAID
+737	geFBkxbVJaPRCuzt3HED	Same Part	probability	5		PAID
+738	vZFqPa96P119NQjkWGz5	Elevator I	probability	3		PAID
+739	t33ZYL0Qrp590MmqYiQk	Unfair Advantage	probability	7		PAID
+740	XOpohBRkBThJrjt90OaL	Monotonic Subsequences	combinatorics	3		PAID
+741	nwezk9PzcgPa191uvZZG	Possible Cover	brainteasers	5		PAID
+742	NTUQybXcAbcbt7CZp7d9	Alternating Sum Sum	brainteasers	8		PAID
+743	oW197fonzMF9Nzbyt816	3 Eggs	brainteasers	7	Optiver|JaneStreet	PAID
+744	1z6T1NAEHscKjNHTGoF5	Expected Minimum	probability	4		PAID
+745	4gosBLLlmK7jM7uavq0B	Grid Arrangement IV	probability	4	Citadel|JaneStreet|Graviton	PAID
+746	yu3jJgcZKIyIoIFWph6I	Subset Length Sum	combinatorics	7		PAID
+747	zAn98ybLA1UBUI5m6S8G	Extended Rock-Paper-Scissors	probability	6		PAID
+748	Y7BSOqtN1HiYsObd6Hv2	King Before Ace	probability	8	Citadel	PAID
+749	70RuLZsYYYIcMeplhw4k	To Infinity And Beyond II	probability	5	JumpTrading	PAID
+750	1egI8CPMWiR4M6tAEKBN	Everything Contained	probability	5		PAID
+751	bjr7xkxNsfcA4gp3We1I	Disjoint Arcs	probability	5	Citadel	PAID
+752	rCSNBtlba5AEKEPElWDw	Maximize RPS Wins	brainteasers	4	Citadel	PAID
+753	mocJDTi9dHsbXl2fb6cc	Maximum Within An Interval	probability	4	Citadel	PAID
+754	UGt2rteklEH5QuXG2yLj	Bulb Toggle I	brainteasers	4	Citadel	PAID
+755	e4Ts1XIvkuutGcdomW4S	Ten Cars Meet	probability	7	JumpTrading	PAID
+756	XOSWJCgtLwkEhMkuiR4A	Perfect Rank Guess	probability	9	Citadel|TwoSigma	PAID
+757	OA6wzuNaQtDl4BUzFT5I	Interesting Average III	probability	4		PAID
+758	vYh9g2DtVtHy4uTENTEg	Seven Colors II	probability	7		PAID
+759	rrWVTWzeAPPMcU8mJOfE	Seven Colors III	probability	8		PAID
+760	mQKHehEReBXqccAkd9ow	Maximum Till Now II	probability	5	HudsonRiverTrading	PAID
+761	VrTWvMrTOzCsX7K8NcTf	Partial Exponential I	probability	4		PAID
+762	Pncv3HfMljJ5IpnIjNRA	Partial Exponential II	probability	4		PAID
+763	aXb8Pde0Ncy5eG3SMArf	Signal To Noise Ratio	probability	4		PAID
+764	JNOhjkQcbsxKI1U4eE43	Deck Choice I	probability	6	JaneStreet|Citadel	PAID
+765	ExZqA2C8HqyV59dOLI8M	Monochromatic Removal	probability	6	JaneStreet	PAID
+766	efbtKfrmAjh1U1WsoW1l	Exponential Inequality I	probability	3		PAID
+767	waG5BS534vSvZaZC9WWg	Tired Rabbit	probability	5		PAID
+768	cJVZQMvei0fqUxMdzPn5	Exponential Inequality II	probability	7		PAID
+769	vNaBmA7oYW7Wckwb05s7	Give And Take	probability	7	JaneStreet	PAID
+770	kI4tRFkAVmGT3SScr3fE	Maxima Sum I	probability	6		PAID
+771	xhZjIKLThN8WnftEGBmW	Maxima Sum II	probability	6		PAID
+772	GTu5NI0v1X9qk3aAgDZy	Nearest Diagonal II	probability	4		PAID
+773	FhfOahI3dRlS3SRutyTA	Fixed Maximum	probability	6		PAID
+774	vZasTJTeEv8uXyx8NujP	It Took Ten Turns	probability	9		PAID
+775	0yqfOOTTyiJquafmmz83	Increasing Decreasing II	probability	8		PAID
+776	Yz0Utw5SPLJlHDnBP4Ns	Swap Swap	probability	6		PAID
+777	JQhNZeMPKjK8qPyhBmJr	Exponential Pentagon	probability	7		PAID
+778	cAg2WPS5F8wYQUxHoMlo	Constrained Maximum	probability	6		PAID
+779	Qsq3i4yA6rbarAIkhQXr	Strange Product	probability	10		PAID
+780	zkLHFNkvXAo3xVI7kBs7	Keep Multiplying	probability	8		PAID
+781	kgHpt7RpjnMnwBFsfCKZ	Maximum Exponential	probability	6		PAID
+782	oyJ45vCtLitXKNpUetEn	Winner Takes All	probability	7		PAID
+783	NO4Hr61wB8Q8oOLaVX1B	Spaced Uniforms I	probability	9		PAID
+784	oIQbAWjkHRSq9qINqh6g	Strictly Behind	probability	6		PAID
+785	lozCxKy7IuxL7wt8zOV5	Spaced Uniforms II	probability	9		PAID
+786	LBY8Duz5ngme2eGPYt1H	Second Last Roll	probability	7	Optiver	PAID
+787	TrF9IynQebtJ446r3UvS	All Suits	probability	7		PAID
+788	sNvN6UxnGpVioT4Gd5OA	Subset Divisibility	probability	10		PAID
+789	W3v1tt7wCfan6kCijeZq	Hit 995	probability	8		PAID
+790	r1xjDkVRldRPJPtT6Xfb	Penguin Walk III	probability	4		PAID
+791	nPqA2rjHcGOXczR2LVIW	Penguin Walk IV	probability	5		PAID
+792	WMsv5zAfcbhqpm7ZoYRp	Uniform Product	probability	7		PAID
+793	8veXciOxDZTk1aXvDjuE	Last Uniform	probability	8		PAID
+794	YLCTczsffkkhvPQ5JpZC	Consecutive Stocks	brainteasers	10		PAID
+795	bQ0uvi4Afe6AnJJzf5GB	Penguin Walk V	probability	4		PAID
+796	PT3sXmOFgTs8pTqDbdgL	Penguin Walk VI	probability	4		PAID
+797	WhjKfKchPxHUfvTB7O53	Penguin Walk VII	probability	4		PAID
+798	WSrSJRATZtdlKfTZBsMq	Penguin Walk VIII	probability	4		PAID
+799	5MqesfTnE6hE3tqAHoeB	Row Expectation I	probability	6		PAID
+800	nNY0gOoh2k4h5A5LnlWX	Gojo's Six Eyes	probability	8		PAID
+801	MhjzKH2jjS4GlpKHRHtO	XY To The Power Z	probability	7		PAID
+802	Sl0IWJ19sUSEjb5DeVK8	Penguin Walk IX	probability	5		PAID
+803	fcAHMKdW0OcFBdEnBAkQ	Penguin Walk X	probability	5		PAID
+804	puU2wFyW9jUq0a6UW1Ul	Ten-Dimensional Ball	probability	6		PAID
+805	d07NRCfuhrNpvrBYr7Z2	Row Expectation II	probability	7		PAID
+806	njDR5i1jq9c9MViLMsia	Conditional Normal IV	probability	7		PAID
+807	ig878injro4NYCErBdj8	Infinite Sum Expectation	probability	8		PAID
+808	MmqzZttvzzxcch4l7JA6	Secret Marbles I	probability	7	JaneStreet	PAID
+809	FXhAdtX0f68S869YDAqp	Secret Marbles II	probability	7		PAID
+810	RylsmNkHoU17PuaQcxO5	Second Last I	probability	9		PAID
+811	nTAcD812sRWG8m2S7Z9v	Second Last II	probability	9		PAID
+812	9dbLq0p4DYA8hn1Zqk7E	Powerful Scaling	probability	6		PAID
+813	KzwqO9BUkwbLV6wx5Aep	One Before Ten	probability	5		PAID
+814	CRE9KnrCrMzR4UmmA5fy	Frog Distance I	probability	8		PAID
+815	fvRxqK7pYhm3DCXWUREB	Frog Distance II	probability	8		PAID
+816	WJcn6RxedwtMs2ZIh2Se	Additional Info Coin Flips II	probability	7		PAID
+817	N2bmK2JKiqGBVpd1TQDJ	Power Distance II	probability	6		PAID
+818	J6Obeni7Wc1tpfegkNlc	Normal Ratio I	probability	6		PAID
+819	D50f6SEGzVjSg2pcONp0	Normal Ratio II	probability	6		PAID
+820	YrNBnDg5xGbErefGXlYM	Exponential Ratio	probability	4		PAID
+821	GPSqiDv60umPVrxV99nO	Square Intersection II	probability	5		PAID
+822	WScucv5ueRXhiYnzCpWt	Increasing Dice Rolls IV	probability	7		PAID
+823	ealAU8GHeWsa7Z44zVJA	Hexagon Intersection	probability	6		PAID
+824	8Iqpfq6V2MRrz1ATzeW2	Sum Over One II	probability	7		PAID
+825	I4e2W4oXWfGbqOaSRJNK	Last Card Survivor	probability	6		PAID
+826	pOEQCoeifnG7Bph8FGTw	Triangle Formation IV	probability	6		PAID
+827	e8LhpVO4QXk2OJy1Hni9	Random Tree Construction	probability	7		PAID
+828	blZjVmCpakMXs0KJ7Pon	Subset Subset	probability	7		PAID
+829	plqxSc1KAfO0AfECB8xH	Socks Remaining III	probability	8	JaneStreet	PAID
+830	mAmOuCFz0mGox8MzDNRl	Expected Head-Tail Ratio	probability	7		PAID
+831	1yMWrC5ga7Roao5kGJHM	Too Many Slips	probability	9		PAID
+832	vICZZACE3oQ3BSYKCHct	Gold Rush I	brainteasers	7	JaneStreet	PAID
+833	otbt8H3EOxj68Dhe0ayc	Expected Number After Swaps	probability	5		PAID
+834	joDBomARTPGr32DrZBRI	Direction Change III	probability	6		PAID
+835	1RgTPmQxhVHhu2Z58md3	Submarine Distance	probability	6		PAID
+836	ldXdhOULx9f0HYchlSaT	Nearest Paint I	probability	9		PAID
+837	4hyO6oMgQctdf461W6Rs	Nearest Paint II	probability	9		PAID
+838	ZBtffo2Q4Y8IIELrHPhB	Normal Inequality V	probability	5		PAID
+839	DePjOrRMwzmoUqcJXOir	Expected Hits I	probability	6		PAID
+840	KCop6iRlDYr5mLE30mMm	Expected Hits II	probability	6		PAID
+841	cL5Qet0IbMv2ocRkJgc4	Jumping Frog X	probability	6		PAID
+842	1AD1dchCaPy6WbmTsVhH	Elevator II	probability	7		PAID
+843	vLx5pzT03CD6LlSK4c4t	Unknown Gunmen I	probability	8		PAID
+844	d665UrZjFbSQHTVeSRfk	Random And Rational	probability	6	JaneStreet	PAID
+845	T2OfgsgCQO7gwetj8MIQ	Line Switch	probability	2	JaneStreet	PAID
+846	eNA4KyRJUywy2vaH9GcR	Unknown Gunmen II	probability	8		PAID
+847	eZbQzcMEXQsFavkzmNhE	Match Fixing I	probability	6	JaneStreet	PAID
+848	VVWO9dNnccu3205SidIF	Unknown Gunmen III	probability	10		PAID
+849	VmcSHr6cF76e7OurFJfi	Extra Information I	probability	7	Citadel	PAID
+850	O60wkeUH8tyVJ5Ym7Yae	Close To One	probability	9		PAID
+851	LGJTgjQLBGqjp0ll70eZ	Partial Visit	probability	4		PAID
+852	oX2xHgkYEVqGzsdmMivI	Middle Ground I	probability	9		PAID
+853	kh5z97aArwDeqCFEElP6	Visited Nodes I	probability	4		PAID
+854	II3WRKXQ5NTBMsnwOfdQ	Visited Nodes II	probability	7		PAID
+855	7nWbGEA50guBs2BrPiXM	Direction Changes In Random Walk	probability	7		PAID
+856	n042T63evjlFhSNLlzGL	Median Guess	probability	6		PAID
+857	gcJLrJER7vvTs3e7o6gy	Extra Information II	probability	9	Citadel	PAID
+858	X2ZncB1Qp3CmTxksqgQ3	Competitive Cutoff	probability	9		PAID
+859	9lVOFW9umkNBhB0SHzGP	Polya Urn Process	probability	10		PAID
+860	5NJY4BdkF7fBTrSKoM4H	Gold Rush II	probability	7	JaneStreet	PAID
+861	PiriWAZe51qrb9UjuRuH	Less Than Square I	probability	4	IMCTrading	PAID
+862	LxxLBf3a1f7pDu9O25os	Less Than Square II	probability	4	IMCTrading	PAID
+863	BayBWzqJn8TomCXMoG2R	Circular Frog II	probability	8		PAID
+864	eKtjn3Vgy9d1ZoYu0t7q	Circular Frog III	probability	8		PAID
+865	NzhPuaUVmUW3seEMW8iL	Capture The Flag II	probability	8		PAID
+866	aG9MhYwM9OcT77zpZJoM	Extra Information III	probability	7		PAID
+867	S4cG3YfD8rikN7GyhOCA	Match Fixing II	probability	6		PAID
+868	v8zg17NwuuTL0AVj317u	Middle Ground II	probability	6		PAID
+869	rPw4anIlQklKBwwnGcn8	Dice Equilibrium	probability	5		PAID
+870	Ab0ntchWctEneezpbHe6	Stock Mean	probability	2	Citadel	PAID
+871	9EPPyGjwz1iXwAwuPqKQ	Stock Variance	probability	5	Citadel	PAID
+872	yCRPuxsMawb4ZgR5co3f	Dice Game IX	probability	6	JaneStreet	PAID
+873	ys1l3OUPRSaoYyKwZWpS	Encoding Bits	brainteasers	6	JaneStreet	PAID
+874	i3gbHyvw7MXx9LXEh3N8	Triangle Formation V	probability	5	Citadel	PAID
+875	WA5G8jatn9sBQHuiOkRT	Consecutive Envelopes II	probability	8	JaneStreet	PAID
+876	Z8m8iyoQDsQwp6IgAGlQ	Are You The Tallest?	probability	3	Citadel	PAID
+877	goW07pSbtNnapIh6YJCF	Monotonic Solutions	combinatorics	6	JumpTrading	PAID
+878	TgVrzH8InJhWJ954dCXR	Check Or Raise	probability	6	Citadel	PAID
+879	hCsvbwVkZyt1fRP8fGqV	Strange Special Case	probability	7	JumpTrading	PAID
+880	QMgi0iOr1Ul5lM0zVSFW	Dice Multiple III	probability	6	HudsonRiverTrading|SusquehannaInternationalGroup	PAID
+881	PgJUrmdujUa2h9yzLcNg	Probabilistic Strategy IV	probability	9	HudsonRiverTrading	PAID
+882	TcF3my95cAAslPoqErYL	Odd Heads IV	probability	5	HudsonRiverTrading	PAID
+883	CyC0kAKgMpCrjkLsPoos	Coin Toss Game VIII	probability	6	Citadel	PAID
+884	FgKDSBgaDWpTzETmH2Uu	Strange Minimizer I	brainteasers	6	Citadel	PAID
+885	9DHdT5kRkSbWiLI7bhAE	Strange Minimizer II	brainteasers	6	Citadel	PAID
+886	5kOU33UOgFNZmvQEUay6	Basketball Practice	brainteasers	6	HudsonRiverTrading	PAID
+887	t5w6tDTnplJ0R4D8AO9D	Simple Game II	probability	9		PAID
+888	WqKkNoXpMlC2Q9Isee9G	Create Empty Pile	brainteasers	6	Optiver	PAID
+889	tVAqIRmHt8NqeJJsPWTp	Simple Game III	probability	9		PAID
+890	0o34GqrFR3h3PTmVLmk3	Discrete Choices	probability	5	JaneStreet	PAID
+891	ykpfIE5lTHL3MKeCkSKW	Partial Reveal I	probability	5		PAID
+892	9oWr8WQvJgnu9zXz73y3	Partial Reveal II	probability	6		PAID
+893	FkJEeeDapvyLlNW5os0D	Probabilistic Strategy V	probability	9		PAID
+894	S6UwM8tdoxonKDnBRAR5	Choose Your Suit	probability	5	JaneStreet	PAID
+895	8RrfMbc7BoHAXs7Tznb3	Optimal Order	probability	7		PAID
+896	c6pORdQohmgMknywzAu9	Deck Choice II	probability	6	JaneStreet	PAID
+897	7VJng7NtShFkoRvVlW0P	Probabilistic Strategy VI	probability	6		PAID
+898	4F6cGPCgIZub6ZsOE5sv	Win By Small Margin	brainteasers	8		PAID
+899	68XGhVqix7cEHMNOxzEo	Final Number Possibilities II	brainteasers	6	Graviton	PAID
+900	w6khlIrKe5IN6hExxtWN	Noodle Loop II	probability	6	HudsonRiverTrading	PAID
+901	0EtZh2UILT2LtZfy0w1y	Noodle Loop III	probability	6	Graviton	PAID
+902	cTS31tSGh0jnBuZfgN37	Noodle Loop IV	probability	6		PAID
+903	H8R2Eto8uJRc1npIch0U	Expected Directed Cycles	probability	6		PAID
+904	M1uxSNgYHaQj0zTeNmTE	Expected Connected Components	probability	8		PAID
+905	5495IeJUrVIIjAy66uDr	Expected Card Piles	probability	6		PAID
+906	fy7B4JTXLGtOG6J31yyU	Keys And Chests I	probability	9		PAID
+907	yrWTx3lQux1V77oHLZci	Keys And Chests II	probability	9		PAID
+908	grBkekkqfZuSzmIcnA2R	Five Cards, Four Slots	probability	9	JumpTrading	PAID
+909	QGExRqPLgKiQw9dXQUBi	Permutation Cycles I	probability	6	Graviton	PAID
+910	mFiTHHHwmR3xXvgQwDPt	Permutation Cycles II	probability	6	Graviton|IMCTrading	PAID
+911	3t60FTbiy2ne99HU5sgE	Largest Envelope I	probability	3	JaneStreet	PAID
+912	2N2x0IC5dzvD4FYJNF2T	Largest Envelope II	probability	5	JaneStreet	PAID
+913	Xv9pTt7McbEzu1vsXqOz	Pair Partition II	probability	8		PAID
+914	BfNJsyFxJ6PfhU6SOHkd	Dice Placement I	probability	6	JaneStreet	PAID
+915	wS9h1vzojYDLAIzPR6kW	Maximising Heads III	probability	6	Citadel	PAID
+916	ocAVTPaITfa9cjgVVAbx	Slot Balancing	probability	7	JaneStreet	PAID
+917	5AZq5xFc994nUjj63h7s	Card Prediction II	probability	6	JaneStreet	PAID
+918	3bMvQvk2hWCnkbNWBezN	Coin With Unknown Bias	probability	5		PAID
+919	OZ97nCyhrsZ5HyOC261C	Repeated Card Guess	probability	6		PAID
+920	kmhdhLGiILZSn1S9IdOC	Dice Game X	probability	7		PAID
+921	X3jGN4J7cVTHRmnLoxQp	Dice Game XI	probability	7	JaneStreet	PAID
+922	cqdiR5cQ6MlFj5OUozRW	Increasing Cards Selection	probability	8		PAID
+923	cCYUWPjOzRaIhRlLdRz2	Continuous Knapsack	probability	8		PAID
+924	p3sHUyPjBatw6SEvWEc5	Interview V	probability	9	Citadel	PAID
+925	l1iWiGI5UNCX3NUVXHso	Interview VI	probability	9		PAID
+926	J0KAHYKOmDdmWkpLtmgU	Last Roll	probability	4		PAID
+927	txCwl66AMz1wbUHNcbgy	Circular Pairing	probability	8		PAID
+928	E1Mu1w39Rv4146pZFnxG	Determinant Variance	probability	7		PAID
+929	CcsZQKRmXUJ3injvLXDG	Rational Number	brainteasers	5	JaneStreet	PAID
+930	cMSzsYh6RbnuM4z9H66y	Most Likely Terminal Sum	probability	5	JaneStreet	PAID
+931	HuVxxQTYc1edgQruDU5f	Double Option	probability	4	JaneStreet	PAID
+932	ehHZsTaLcziw4l6lqVA1	Circular Bulbs	probability	6		PAID
+933	fJF451srLDxRalJIYhPr	The Art Of War	probability	8		PAID
+934	q4VAU62eXQgZm54DIAR6	Coin Toss Game IX	probability	6		PAID
+935	Oh16Lvl1wKmm5oB7MmDj	Dice Placement II	probability	7		PAID
+936	IMr9aPqLXH8Nt0QSH7MZ	Unknown Gunmen IV	probability	8		PAID
+937	6p9caV5ZJA5KBXPkMit4	Count Digits II	brainteasers	8	IMCTrading|SusquehannaInternationalGroup|Optiver	PAID
+938	1B8Qf2FqBQg3qqTblqfN	Yet Another Optimal Stopping I	probability	6		PAID
+939	6GsO78sQBOUCbJ7hzSSo	Yet Another Optimal Stopping II	probability	6		PAID
+940	dA7ORvijgRTO9O8i5vr4	Sampling I	probability	7		PAID
+941	EF1t9UD9zpnnJkKL7wAS	Sampling II	probability	9	SusquehannaInternationalGroup	PAID
+942	mSLZXfD5Tluf5jpv4yum	Sampling III	probability	9	SusquehannaInternationalGroup	PAID
+943	KAJsdPj1SsTC77ggtinN	Count Paths IV	combinatorics	5	SusquehannaInternationalGroup	PAID
+944	eeiipK8HtW6kLTPmvJ3K	Spread Set	combinatorics	5	DRW	PAID
+945	OHf9dpMOhuMaaOV5s8py	Three Drawers, Three Colors	probability	7	HudsonRiverTrading	PAID
+946	xbyuPEt3FlkCXRzshTGX	Acute Triangle II	probability	8		PAID
+947	pyb6J00hKffu4KvnQPZ8	Bluff	probability	6	FiveRings	PAID
+948	BUs87DfYqIVjCCKyky1X	Acute Triangle III	probability	8		PAID
+949	1JSUobC40vsk6enYHoqR	Even Coloring	combinatorics	5	DRW	PAID
+950	G6qSP6gG6BJ78kgcQWPb	Ratio Expectation Bound	probability	6	DRW	PAID
+951	iUGwQ8UrnddavW4fjlOv	Simplest Game	probability	4	DRW	PAID
+952	rl5IcA03xSOz8yMJKZnq	Additional Info Coin Flips III	probability	5		PAID
+953	pVh5mrSMIgMH1KYcUWxl	Most Likely Sum	probability	4		PAID
+954	tiYJEsNlHdjWfx2sHODe	Fair Flip Construction	probability	5		PAID
+955	lUMbEFUsuDGah6cvna8V	Three Consecutive Wins	probability	5		PAID
+956	smU96sHObmJQWhFCgApV	Cracking The Code	brainteasers	10		PAID
+957	QfeDSEgChn02zBccdW4x	Count Digits III	brainteasers	6	SusquehannaInternationalGroup	PAID
+958	a8mDKiiT8kSzAVxXtQUW	Gold Rush III	brainteasers	5	JaneStreet	PAID
+959	cP58Ri8iqtSWOQHIoKiK	Consecutive Expectation	probability	4	SusquehannaInternationalGroup	PAID
+960	rkNcdWTeSQvwBu5RfuyN	Sampling IV	probability	9		PAID
+961	eB8NwLi51M265ZT9Uxiv	Monty Hall I	probability	6	Citadel	PAID
+962	45dYHUaweJ7oXPZF4qjd	Monty Hall II	probability	6		PAID
+963	APjmdxh1gnzctDHqGAnW	Monty Hall III	probability	6		PAID
+964	pmQOtOoWuko6102B5LZC	Infinite Product	brainteasers	6		PAID
+965	ESA8mSmSMOsjGzCf7kjO	Reflection Reflection	brainteasers	6		PAID
+966	SlieHcH8m4ZUOIqOoLLo	One By Four Construction	probability	6		PAID
+967	VxBFYBKdwGhhJdNhldKp	Traversal	brainteasers	6		PAID
+968	kmpsSDt4OzDsDmW0TLJt	Function Train	brainteasers	7		PAID
+969	GyqYvLUVFcjqpcLicvQL	Empty Jar	probability	9		PAID
+970	qVbl4RLN2uBsKTpRVTF7	Three In Decimal Expansion	probability	5		PAID
+971	Oxnzg0c7dnk5j4hCjTVu	Robot Walk	probability	5		PAID
+972	7n4uFzpMntbiyVgDsbTP	Conditional Circular Arrangement	probability	6		PAID
+973	DvrxtIE39jS4KNDAqHgz	Four Four Four	probability	6		PAID
+974	HMP7Xa0iUnz3yn5dmvjf	Hard Probability Construction I	probability	7		PAID
+975	KB6MYhZt7gmRXgSzgGjv	Nothing Is Guaranteed	brainteasers	5		PAID
+976	Wnt84EeRdc1mqvjHlvmZ	Don’t Cross One	probability	7	JaneStreet|DRW	PAID
