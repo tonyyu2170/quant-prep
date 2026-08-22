@@ -182,3 +182,177 @@ SOLVERS = {
     "geometric/border-band": {"exact": border_band_exact, "simulate": border_band_sim},
     "geometric/chord-angle-cap": {"exact": chord_angle_cap_exact, "simulate": chord_angle_cap_sim},
 }
+
+
+def meeting_inverse_fit_exact(p):
+    wait = p["windowMinutes"] * (1 - math.sqrt(1 - p["targetPct"] / 100))
+    miss_leg = p["windowMinutes"] - wait
+    return {"wait": wait, "missLeg": miss_leg, "missProb": (miss_leg / p["windowMinutes"]) ** 2}
+
+
+def meeting_inverse_fit_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    """B4 fit pattern: simulate at the fitted wait, then invert the noisy probability back
+    through the closed form; delta-method carries the standard error into minutes."""
+    t = p["windowMinutes"]
+    wait = t * (1 - math.sqrt(1 - p["targetPct"] / 100))
+
+    def hits(m):
+        x = rng.uniform(0, t, m)
+        y = rng.uniform(0, t, m)
+        return int((np.abs(x - y) <= wait).sum())
+
+    est_p, se_p = _bernoulli_sim(hits, trials, rng, chunk)
+    est_w = t * (1 - math.sqrt(max(1 - est_p, 0.0)))
+    se_w = (t / (2 * math.sqrt(max(1 - est_p, 1e-12)))) * se_p
+    return est_w, se_w
+
+
+def stick_triangle_conditional_exact(p):
+    u = p["firstBreakPct"] / 100
+    return {"answer": u / (1 - u), "seqUnconditional": math.log(2) - 0.5,
+            "remainderPct": 100 - p["firstBreakPct"]}
+
+
+def stick_triangle_conditional_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    length = p["stickCm"]
+    u = p["firstBreakPct"] / 100
+
+    def hits(m):
+        v = rng.uniform(0, 1, m)          # second break as a share of the remainder
+        left = u
+        mid = v * (1 - u)
+        right = (1 - v) * (1 - u)
+        triangle = (left < 0.5) & (mid < 0.5) & (right < 0.5)
+        return int(triangle.sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def buffon_short_needle_exact(p):
+    answer = (2 * p["needleCm"]) / (math.pi * p["boardCm"])
+    return {"answer": answer, "ratio": p["needleCm"] / p["boardCm"]}
+
+
+def buffon_short_needle_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    t = p["boardCm"]
+    half = p["needleCm"] / 2
+
+    def hits(m):
+        y = rng.uniform(0, t, m)
+        theta = rng.uniform(0, math.pi, m)
+        reach = half * np.sin(theta)
+        crosses = (y <= reach) | (y >= t - reach)
+        return int(crosses.sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def three_points_spacing_exact(p):
+    t = (p["stickLength"] - 2 * p["gapUnits"]) / p["stickLength"]
+    return {"t": t, "answer": t**3, "consumed": 2 * p["gapUnits"]}
+
+
+def three_points_spacing_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    length = p["stickLength"]
+    d = p["gapUnits"]
+
+    def hits(m):
+        pts = rng.uniform(0, length, (m, 3))
+        pts.sort(axis=1)
+        gaps = np.diff(pts, axis=1)
+        return int(((gaps >= d).all(axis=1)).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def corner_quarter_disk_exact(p):
+    zone_area = math.pi * p["zoneR"] ** 2 / 4
+    board_area = p["boardW"] * p["boardH"]
+    return {"zoneArea": zone_area, "boardArea": board_area, "answer": zone_area / board_area}
+
+
+def corner_quarter_disk_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    w, h, r = p["boardW"], p["boardH"], p["zoneR"]
+
+    def hits(m):
+        x = rng.uniform(0, w, m)
+        y = rng.uniform(0, h, m)
+        return int((x * x + y * y <= r * r).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def disk_in_rect_complement_exact(p):
+    disk_share = math.pi * p["diskR"] ** 2 / (p["boardW"] * p["boardH"])
+    return {"diskShare": disk_share, "answer": 1 - disk_share}
+
+
+def disk_in_rect_complement_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    w, h, r = p["boardW"], p["boardH"], p["diskR"]
+    cx, cy = w / 3.0, h / 3.0          # any off-center spot; area law ignores it
+
+    def hits(m):
+        x = rng.uniform(0, w, m)
+        y = rng.uniform(0, h, m)
+        inside = (x - cx) ** 2 + (y - cy) ** 2 <= r * r
+        return int((~inside).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+def buffon_fit_length_inverse_exact(p):
+    needle = (p["targetPct"] / 100) * p["boardCm"] * (math.pi / 2)
+    return {"needle": needle, "ratio": needle / p["boardCm"]}
+
+
+def buffon_fit_length_inverse_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    """Fit pattern: drop needles of the implied length, then invert the noisy crossing
+    estimate through the linear closed form."""
+    t = p["boardCm"]
+    needle = (p["targetPct"] / 100) * t * (math.pi / 2)
+
+    def hits(m):
+        y = rng.uniform(0, t, m)
+        theta = rng.uniform(0, math.pi, m)
+        reach = (needle / 2) * np.sin(theta)
+        return int(((y <= reach) | (y >= t - reach)).sum())
+
+    est_p, se_p = _bernoulli_sim(hits, trials, rng, chunk)
+    est_l = est_p * t * math.pi / 2
+    se_l = se_p * t * math.pi / 2
+    return est_l, se_l
+
+
+def triangle_parallel_cut_exact(p):
+    t = p["cutPct"] / 100
+    top = t**2
+    return {"t": t, "answer": 1 - top, "topShare": top}
+
+
+def triangle_parallel_cut_sim(p, rng, trials=15_000_000, chunk=1_500_000):
+    cut = p["cutPct"] / 100
+
+    def hits(m):
+        # uniform point in apex-up triangle via two uniforms folded below the diagonal:
+        # (a, b) uniform on unit square with a + b <= 1 maps affinely to the triangle.
+        a = rng.uniform(0, 1, m)
+        b = rng.uniform(0, 1, m)
+        over = a + b > 1
+        a[over] = 1 - a[over]
+        b[over] = 1 - b[over]
+        # height fraction below the cut equals a + b on this simplex
+        return int((a + b > cut).sum())
+
+    return _bernoulli_sim(hits, trials, rng, chunk)
+
+
+SOLVERS.update({
+    "geometric/meeting-inverse-fit": {"exact": meeting_inverse_fit_exact, "simulate": meeting_inverse_fit_sim},
+    "geometric/stick-triangle-conditional": {"exact": stick_triangle_conditional_exact, "simulate": stick_triangle_conditional_sim},
+    "geometric/buffon-short-needle": {"exact": buffon_short_needle_exact, "simulate": buffon_short_needle_sim},
+    "geometric/three-points-spacing": {"exact": three_points_spacing_exact, "simulate": three_points_spacing_sim},
+    "geometric/corner-quarter-disk": {"exact": corner_quarter_disk_exact, "simulate": corner_quarter_disk_sim},
+    "geometric/disk-in-rect-complement": {"exact": disk_in_rect_complement_exact, "simulate": disk_in_rect_complement_sim},
+    "geometric/buffon-fit-length-inverse": {"exact": buffon_fit_length_inverse_exact, "simulate": buffon_fit_length_inverse_sim},
+    "geometric/triangle-parallel-cut": {"exact": triangle_parallel_cut_exact, "simulate": triangle_parallel_cut_sim},
+})

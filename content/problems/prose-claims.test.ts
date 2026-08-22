@@ -1324,6 +1324,102 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.answer) >= 0.1 && P(d.answer) <= 0.99,
       breaks: (_p, d) => ({ ...d, answer: 1.5 }) },
   ],
+
+  "geometric/meeting-inverse-fit": [
+    { says: "The fitted wait sits inside the window",
+      holds: (p, d) => P(d.wait) > 0 && P(d.wait) < p.windowMinutes,
+      breaks: (p, d) => ({ ...d, wait: p.windowMinutes + 5 }) },
+    { says: "Reading the square back puts the miss share at the exact complement of the target",
+      holds: (p, d) => Math.abs(P(d.missProb) - (1 - p.targetPct / 100)) < 1e-4,
+      breaks: (_p, d) => ({ ...d, missProb: d.missProb * 0.8 }) },
+    { says: "Miss legs equal window minus wait, fresh from printed values",
+      holds: (p, d) => same(d.missLeg, p.windowMinutes - d.wait),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 9 }) },
+  ],
+
+  "geometric/stick-triangle-conditional": [
+    { says: "Conditional chance is left share over right share, fresh from params",
+      holds: (p, d) => same(d.answer, (p.firstBreakPct / 100) / (1 - p.firstBreakPct / 100)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.97 }) },
+    { says: "Remainder percentage prints back as one hundred minus the first break",
+      holds: (p, d) => same(d.remainderPct, 100 - p.firstBreakPct),
+      breaks: (_p, d) => ({ ...d, remainderPct: d.remainderPct + 4 }) },
+    { says: "The unconditional sequential value sits strictly under a quarter",
+      holds: (_p, d) => P(d.seqUnconditional) < 0.25,
+      breaks: (_p, d) => ({ ...d, seqUnconditional: 0.3 }) },
+  ],
+
+  "geometric/buffon-short-needle": [
+    { says: "Crossing chance recomputes as twice the ratio over pi",
+      holds: (p, d) => Math.abs((2 * p.needleCm) / (Math.PI * p.boardCm) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.05 }) },
+    { says: "Short regime holds and the chance stays a probability",
+      holds: (p, d) => p.needleCm <= p.boardCm && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.2 }) },
+    { says: "The length-to-spacing ratio prints back from raw params",
+      holds: (p, d) => same(d.ratio, p.needleCm / p.boardCm),
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 2 }) },
+  ],
+
+  "geometric/three-points-spacing": [
+    { says: "Consumed space is twice the demanded gap",
+      holds: (p, d) => same(d.consumed, 2 * p.gapUnits),
+      breaks: (p, d) => ({ ...d, consumed: p.gapUnits }) },
+    { says: "Effective span is the stick short of the consumed space",
+      holds: (p, d) => same(d.t, (p.stickLength - d.consumed) / p.stickLength),
+      breaks: (_p, d) => ({ ...d, t: d.t * 1.02 }) },
+    { says: "The answer is that span cubed and stays inside the band",
+      holds: (p, d) => Math.abs(Math.pow((p.stickLength - 2 * p.gapUnits) / p.stickLength, 3) - d.answer) < 1e-9 && P(d.answer) >= 0.1,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+  ],
+
+  "geometric/corner-quarter-disk": [
+    { says: "Zone area is pi r-squared over four",
+      holds: (p, d) => same(d.zoneArea, (Math.PI * p.zoneR * p.zoneR) / 4),
+      breaks: (_p, d) => ({ ...d, zoneArea: d.zoneArea * 2 }) },
+    { says: "The zone stays on the lawn and its share remains a probability",
+      holds: (p, d) => p.zoneR <= Math.min(p.boardW, p.boardH) && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.1 }) },
+    { says: "The share recomputes as zone over board",
+      holds: (p, d) => same(d.answer, d.zoneArea / d.boardArea),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.95 }) },
+  ],
+
+  "geometric/disk-in-rect-complement": [
+    { says: "The disk fits on the table and the miss share stays a probability",
+      holds: (p, d) => 2 * p.diskR <= Math.min(p.boardW, p.boardH) && P(d.answer) >= 0.1,
+      breaks: (_p, d) => ({ ...d, answer: -0.5 }) },
+    { says: "Disk share is pure area over table, position-free",
+      holds: (p, d) => same(d.diskShare, (Math.PI * p.diskR * p.diskR) / (p.boardW * p.boardH)),
+      breaks: (_p, d) => ({ ...d, diskShare: d.diskShare * 1.04 }) },
+    { says: "Missing is the exact complement of the stain share",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.diskShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, answer: d.diskShare }) },
+  ],
+
+  "geometric/buffon-fit-length-inverse": [
+    { says: "Fitted needle respects the short-needle regime",
+      holds: (p, d) => P(d.ratio) <= 1 && same(d.ratio, d.needle / p.boardCm),
+      breaks: (p, d) => ({ ...d, needle: p.boardCm * 1.5 }) },
+    { says: "Needle is target times board times two-over-pi",
+      holds: (p, d) => same(d.needle, (p.targetPct / 100) * p.boardCm * (Math.PI / 2)),
+      breaks: (_p, d) => ({ ...d, needle: d.needle * 1.03 }) },
+    { says: "Feeding the ratio forward returns the target probability",
+      holds: (p, d) => Math.abs((2 * d.ratio) / Math.PI - p.targetPct / 100) < 1e-9,
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 0.9 }) },
+  ],
+
+  "geometric/triangle-parallel-cut": [
+    { says: "Top piece is the depth fraction squared",
+      holds: (p, d) => same(d.topShare, Math.pow(p.cutPct / 100, 2)),
+      breaks: (_p, d) => ({ ...d, topShare: d.topShare * 0.5 }) },
+    { says: "Below the cut takes everything else",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.topShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, answer: d.topShare }) },
+    { says: "A mid-height cut would hold three quarters below",
+      holds: (p, d) => p.cutPct !== 50 || Math.abs(P(d.answer) - 0.75) < 1e-4,
+      breaks: (p, d) => ({ ...d, answer: p.cutPct === 50 ? 0.7 : d.answer + 0.2 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

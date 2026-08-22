@@ -137,6 +137,14 @@ import { concentricCircles } from "./geometric/concentric-circles";
 import { brokenStickLeftShare } from "./geometric/broken-stick-left-share";
 import { borderBand } from "./geometric/border-band";
 import { chordAngleCap } from "./geometric/chord-angle-cap";
+import { meetingInverseFit } from "./geometric/meeting-inverse-fit";
+import { stickTriangleConditional } from "./geometric/stick-triangle-conditional";
+import { buffonShortNeedle } from "./geometric/buffon-short-needle";
+import { threePointsSpacing } from "./geometric/three-points-spacing";
+import { cornerQuarterDisk } from "./geometric/corner-quarter-disk";
+import { diskInRectComplement } from "./geometric/disk-in-rect-complement";
+import { buffonFitLengthInverse } from "./geometric/buffon-fit-length-inverse";
+import { triangleParallelCut } from "./geometric/triangle-parallel-cut";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -277,6 +285,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   brokenStickLeftShare,
   borderBand,
   chordAngleCap,
+  meetingInverseFit,
+  stickTriangleConditional,
+  buffonShortNeedle,
+  threePointsSpacing,
+  cornerQuarterDisk,
+  diskInRectComplement,
+  buffonFitLengthInverse,
+  triangleParallelCut,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
