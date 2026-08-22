@@ -109,6 +109,7 @@ import { normalBelow } from "./distributions/normal-below";
 import { normalAbove } from "./distributions/normal-above";
 import { normalBetween } from "./distributions/normal-between";
 import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
+import { fairReachGoal } from "./ruin/fair-reach-goal";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -221,6 +222,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   normalAbove,
   normalBetween,
   normalQuantileThenRange,
+  fairReachGoal,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

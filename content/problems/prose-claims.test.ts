@@ -942,6 +942,18 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.answer) !== P(p.c),
       breaks: (p, d) => ({ ...d, answer: p.c }) },
   ],
+
+  "ruin/fair-reach-goal": [
+    { says: "Sanity: sweeping the table and busting are complements whose printed probabilities sum to 1",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.ruinProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ruinProb: d.ruinProb * 0.5 }) },
+    { says: "Read off the line: the reach probability equals the starting share, recomputed fresh from raw params",
+      holds: (p, d) => same(d.frac, p.startChips / p.goalChips),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 1.02 }) },
+    { says: "The bust probability is one minus the very same share",
+      holds: (p, d) => same(d.ruinProb, 1 - p.startChips / p.goalChips),
+      breaks: (_p, d) => ({ ...d, ruinProb: 1 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -1004,7 +1016,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
