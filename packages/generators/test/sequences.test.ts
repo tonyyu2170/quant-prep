@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeRng } from "@qp/engine";
-import { sequenceItem, SEQ_FAMILIES, SEQ_WEIGHTS, type SeqFamily } from "../src/sequences";
+import { sequenceItem, sequenceItemOfFamily, SEQ_FAMILIES, SEQ_WEIGHTS, type SeqFamily } from "../src/sequences";
 
 type Verifier = (terms: number[], answer: number) => boolean;
 
@@ -221,6 +221,41 @@ describe("sequenceItem", () => {
       }
       const n = terms.length;
       expect(item.answer).toBe(n % 2 === 1 ? terms[n - 1] + a : terms[n - 1] * b);
+    }
+  });
+});
+
+describe("sequenceItemOfFamily", () => {
+  it("builds the family it is asked for, at the difficulty it is asked for", () => {
+    const rng = makeRng(11);
+    for (const family of SEQ_FAMILIES) {
+      const item = sequenceItemOfFamily(rng, family, 2);
+      expect(item.meta.family).toBe(family);
+      expect(item.id.startsWith(`seq-${family}-`)).toBe(true);
+      expect(item.meta.difficulty).toBe(2);
+    }
+  });
+
+  // Replaces a golden-id pin whose values were captured BEFORE sequenceItemOfFamily was extracted,
+  // to prove the extraction changed nothing. That guard cannot be restated here: main has since
+  // replaced the uniform family pick with the per-difficulty weighted one, so the pre-refactor ids
+  // can never match again. What still matters is the pair of invariants below, and neither of them
+  // has to be re-pinned when the weights are retuned.
+  //
+  // Burning exactly one draw and getting a byte-identical item proves both at once: sequenceItem
+  // routes through sequenceItemOfFamily rather than being a divergent copy, AND choosing the family
+  // costs exactly one draw. A two-draw selection would desync the rng and change every term.
+  it("routes through sequenceItemOfFamily, spending exactly one draw on the family", () => {
+    for (const difficulty of [1, 2, 3] as const) {
+      const direct = makeRng(4242);
+      const item = sequenceItem(direct, difficulty);
+
+      const replayed = makeRng(4242);
+      replayed(); // the family draw
+      const rebuilt = sequenceItemOfFamily(replayed, item.meta.family as SeqFamily, difficulty);
+      // whole item, not just the id: the id carries family and terms but not the difficulty, so an
+      // id-only assertion misses a wrapper that forwards the wrong tier whenever the bounds coincide
+      expect(rebuilt).toEqual(item);
     }
   });
 });

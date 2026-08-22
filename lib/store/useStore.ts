@@ -1,10 +1,10 @@
 import { LocalStore } from "./local";
 import { SupabaseStore } from "./supabase";
-import { planMerge } from "./merge";
+import { mergeReviews, planMerge } from "./merge";
 import { attemptRowsFromSession } from "./testAttempts";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import type { AttemptRow, Store, TestSessionRow } from "./types";
-import type { Preset, SessionState, Summary } from "@qp/engine";
+import type { AttemptRow, ReviewRow, Store, TestSessionRow } from "./types";
+import { enqueue, sequenceReviewKey, type Preset, type SessionState, type Summary } from "@qp/engine";
 
 const MERGED_FLAG = "qp.merged.v1";
 let cached: { store: Store; signedIn: boolean } | null = null;
@@ -25,6 +25,7 @@ async function mergeLocalIntoRemote(local: LocalStore, remote: SupabaseStore): P
   const plan = planMerge(await local.listAttempts(), await local.listSessions());
   if (plan.attempts.length) await remote.saveAttempts(plan.attempts);
   for (const s of plan.sessions) await remote.saveSession(s);
+  for (const r of mergeReviews(await local.listReviews(), await remote.listReviews())) await remote.saveReview(r);
   localStorage.setItem(MERGED_FLAG, "1");
   await local.clear();
 }
@@ -74,9 +75,51 @@ export function getStore(): Store {
       saveWithFallback((s) => s.saveAttempts(rows), (l) => l.saveAttempts(rows)),
     saveSession: (row: TestSessionRow) =>
       saveWithFallback((s) => s.saveSession(row), (l) => l.saveSession(row)),
+    saveReview: (row: ReviewRow) =>
+      saveWithFallback((s) => s.saveReview(row), (l) => l.saveReview({ ...row, pending: true })),
+    async removeReview(problemId: string) {
+      // Best-effort: a failed delete leaves the row queued, which the next load shows again.
+      try { await (await resolveStore()).store.removeReview(problemId); } catch { /* studying never blocks */ }
+    },
     async listAttempts() { return (await resolveStore()).store.listAttempts(); },
     async listSessions() { return (await resolveStore()).store.listSessions(); },
+    async listReviews() { return (await resolveStore()).store.listReviews(); },
   };
+}
+
+/**
+ * Intake: due now at interval 1, preserving ease already earned.
+ *
+ * Content-bank problem ids only. Spec §6 also wants sims and the arithmetic/sequences drills to
+ * enqueue on a miss, but generator `Item.id`s are instance-level (`arith-mul-7-13`,
+ * `seq-fib-2_3_5_8`) — not the stable per-concept ids §6 assumes when it says reviews
+ * "regenerate from their generator ids". Queuing those would store one row per instance and
+ * re-ask the identical numbers. Needs a family-key convention before it can be wired.
+ */
+export async function enqueueReviews(problemIds: string[]): Promise<void> {
+  if (!problemIds.length) return;
+  const store = getStore();
+  const queue = await store.listReviews(); // one read for the whole batch
+  const now = new Date();
+  for (const id of new Set(problemIds)) {
+    await store.saveReview(enqueue(id, now, queue.find((r) => r.problemId === id) ?? null));
+  }
+}
+
+export const enqueueReview = (problemId: string) => enqueueReviews([problemId]);
+
+/** Sequence patterns missed in a sim, deduped by family — skips never enqueue (spec §6). */
+function missedSequenceKeys(state: SessionState): string[] {
+  const keys: string[] = [];
+  state.answers.forEach((answer, i) => {
+    const item = state.items[i];
+    if (answer === null || state.grades[i] || item.topic !== "sequences") return;
+    const { family, difficulty } = item.meta;
+    if (typeof family === "string" && (difficulty === 1 || difficulty === 2 || difficulty === 3)) {
+      keys.push(sequenceReviewKey(family, difficulty));
+    }
+  });
+  return keys;
 }
 
 export async function saveRun(preset: Preset, summary: Summary, state: SessionState): Promise<void> {
@@ -90,4 +133,5 @@ export async function saveRun(preset: Preset, summary: Summary, state: SessionSt
   await store.saveSession(row);
   const attempts = attemptRowsFromSession(state, row.id, row.createdAt);
   if (attempts.length) await store.saveAttempts(attempts);
+  await enqueueReviews(missedSequenceKeys(state)).catch(() => {}); // studying never blocks
 }

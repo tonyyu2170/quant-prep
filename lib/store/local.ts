@@ -1,7 +1,8 @@
-import type { AttemptRow, Store, TestSessionRow } from "./types";
+import type { AttemptRow, ReviewRow, Store, TestSessionRow } from "./types";
 
 const A_KEY = "qp.attempts.v1";
 const S_KEY = "qp.sessions.v1";
+const R_KEY = "qp.reviews.v1";
 const CAP = 5000;
 
 function read<T>(key: string): T[] {
@@ -24,5 +25,13 @@ export class LocalStore implements Store {
   }
   async listAttempts() { return read<AttemptRow>(A_KEY); }
   async listSessions() { return read<TestSessionRow>(S_KEY); }
-  async clear() { localStorage.removeItem(A_KEY); localStorage.removeItem(S_KEY); }
+  async listReviews() { return read<ReviewRow>(R_KEY); }
+  async saveReview(row: ReviewRow) {
+    const rest = read<ReviewRow>(R_KEY).filter((r) => r.problemId !== row.problemId);
+    write(R_KEY, [...rest, row]);
+  }
+  async removeReview(problemId: string) {
+    write(R_KEY, read<ReviewRow>(R_KEY).filter((r) => r.problemId !== problemId));
+  }
+  async clear() { localStorage.removeItem(A_KEY); localStorage.removeItem(S_KEY); localStorage.removeItem(R_KEY); }
 }

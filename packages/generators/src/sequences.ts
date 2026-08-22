@@ -171,8 +171,7 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
   }
 }
 
-export function sequenceItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
-  const family = pickFamily(rng, difficulty);
+export function sequenceItemOfFamily(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): Item {
   const { terms, answer, rule, extra } = build(rng, family, difficulty);
   return {
     id: `seq-${family}-${terms.join("_")}`,
@@ -180,6 +179,13 @@ export function sequenceItem(rng: Rng, difficulty: 1 | 2 | 3): Item {
     prompt: terms.join(", ") + ", ?",
     answer,
     rule,
-    meta: { family, terms: terms.join(","), ...(extra ?? {}) },
+    meta: { family, difficulty, terms: terms.join(","), ...(extra ?? {}) },
   };
 }
+
+// Family first, then `build` — one weighted draw, then the family's own draws. Seed replay is
+// NOT what pins this order (nothing reads a stored seed back to regenerate an item); keeping the
+// selection to a single fixed-width draw is, so a family's draw count stays independent of the
+// tier it was chosen in.
+export const sequenceItem = (rng: Rng, difficulty: 1 | 2 | 3): Item =>
+  sequenceItemOfFamily(rng, pickFamily(rng, difficulty), difficulty);

@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { grade, makeRng, parseAnswer, type Item, type Topic } from "@qp/engine";
+import { grade, makeRng, parseAnswer, sequenceReviewKey, type Item, type Topic } from "@qp/engine";
 import { arithmeticItem, missingOperandItem, sequenceItem } from "@qp/generators";
 import ChoiceGrid from "./ChoiceGrid";
-import { getStore } from "@/lib/store/useStore";
+import { enqueueReview, getStore } from "@/lib/store/useStore";
 
 type Feedback = { ok: boolean; item: Item } | null;
 
@@ -47,6 +47,10 @@ function DrillSession({ topic, seed }: { topic: Topic; seed: number }) {
       topic, answer: value || String(parsed), correct: ok, timeMs: Date.now() - qStart.current,
       sessionId: null, createdAt: new Date().toISOString(),
     }]).catch(() => {});
+    // Sequences only: an arithmetic instance is not a concept worth spacing (see enqueueReviews).
+    if (!ok && topic === "sequences") {
+      enqueueReview(sequenceReviewKey(String(item.meta.family), difficulty)).catch(() => {});
+    }
     setFeedback({ ok, item });
     setStreak((s) => (ok ? s + 1 : 0));
     setShowHint(false);

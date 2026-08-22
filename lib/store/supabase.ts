@@ -1,5 +1,5 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
-import type { AttemptRow, Store, TestSessionRow } from "./types";
+import type { AttemptRow, ReviewRow, Store, TestSessionRow } from "./types";
 
 type Client = ReturnType<typeof supabaseBrowser>;
 
@@ -14,6 +14,11 @@ const toSession = (r: TestSessionRow, userId: string) => ({
   wrong: r.wrong, skipped: r.skipped, duration_s: r.durationS, timings: r.timings,
   total: r.total ?? null,
   merged_from_local: r.mergedFromLocal ?? false, created_at: r.createdAt,
+});
+
+const toReview = (r: ReviewRow, userId: string) => ({
+  user_id: userId, problem_id: r.problemId, due_at: r.dueAt,
+  interval_days: r.intervalDays, ease: r.ease,
 });
 
 export class SupabaseStore implements Store {
@@ -45,5 +50,22 @@ export class SupabaseStore implements Store {
       total: d.total ?? undefined,
       mergedFromLocal: d.merged_from_local,
     }));
+  }
+
+  async listReviews(): Promise<ReviewRow[]> {
+    const { data, error } = await this.client.from("review_queue").select("*").order("due_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((d) => ({
+      problemId: d.problem_id, dueAt: d.due_at,
+      intervalDays: d.interval_days, ease: Number(d.ease),
+    }));
+  }
+  async saveReview(row: ReviewRow) {
+    const { error } = await this.client.from("review_queue").upsert(toReview(row, this.userId), { onConflict: "user_id,problem_id" });
+    if (error) throw error;
+  }
+  async removeReview(problemId: string) {
+    const { error } = await this.client.from("review_queue").delete().eq("user_id", this.userId).eq("problem_id", problemId);
+    if (error) throw error;
   }
 }

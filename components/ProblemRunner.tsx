@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { answerOf, drawParams, fmtNum, grade, parseAnswerExpr, type ProblemTemplate } from "@qp/engine";
-import { getStore } from "@/lib/store/useStore";
+import { enqueueReview, getStore } from "@/lib/store/useStore";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { problemsFor, TOPIC_LABELS } from "@/content/problems";
 import Tex from "./Tex";
@@ -32,8 +32,9 @@ function ProblemPicker({ topic, difficulty, nonce }: { topic?: string; difficult
   );
 }
 
-export function ProblemSession({ template, seed, onNext, onHarder }: {
+export function ProblemSession({ template, seed, onNext, onHarder, mode = "practice", onGraded }: {
   template: ProblemTemplate; seed: number; onNext: () => void; onHarder: (() => void) | null;
+  mode?: "practice" | "review"; onGraded?: (correct: boolean) => void;
 }) {
   const [roll, setRoll] = useState(0);
   const p = useMemo(() => drawParams(template, (seed + roll) >>> 0), [template, seed, roll]);
@@ -43,6 +44,7 @@ export function ProblemSession({ template, seed, onNext, onHarder }: {
   const [showHint, setShowHint] = useState(false);
   const [done, setDone] = useState<null | boolean>(null);
   const [reported, setReported] = useState(false);
+  const [queued, setQueued] = useState(false);
   const qStart = useRef(Date.now());
   const walkthroughRef = useRef<HTMLDivElement>(null);
 
@@ -55,14 +57,18 @@ export function ProblemSession({ template, seed, onNext, onHarder }: {
     if (parsed === null) { if (value.trim() !== "") setShowHint(true); return; }
     const ok = grade(parsed, exact, template.accepted.tolerance);
     getStore().saveAttempts([{
-      problemId: template.id, problemVersion: template.version, seed: (seed + roll) >>> 0, mode: "practice",
+      problemId: template.id, problemVersion: template.version, seed: (seed + roll) >>> 0, mode,
       topic: template.topic, answer: value, correct: ok, timeMs: Date.now() - qStart.current,
       sessionId: null, createdAt: new Date().toISOString(),
     }]).catch(() => {});
+    if (mode === "review") onGraded?.(ok);
+    else if (!ok) { setQueued(true); enqueueReview(template.id).catch(() => {}); } // auto-intake on a miss (spec §6)
     setDone(ok);
   }
 
-  function reroll() { setRoll((r) => r + 1); setValue(""); setDone(null); setReported(false); qStart.current = Date.now(); }
+  function reroll() { setRoll((r) => r + 1); setValue(""); setDone(null); setReported(false); setQueued(false); qStart.current = Date.now(); }
+
+  function addToReview() { setQueued(true); enqueueReview(template.id).catch(() => {}); }
 
   async function report() {
     setReported(true); // optimistic; reports are best-effort
@@ -117,8 +123,17 @@ export function ProblemSession({ template, seed, onNext, onHarder }: {
             seen at: {template.firms.map((f) => f.firm).join(" · ") || "—"} · expected pace ~{template.expectedPaceS}s
           </p>
           <p className="mono" style={{ marginTop: 14, fontSize: 12 }}>
-            <button type="button" onClick={reroll} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 700 }}>Re-roll numbers</button>
+            {/* No re-roll in review: a second submission would grade the same queue row again from stale state. */}
+            {mode === "practice" && (
+              <button type="button" onClick={reroll} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 700 }}>Re-roll numbers</button>
+            )}
             {onHarder && <button type="button" onClick={onHarder} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 700, marginLeft: 16 }}>Harder variant</button>}
+            {mode === "practice" && (
+              <button type="button" onClick={addToReview} disabled={queued} data-testid="add-review"
+                      style={{ background: "none", border: "none", color: queued ? "var(--muted)" : "var(--teal)", fontWeight: queued ? 400 : 700, marginLeft: 16 }}>
+                {queued ? "In review queue ✓" : "Add to review queue"}
+              </button>
+            )}
             <button type="button" onClick={report} disabled={reported} style={{ background: "none", border: "none", color: reported ? "var(--muted)" : "var(--faint)", marginLeft: 16 }}>{reported ? "Reported ✓" : "Report issue"}</button>
             <span style={{ marginLeft: 16, color: "var(--faint)" }}>Enter for next</span>
           </p>

@@ -85,4 +85,25 @@ describe("DrillRunner", () => {
     fireEvent.keyDown(fb, { key: "Enter", repeat: true });
     expect(screen.getByTestId("feedback")).toBeInTheDocument();
   });
+
+  it("queues the missed pattern FAMILY, not the instance, so review regenerates fresh terms", async () => {
+    render(<DrillRunner topic="sequences" />);
+    const input = await screen.findByLabelText("answer");
+    fireEvent.change(input, { target: { value: "999999" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    const queue = JSON.parse(localStorage.getItem("qp.reviews.v1") ?? "[]");
+    expect(queue).toHaveLength(1);
+    // A per-instance id (seq-fiblike-1_2_3_5_8) would store one row per draw and re-ask the same terms.
+    expect(queue[0].problemId).toMatch(/^seq-[a-z-]+-d1$/);
+  });
+
+  it("queues nothing for a missed arithmetic question", async () => {
+    render(<DrillRunner topic="arithmetic" />);
+    const input = await screen.findByLabelText("answer");
+    fireEvent.change(input, { target: { value: "999999" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(localStorage.getItem("qp.reviews.v1")).toBeNull();
+  });
 });
