@@ -64,8 +64,8 @@ Every problem supplies an **independent** `exact()` — a from-scratch Python re
 
 | family | template's closed form | `exact()` independent reimpl | 2nd check (`method`) |
 |---|---|---|---|
-| ruin — fair two-barrier (prob) | `i/N` | from-scratch Python | `brute-force`: depth-truncated full path enumeration, truncation depth chosen per-instance so unabsorbed tail mass `< 1e-12` (feasible for the small-barrier items this family is pinned to) |
-| ruin — unfair two-barrier (prob) | `(1−(q/p)^i)/(1−(q/p)^N)` | from-scratch Python | `brute-force`: same truncated enumeration (same small-barrier pinning) |
+| ruin — fair two-barrier (prob) | `i/N` | from-scratch Python | `brute-force`: independent `numpy` solve of the absorption system `(I−Q)x=R` — matrix inversion vs the closed form's difference-equation algebra |
+| ruin — unfair two-barrier (prob) | `(1−(q/p)^i)/(1−(q/p)^N)` | from-scratch Python | `brute-force`: same absorption-system solve with biased transition weights |
 | ruin — one-barrier drift (prob) | `(q/p)^b` or `(p/q)^a` | from-scratch Python | `montecarlo`: simulate walks, estimate ever-touch probability |
 | ruin — expected durations | `i(N−i)`, `[i−N·Π]/(q−p)`, `b/(p−q)` | from-scratch Python | `montecarlo`: sample-mean of simulated absorption times (enumeration cannot average durations without the same tail machinery; the sample mean under the existing noise-bound rule is the honest independent check) |
 | geometric — single-point regions (segment, rectangle, disk, band, quarter-disk, triangle band) | length/area ratio | from-scratch Python | `montecarlo`: uniform point sampling |
@@ -74,9 +74,9 @@ Every problem supplies an **independent** `exact()` — a from-scratch Python re
 | geometric — Buffon short needle | `2L/(πT)` | from-scratch Python | `montecarlo`: needle drops (center + angle uniform), cross counted |
 | geometric — conditional broken stick | piecewise in first-break position | from-scratch Python | `montecarlo`: two independent breaks, condition evaluated |
 
-**Why ruin's enumeration is pinned to small barriers:** the fair walk's absorption-time tail decays like `exp(−π²D/2N²)`, so provable `< 1e-12` truncation needs depth `D ∝ N²` — and path count is `2^D`. Enumeration is honest only while `D ≲ 24`, i.e. toy barriers (`N ≤ 5`). Every enumeration-checked problem is *authored* with barriers in that regime (its difficulty comes from the algebra, not the barrier size); everything else uses the linear-system solve below.
+**Why enumeration is out entirely (corrected at planning time):** a walk on `{0..N}` survives step `D` with probability decaying like `cos(π/(N+1))^D`, so provable `< 1e-12` tail truncation needs depth `D ∝ N²` — even the toy case `N=2` needs depth ≈ 40 (`2^40` sequences) and `N=5` needs ≈ 193 (`2^193`). Path enumeration cannot reach the discipline at any feasible depth, so the linear-system solve carries the `brute` slot for all two-barrier probabilities: algorithmically independent (matrix inversion vs difference-equation algebra), and `verify.py:52`'s **absolute** `1e-9` comparison is comfortable at probability magnitudes (`κ·eps ≈ 4e-11` for barriers ≤ ~700 states). Durations never route through `brute()` — at magnitude ~1e3 the same absolute bound leaves only ~100× margin — so they stay `montecarlo`, as does every one-barrier and geometric problem.
 
-**The linear-system fallback is a first-class method, not an afterthought:** where barriers exceed the enumeration regime, the second check solves the absorption system `(I−Q)^{-1}R` (probabilities) and the extended duration system `t = 1 + Q t` (durations) numerically via `numpy` — algorithmically independent of the algebraic closed form (matrix inversion vs. difference-equation solution). This is the "linear-system solve where enumeration is too big" branch approved at brainstorm. `numpy` is already in the verification environment as a `scipy` dependency; if `requirements.txt` needs it pinned explicitly, that is a one-line sub-batch-1 change, not an infra delta.
+**The linear solve is the second check for two-barrier ruin probabilities:** it solves `(I−Q)^{-1}R` (probabilities) numerically via `numpy` — already imported by `verify.py` and pinned in `requirements.txt`, so no dependency change. For `montecarlo` problems, `verify.py`'s existing noise-bound check (`3·se ≤ bound/2`) governs trial counts; §3's floors keep trial counts sane by construction. Monte Carlo-method probability answers floor at **0.1**, not 0.01 (B4's measured noise-bound lesson carried forward); fit-problem simulations follow B4's invert-through-the-closed-form pattern with propagated standard errors.
 
 For `montecarlo` problems, `verify.py`'s existing noise-bound check (`3·se ≤ bound/2`) governs trial counts — the same mechanism B1's Bayes and B4's continuous solvers already use. The §3 floor (`answers ≥ 0.01`) keeps trial counts sane by construction.
 
@@ -118,7 +118,7 @@ Each bullet is one problem. Surface contexts vary per problem and never repeat a
 9. **complement-ruin-first** — `P(ruin before goal) = 1 − success` as the primary ask — *insurance-blowup framing*
 10. **fit-capital-fair** — minimum `i` with `i/N ≥ c`: `⌈cN⌉` — *linear inversion*
 11. **fit-capital-unfair** — invert the power formula for `i` via logs — *log inversion; ⚠ the `⌈·⌉` must be verified against strict `≥` at authoring (off-by-one is the live defect)*
-12. **doubling-strategy** — table limit `n` doublings: session win prob `1 − (q/p)^n` (fair: `1 − 2^{−n}`) — *complement + geometric series*
+12. **doubling-strategy** — bankroll backs `n` consecutive losses: session win probability `1 − q^n` (the session fails only on n straight losses; fair stakes: `1 − 2^{−n}`) — *complement of a losing streak* (formula corrected at planning; the `1 − (q/p)^n` quantity belongs to the unshipped table-limit/infinite-time variant)
 13. **fit-goal-from-duration-fair** — given `i(N−i) = E`, solve the quadratic for `N` (admissible root) — *quadratic inversion*
 14. **stake-rescale** — recompute an absorption probability after units are halved/doubled — *scale-invariance teaching; arithmetic twist, not new theory*
 15. **restart-after-survival** — given level `j` was reached unharmed, fresh `P(goal)` from there — *Markov-restart decomposition*
@@ -151,7 +151,7 @@ Each bullet is one problem. Surface contexts vary per problem and never repeat a
 33. **corner-quarter-disk** — point uniform in rectangle: `P(within r of a corner)` — *quarter-circle area ratio*
 34. **disk-in-rect-complement** — circle radius `r` inside rectangle `a×b` (`r < min(a,b)/2`): `P(outside the circle) = 1 − πr²/(ab)` — *complement framing; parameterized so it never collapses to π/4*
 35. **buffon-fit-length-inverse** — find `L` with `P(cross) = c`: `L = cTπ/2` — *linear-in-π inversion of #31*
-36. **triangle-centroid-band** — point uniform in a triangle: probability below the line through the centroid parallel to the base — *area ratio under a drawn shape*
+36. **triangle-parallel-cut** — apex-up triangle cut parallel to the base at a drawn height fraction `t`: below-area `1−(1−t)²` — *area ratio under a drawn shape* (reframed at planning: the centroid line alone is fixed-answer 8/9, §3 hazard 4)
 
 ### `geometric` L3 — 4 problems (two dependent stages)
 
@@ -178,7 +178,7 @@ Inherited from B1 Task 10, B2 §8, B3 §9, and B4 §9 verbatim except where mark
 
 Four sub-batches, tier-grouped per the approved decision, each committed only when `npm run typecheck && npm run test && npm run verify:emit && python3 verification/verify.py` is green:
 
-- **Sub-batch 1 (9)** — the registration/gate widenings (§7 items 1-partial, 2, 6, 7), `ruin` L1 (8) with their Python counterparts and `CLAIMS` entries. The topic-sum assertion gains `ruin` here; the `numpy`-in-requirements check happens here if §5's fallback is exercised by any sub-batch-1 item.
+- **Sub-batch 1 (9)** — the registration/gate widenings (§7 items 1-partial, 2, 6, 7), `ruin` L1 (8) with their Python counterparts and `CLAIMS` entries. The topic-sum assertion gains `ruin` here. `numpy` is already imported by `verify.py` and pinned in `requirements.txt` — confirmed at planning, no dependency work exists in this batch.
 - **Sub-batch 2 (12)** — `ruin` L2 (8) + L3 (4) with counterparts and `CLAIMS` entries.
 - **Sub-batch 3 (9)** — the `geometric` gate widenings (§7 items 1-partial, 6, 7), `geometric` L1 (8) with counterparts and `CLAIMS` entries; the topic-sum assertion gains `geometric`.
 - **Sub-batch 4 (12)** — `geometric` L2 (8) + L3 (4) with counterparts and `CLAIMS` entries, the two 8/8/4 difficulty pins and tolerance-species re-check in `registry.test.ts`, and the §7 item 5 sign/sub-1e-6-audit confirmation (explicitly stated at ship, not assumed from earlier sub-batches).
