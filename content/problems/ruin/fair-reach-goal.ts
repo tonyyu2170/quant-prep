@@ -33,7 +33,7 @@ export const fairReachGoal: ProblemTemplate = {
     { title: "One fair hand", body: `From any intermediate stack $k$ the next hand sends you to $k-1$ or $k+1$ with equal chance, giving $f(k)=\\frac{f(k-1)+f(k+1)}{2}$. A value pinned halfway between its neighbours at every point can only be a straight line.` },
     { title: "Read off the line", body: `The straight line through $(0,0)$ and $(${fmtNum(p.goalChips)},1)$ is $f(k)=\\frac{k}{${fmtNum(p.goalChips)}}$, so from your stack $f=\\frac{${fmtNum(p.startChips)}}{${fmtNum(p.goalChips)}}=${fmtNum(d.frac)}$.` },
     { title: "Answer", body: `The probability you sweep the table is $${fmtNum(d.frac)}$.` },
-    { title: "Sanity check", body: `Your opponent sweeps with probability $1-${fmtNum(d.frac)}=${fmtNum(d.ruinProb)}$, and $${fmtNum(d.frac)}+${fmtNum(d.ruinProb)}=${fmtNum(1)}$ — exactly one of the two endings must happen.` },
+    { title: "Sanity check", body: `Your opponent sweeps with probability ${fmtNum(d.ruinProb)} — the exact complement of your share: $\\frac{${fmtNum(p.startChips)}}{${fmtNum(p.goalChips)}}+\\frac{${fmtNum(d.oppStack)}}{${fmtNum(p.goalChips)}}=${fmtNum(1)}$. Exactly one of the two endings must happen.` },
   ],
   keyInsight: "In a fair game your expected stack never moves, so the chance of ending up with everything is simply your share of the chips on the table.",
   commonTrap: "Reaching for streak arguments or betting systems — fairness pins the odds at your starting share, and no scheme moves it.",

@@ -954,6 +954,114 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(d.ruinProb, 1 - p.startChips / p.goalChips),
       breaks: (_p, d) => ({ ...d, ruinProb: 1 }) },
   ],
+
+  "ruin/unfair-reach-goal": [
+    { says: "Sanity: one extra chip strictly raises the reach chance",
+      holds: (_p, d) => P(d.successNext) > P(d.success),
+      breaks: (_p, d) => ({ ...d, successNext: d.success * 0.9 }) },
+    { says: "Solve: with r=q/p the answer recomputed fresh from params matches the printed value",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.startChips) / (1 - r ** p.goalChips) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "The complement is the bust chance and both sit inside the unit interval",
+      holds: (_p, d) => Math.abs(P(d.success) + P(1 - d.success) - 1) < 1e-4 && P(d.success) > 0 && P(d.success) < 1,
+      breaks: (_p, d) => ({ ...d, success: 2 }) },
+  ],
+
+  "ruin/walk-hit-upper-first": [
+    { says: "Sanity: touching the top first and the bottom first are complements summing to 1",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.mirrorFrac) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, mirrorFrac: d.mirrorFrac * 0.5 }) },
+    { says: "Read off the line: the answer equals downBarrier over total width, fresh from raw params",
+      holds: (p, d) => same(d.frac, p.downBarrier / (p.upBarrier + p.downBarrier)),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 1.02 }) },
+    { says: "The corridor width printed in Setup equals the sum of the two barriers from raw params",
+      holds: (p, d) => same(d.total, p.upBarrier + p.downBarrier),
+      breaks: (_p, d) => ({ ...d, total: d.total * 2 }) },
+  ],
+
+  "ruin/walk-hit-loss-first": [
+    { says: "Sanity: cut-first and bank-first exits account for the whole walk",
+      holds: (_p, d) => Math.abs(P(d.frac) + P(d.gainFirst) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, gainFirst: d.gainFirst + 0.5 }) },
+    { says: "The cut-first chance equals reboundTarget over corridor width, recomputed from raw params",
+      holds: (p, d) => same(d.frac, p.reboundTarget / (p.dropLimit + p.reboundTarget)),
+      breaks: (_p, d) => ({ ...d, frac: d.frac * 0.98 }) },
+    { says: "The corridor width printed in Setup equals the sum of the two levels from raw params",
+      holds: (p, d) => same(d.total, p.dropLimit + p.reboundTarget),
+      breaks: (_p, d) => ({ ...d, total: d.total + 1 }) },
+  ],
+
+  "ruin/fair-expected-duration": [
+    { says: "Setup fit: the parabola form k*(N-k) reproduces the printed duration from raw params",
+      holds: (p, d) => same(d.duration, p.stake * (p.target - p.stake)),
+      breaks: (_p, d) => ({ ...d, duration: d.duration * 1.05 }) },
+    { says: "Sanity: the average sits at or above both clean-run bounds",
+      holds: (_p, d) => P(d.duration) >= P(d.straightLoss) && P(d.duration) >= P(d.straightWin),
+      breaks: (_p, d) => ({ ...d, duration: Math.min(d.straightLoss, d.straightWin) - 1 }) },
+    { says: "Monotonicity: pushing the target one chip higher strictly lengthens the expected session",
+      holds: (p, d) => {
+        const grown = p.stake * (p.target + 1 - p.stake);
+        return P(grown) > P(d.duration);
+      },
+      breaks: (p, d) => ({ ...d, duration: p.stake * (p.target + 1 - p.stake) }) },
+  ],
+
+  "ruin/unfair-expected-duration": [
+    { says: "Sanity: expected play stays strictly inside the positive integers",
+      holds: (_p, d) => P(d.duration) >= 1 && P(d.duration) <= P(d.fairDuration) + P(d.fairDuration),
+      breaks: (_p, d) => ({ ...d, duration: -1 }) },
+    { says: "Success first: Pi from the odds ratio recomputes fresh from raw params",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const r = (1 - prob) / prob;
+        return Math.abs((1 - r ** p.stake) / (1 - r ** p.target) - d.success) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, success: d.success * 1.02 }) },
+    { says: "Monotonicity: pushing the target one chip higher strictly lengthens expected play",
+      holds: (p, d) => {
+        const prob = p.winPct / 100;
+        const q = 1 - prob;
+        const r = q / prob;
+        const pi = (1 - r ** p.stake) / (1 - r ** (p.target + 1));
+        const grown = (p.stake - (p.target + 1) * pi) / (q - prob);
+        return grown - d.duration > 1e-4; // measured min growth 1.5e-3 across the legal space
+      },
+      breaks: (p, d) => {
+        const prob = p.winPct / 100;
+        const q = 1 - prob;
+        const r = q / prob;
+        const pi = (1 - r ** p.stake) / (1 - r ** (p.target + 1));
+        return { ...d, duration: (p.stake - (p.target + 1) * pi) / (q - prob) };
+      } },
+  ],
+
+  "ruin/drift-touch-downside": [
+    { says: "Solve: the touch chance equals the odds ratio to the distance, fresh from raw params",
+      holds: (p, d) => Math.abs(((1 - p.winPct / 100) / (p.winPct / 100)) ** (p.startLevel + p.depth) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+    { says: "Sanity: a hole one deeper gives a strictly smaller touch chance",
+      holds: (_p, d) => P(d.oneDeeper) < P(d.answer),
+      breaks: (_p, d) => ({ ...d, oneDeeper: d.answer * 1.5 }) },
+    { says: "The touch chance stays a strict probability inside the band",
+      holds: (_p, d) => P(d.answer) >= 0.1 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1.0000001 }) },
+  ],
+
+  "ruin/adverse-drift-reach-upside": [
+    { says: "Solve: the reach chance equals the inverted odds ratio to the distance, fresh from raw params",
+      holds: (p, d) => Math.abs((p.winPct / 100 / (1 - p.winPct / 100)) ** (p.hole + p.height) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.97 }) },
+    { says: "Sanity: a target one lower gives a strictly larger reach chance",
+      holds: (_p, d) => P(d.oneLower) > P(d.answer),
+      breaks: (_p, d) => ({ ...d, oneLower: d.answer * 0.5 }) },
+    { says: "Bounds chain: the answer sits at or below the one-lower reach, which stays a probability",
+      holds: (_p, d) => P(d.answer) <= P(d.oneLower) && P(d.oneLower) <= 1,
+      breaks: (_p, d) => ({ ...d, oneLower: 0 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

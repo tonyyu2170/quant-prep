@@ -110,6 +110,13 @@ import { normalAbove } from "./distributions/normal-above";
 import { normalBetween } from "./distributions/normal-between";
 import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
 import { fairReachGoal } from "./ruin/fair-reach-goal";
+import { unfairReachGoal } from "./ruin/unfair-reach-goal";
+import { walkHitUpperFirst } from "./ruin/walk-hit-upper-first";
+import { walkHitLossFirst } from "./ruin/walk-hit-loss-first";
+import { fairExpectedDuration } from "./ruin/fair-expected-duration";
+import { unfairExpectedDuration } from "./ruin/unfair-expected-duration";
+import { driftTouchDownside } from "./ruin/drift-touch-downside";
+import { adverseDriftReachUpside } from "./ruin/adverse-drift-reach-upside";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -223,6 +230,13 @@ export const PROBLEMS: ProblemTemplate[] = [
   normalBetween,
   normalQuantileThenRange,
   fairReachGoal,
+  unfairReachGoal,
+  walkHitUpperFirst,
+  walkHitLossFirst,
+  fairExpectedDuration,
+  unfairExpectedDuration,
+  driftTouchDownside,
+  adverseDriftReachUpside,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
