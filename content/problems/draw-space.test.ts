@@ -19,7 +19,7 @@ import { PROBLEMS } from "./index";
 // Scope is ev-variance and distributions. Constraint 8 is a B3 rule and the 55 bayes and
 // counting problems predate it; widening further is a decision to take on its own evidence,
 // not a side effect of this file.
-const TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin"];
+const TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric"];
 
 /** Walk the full cartesian product of a template's param specs, legal draws only. */
 export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): void {

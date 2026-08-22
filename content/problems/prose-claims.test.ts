@@ -1228,6 +1228,102 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.remaining) <= P(d.fromZero),
       breaks: (_p, d) => ({ ...d, remaining: 10 ** 6 }) },
   ],
+
+  "geometric/segment-subinterval": [
+    { says: "Sanity: before and after shares reassemble the window",
+      holds: (p, d) => same(d.frac + d.complement, p.endMark / p.trailLength + (p.trailLength - p.endMark) / p.trailLength),
+      breaks: (_p, d) => ({ ...d, complement: d.frac }) },
+    { says: "The after-share recomputes fresh from raw params",
+      holds: (p, d) => same(d.complement, 1 - p.endMark / p.trailLength),
+      breaks: (_p, d) => ({ ...d, complement: d.complement * 1.02 }) },
+    { says: "The remaining stretch prints back as length minus mark",
+      holds: (p, d) => same(d.windowLeft, p.trailLength - p.endMark),
+      breaks: (_p, d) => ({ ...d, windowLeft: d.windowLeft + 5 }) },
+  ],
+
+  "geometric/two-points-gap": [
+    { says: "Close and far chances fill the square",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.farProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, farProb: d.farProb * 0.5 }) },
+    { says: "The corner leg is the stick short of the gap",
+      holds: (p, d) => same(d.cornerLeg, p.stickLength - p.gapUnits),
+      breaks: (_p, d) => ({ ...d, cornerLeg: d.cornerLeg * 1.05 }) },
+    { says: "The answer recomputes as one minus the squared shortfall ratio",
+      holds: (p, d) => Math.abs(1 - Math.pow(1 - p.gapUnits / p.stickLength, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 0.98 }) },
+  ],
+
+  "geometric/meeting-window": [
+    { says: "Meeting plus missing fills the arrival square",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.missProb) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, missProb: d.missProb + 0.5 }) },
+    { says: "The miss triangle legs are the window short of the patience",
+      holds: (p, d) => same(d.missLeg, p.windowMinutes - p.waitMinutes),
+      breaks: (_p, d) => ({ ...d, missLeg: d.missLeg + 7 }) },
+    { says: "The meeting chance recomputes fresh from the two times",
+      holds: (p, d) => Math.abs(1 - Math.pow((p.windowMinutes - p.waitMinutes) / p.windowMinutes, 2) - d.answer) < 1e-9,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "geometric/square-inner-disk": [
+    { says: "Areas: pi r-squared over width-times-height reproduces the printed chance",
+      holds: (p, d) => same(d.answer, (Math.PI * p.diskR * p.diskR) / (p.boardW * p.boardH)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.03 }) },
+    { says: "The disk fits inside the board and its share stays a probability",
+      holds: (p, d) => 2 * p.diskR <= Math.min(p.boardW, p.boardH) && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 2 }) },
+    { says: "A square board would cap any inscribed circle's share at a quarter of pi",
+      holds: (p, d) => p.boardW !== p.boardH || P(d.answer) <= P(Math.PI / 4),
+      breaks: (_p, d) => ({ ...d, answer: Math.PI / 3 }) },
+  ],
+
+  "geometric/concentric-circles": [
+    { says: "Bullseye share equals squared radius ratio, fresh from raw params",
+      holds: (p, d) => same(d.answer, Math.pow(p.bullR / p.boardR, 2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Ring and bullseye partition the board",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.ringShare) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, ringShare: d.ringShare * 0.9 }) },
+    { says: "The radius ratio itself prints back from raw params",
+      holds: (p, d) => same(d.ratio, p.bullR / p.boardR),
+      breaks: (_p, d) => ({ ...d, ratio: d.ratio * 1.05 }) },
+  ],
+
+  "geometric/broken-stick-left-share": [
+    { says: "Qualifying stretch is the stick past the threshold mark",
+      holds: (p, d) => same(d.qualifying, p.stickCm - (p.sharePct / 100) * p.stickCm),
+      breaks: (_p, d) => ({ ...d, qualifying: d.qualifying + 4 }) },
+    { says: "Answer is one minus the demanded share",
+      holds: (p, d) => same(d.answer, 1 - d.shareFrac),
+      breaks: (_p, d) => ({ ...d, answer: d.shareFrac }) },
+    { says: "Threshold sits at the demanded share of full length",
+      holds: (p, d) => same(d.threshold, (p.sharePct / 100) * p.stickCm),
+      breaks: (_p, d) => ({ ...d, threshold: d.threshold * 1.04 }) },
+  ],
+
+  "geometric/border-band": [
+    { says: "Interior keeps positive room and the band stays a strict share",
+      holds: (p, d) => 2 * p.bandWidth < Math.min(p.boardW, p.boardH) && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+    { says: "Band share is one minus interior over whole",
+      holds: (p, d) => same(d.answer, 1 - d.innerArea / d.boardArea),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Interior dimensions print back from raw params",
+      holds: (p, d) => same(d.innerW, p.boardW - 2 * p.bandWidth) && same(d.innerH, p.boardH - 2 * p.bandWidth),
+      breaks: (_p, d) => ({ ...d, innerW: d.innerW + 6 }) },
+  ],
+
+  "geometric/chord-angle-cap": [
+    { says: "Answer is the cap fraction itself",
+      holds: (p, d) => same(d.answer, p.capPct / 100),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Complement covers pairings beyond the cap",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.complement) - 1) < 1e-4,
+      breaks: (_p, d) => ({ ...d, complement: 1 }) },
+    { says: "Caps stay within the foldable half-turn range",
+      holds: (_p, d) => P(d.answer) >= 0.1 && P(d.answer) <= 0.99,
+      breaks: (_p, d) => ({ ...d, answer: 1.5 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -1290,7 +1386,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

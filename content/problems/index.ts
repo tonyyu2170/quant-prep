@@ -129,6 +129,14 @@ import { fitThenDuration } from "./ruin/fit-then-duration";
 import { inferCapitalThenNewGoal } from "./ruin/infer-capital-then-new-goal";
 import { doublingFitThenDuration } from "./ruin/doubling-fit-then-duration";
 import { surviveThenRemainingDuration } from "./ruin/survive-then-remaining-duration";
+import { segmentSubinterval } from "./geometric/segment-subinterval";
+import { twoPointsGap } from "./geometric/two-points-gap";
+import { meetingWindow } from "./geometric/meeting-window";
+import { squareInnerDisk } from "./geometric/square-inner-disk";
+import { concentricCircles } from "./geometric/concentric-circles";
+import { brokenStickLeftShare } from "./geometric/broken-stick-left-share";
+import { borderBand } from "./geometric/border-band";
+import { chordAngleCap } from "./geometric/chord-angle-cap";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -261,6 +269,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   inferCapitalThenNewGoal,
   doublingFitThenDuration,
   surviveThenRemainingDuration,
+  segmentSubinterval,
+  twoPointsGap,
+  meetingWindow,
+  squareInnerDisk,
+  concentricCircles,
+  brokenStickLeftShare,
+  borderBand,
+  chordAngleCap,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
