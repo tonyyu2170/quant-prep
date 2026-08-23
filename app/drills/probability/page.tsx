@@ -15,7 +15,7 @@ export default function Page() {
   } as const);
   return (
     <div className="container" style={{ padding: "48px 24px", maxWidth: 760 }}>
-      <DrillNav current="probability" />
+      <DrillNav current="problem bank" />
       <div className="mono" style={{ display: "flex", justifyContent: "space-between", fontSize: 12, flexWrap: "wrap", marginBottom: 26 }}>
         <span>
           <button type="button" style={chip(topic === undefined)} onClick={() => setTopic(undefined)}>all</button>

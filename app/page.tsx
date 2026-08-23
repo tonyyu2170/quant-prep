@@ -12,7 +12,7 @@ const sims = [
 ];
 
 const drills = [
-  { href: "/drills/probability", label: "Probability & brainteasers", sub: `${PROBLEMS.length} problems · ${TOPICS} topics · worked solutions` },
+  { href: "/drills/probability", label: "Problem bank", sub: `${PROBLEMS.length} problems · ${TOPICS} topics · worked solutions` },
   { href: "/drills/arithmetic", label: "Arithmetic drill", sub: "Endless, difficulty-curved" },
   { href: "/drills/sequences", label: "Sequences drill", sub: "16 pattern families, weighted by level" },
   { href: "/drills/missing-operand", label: "Missing operand", sub: "Four-way choice · the unknown moves around the equation" },

@@ -4,7 +4,9 @@ const DRILLS = [
   { href: "/drills/arithmetic", label: "arithmetic" },
   { href: "/drills/sequences", label: "sequences" },
   { href: "/drills/missing-operand", label: "missing operand" },
-  { href: "/drills/probability", label: "probability" },
+  // Route kept for bookmarks; the label reflects what the page actually serves now that
+  // brainteasers, statistics and finance live in the same bank.
+  { href: "/drills/probability", label: "problem bank" },
 ];
 
 export default function DrillNav({ current }: { current: string }) {

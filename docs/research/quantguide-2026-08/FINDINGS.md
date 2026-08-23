@@ -9,9 +9,9 @@ costs one Firecrawl credit per page, so check there before spending any.
 
 ## What was collected, and what it is a sample of
 
-- 218 question pages scraped by slug (`.firecrawl/harvest.sh`), of which **177 are
-  unlocked** and carry a difficulty, a category and a prompt; 41 are premium-locked and
-  give only a title.
+- 323 question pages scraped by slug (`harvest.sh`), of which **265 are unlocked** and
+  carry a difficulty, a category and a prompt; 58 are premium-locked and give only a title.
+  That is every slug the pagination walk collected.
 - The platform's own totals, printed in every page footer:
 
 | category | theirs | ours before tonight | ours now |
@@ -37,8 +37,8 @@ Over the 177 unlocked questions:
 
 | | Easy | Medium | Hard |
 |---|---|---|---|
-| **QuantGuide, unlocked sample (n=177)** | **39%** | **46%** | **15%** |
-| ours, whole bank (n=201) | 30% | 45% | 25% |
+| **QuantGuide, unlocked sample (n=265)** | **41%** | **40%** | **18%** |
+| ours, whole bank (n=206) | 30% | 45% | 25% |
 | QuantProf, levels 1-3 / 4-6 / 7-10 (n=694) | 16% | 53% | 31% |
 
 `COVERAGE.md` currently carries QuantProf's row as evidence that "our easy tier is roughly
@@ -46,7 +46,8 @@ Over the 177 unlocked questions:
 outside bank says the opposite: on a three-level scale that needs no mapping — QuantGuide
 labels questions Easy/Medium/Hard exactly as we label them L1/L2/L3 — a live commercial
 competitor puts *more* weight on the bottom tier than we do, and our bank is already the
-harder of the two.
+harder of the two. (An interim reading over the first 177 pages gave 39/46/15; completing
+the harvest moved it to 41/40/18, i.e. slightly further in the same direction.)
 
 ### The obvious objection, tested and rejected
 
@@ -60,13 +61,17 @@ comparison inside one curated list:
 | unlocked | 68 | 37% | 41% | 22% |
 | **locked** | 58 | **47%** | 41% | 12% |
 
-The locked half is the easier half. So the 39% Easy measured on unlocked questions is, if
+The locked half is the easier half. So the 41% Easy measured on unlocked questions is, if
 anything, an *under*estimate of their true bottom-tier share.
 
 Two caveats stay on the record. The playlist rows are a curated "most asked" list, so their
 absolute mix is not the platform's — only the locked-versus-unlocked *contrast* within them
 is controlled. And Easy/Medium/Hard is their author's judgement against their bank, as L1/L2/L3
 is ours against ours; the scales are named alike, not calibrated alike.
+
+Category shares of the unlocked sample track the platform's own totals closely — Probability
+62% against 61%, Brainteasers 20% against 20%, Finance 8% against 8% — which is the one
+respect in which the uncontrolled slice behaves like a random one.
 
 **Recommendation: retire the 130-template target.** COVERAGE.md already warned that treating
 QuantProf's 16% as a number to hit was "false precision"; this is the measurement that
