@@ -2,7 +2,11 @@
 
 ## NEXT SESSION STARTS HERE (resumed and landed 2026-08-22)
 
-**This work is now committed.** `main` carries four commits on top of `a2960ae`,
+**Everything below is landed and pushed.** `main` is at `057c5ba`. The four
+commits named here were pushed, then `phase-d-review-queue` merged in as
+`44e6006`, then the B7 batch as `11ea7b5` and `057c5ba` (bank 174 -> 188).
+
+Original four commits on top of `a2960ae`,
 in the order the earlier draft of this section proposed:
 
 1. `3bcf19d` feat(generators): weighted sequence families + missing-operand drill
@@ -11,7 +15,7 @@ in the order the earlier draft of this section proposed:
    Python counterparts, bank at 174
 4. `5c98986` docs(research): quantprof harvest + coverage analysis
 
-Nothing is pushed. `origin/main` is still at `a2960ae`.
+All of it is pushed; CI green on each push.
 
 **The Python gate has now been run and is green.** It was the one gate this work
 had never exercised, and the reason was concrete rather than incidental: all 24
@@ -34,11 +38,33 @@ before it, nobody had watched this gate fail.
 
 **Open next, in rough value order.** Nothing below is started.
 
-- Push, and watch CI go green on a runner rather than only locally.
-- Handoff item 3, four-term sequence display, still blocked on the answer
-  checker accepting any rule consistent with the shown terms.
+- **Apply `supabase/migrations/0003_leaderboard.sql`.** It is committed and
+  `/leaderboard` builds and passes e2e against local state, but the page cannot
+  work in production until the migration runs against the Supabase project. This
+  is the only thing blocking a shipped feature.
+- **The difficulty mix.** `COVERAGE.md` measured 36/40/23 against QuantProf's
+  16/53/31. B6 and B7 both skewed to L2/L3 and moved it, neither fixed it: the
+  weight is ~60 existing L1 templates. Closing it means re-tuning their param
+  ranges and difficulty tags, which is an edit to existing files rather than new
+  authoring, and it should be scoped before anyone starts.
+- Four-term sequence display, still blocked on the answer checker accepting any
+  rule consistent with the shown terms.
 - Combinatorial-game brainteasers, still blocked on a non-numeric answer type.
-- The `optiver-80in8` naming collision described at the end of this file.
+- The `optiver-80in8` naming collision, which needs a ruling rather than a fix.
+
+**Read `[[quantprep-authoring-gates]]` in memory before authoring another batch.**
+B7 cost real time to four traps that are all now written down: consecutive-seed
+correlation defeating tuple count in draw-space, answer spaces that are too
+DENSE rather than too sparse, rounded transcendentals as chain operands, and
+prose claims that are exactly true but false at display precision.
+
+**The gate that earns its keep is the Python counterpart.** In B6 it caught the
+ants factor-of-two and both bridge mis-costings. In B7 it caught a wrong
+QUESTION: comparing-heads-counts asked who gets strictly more heads and answered
+"half of what the tie leaves", which needs the two flip counts to be equal. It
+cleared registry, draw-space, printed-precision and prose-claims while being
+wrong by a factor of two at 24 flips against 4. The content gates check internal
+consistency; only an independent derivation checks truth.
 
 **Also still open from before this work:** branch `phase-d-review-queue` holds
 3 unmerged commits (tip `b69fbb1`) in `.worktrees/phase-d-review-queue` —
