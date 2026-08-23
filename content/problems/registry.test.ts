@@ -7,10 +7,10 @@ import { PROBLEMS, byId, problemsFor } from "./index";
 describe("problem registry invariants", () => {
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
-    // Three families now: probability/*, brainteasers/* and statistics/*. The prefix is still
-    // pinned — an id must declare which family it belongs to — but neither brainteasers nor
-    // statistics is a probability sub-topic.
-    const FAMILIES = ["probability/", "brainteasers/", "statistics/"];
+    // Four families now: probability/*, brainteasers/*, statistics/* and finance/*. The
+    // prefix is still pinned — an id must declare which family it belongs to — but none of
+    // the other three is a probability sub-topic.
+    const FAMILIES = ["probability/", "brainteasers/", "statistics/", "finance/"];
     for (const t of PROBLEMS) expect(FAMILIES.some((f) => t.topic.startsWith(f)), `${t.id}: unknown topic family "${t.topic}"`).toBe(true);
   });
   // `firms` is a free-form string rendered raw to users at ProblemRunner.tsx. Two spellings of one
@@ -72,6 +72,7 @@ describe("problem registry invariants", () => {
     const symmetry = problemsFor("probability/symmetry").length;
     const brainteasers = problemsFor("brainteasers/logic").length;
     const statistics = problemsFor("statistics/moments").length;
+    const finance = problemsFor("finance/pricing").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(27);
     expect(ev).toBe(34);
@@ -82,7 +83,8 @@ describe("problem registry invariants", () => {
     expect(symmetry).toBe(12);
     expect(brainteasers).toBe(16);
     expect(statistics).toBe(5);
-    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics).toBe(PROBLEMS.length);
+    expect(finance).toBe(5);
+    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + finance).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

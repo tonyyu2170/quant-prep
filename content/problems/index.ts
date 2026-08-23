@@ -203,6 +203,11 @@ import { minVarianceWeight } from "./statistics/min-variance-weight";
 import { correlationBoundThirdPair } from "./statistics/correlation-bound-third-pair";
 import { regressionSlopeFromMoments } from "./statistics/regression-slope-from-moments";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
+import { bookOverroundArbitrage } from "./finance/book-overround-arbitrage";
+import { triangularFxArbitrage } from "./finance/triangular-fx-arbitrage";
+import { putCallParity } from "./finance/put-call-parity";
+import { growingPerpetuityValue } from "./finance/growing-perpetuity-value";
+import { butterflyMaxProfit } from "./finance/butterfly-max-profit";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -406,6 +411,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   correlationBoundThirdPair,
   regressionSlopeFromMoments,
   sharpeTimeScaling,
+  bookOverroundArbitrage,
+  triangularFxArbitrage,
+  putCallParity,
+  growingPerpetuityValue,
+  butterflyMaxProfit,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
@@ -425,4 +435,5 @@ export const TOPIC_LABELS: Record<string, string> = {
   "probability/symmetry": "symmetry",
   "brainteasers/logic": "brainteasers",
   "statistics/moments": "statistics",
+  "finance/pricing": "finance",
 };

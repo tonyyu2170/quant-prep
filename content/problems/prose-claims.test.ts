@@ -1982,6 +1982,79 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => (d.answer === (p.counters % d.period === 0 ? 2 : 1)) === !(d.rem === 0 || d.rem === 1),
       breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
   ],
+  "finance/book-overround-arbitrage": [
+    { says: "Solve: the locked profit recomputed fresh from the odds matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.bank / (1 / p.o1 + 1 / p.o2 + 1 / p.o3) - p.bank)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The three implied prices are the reciprocals of the odds and add to the printed book",
+      holds: (p, d) => same(d.p1, r9(1 / p.o1)) && same(d.p2, r9(1 / p.o2)) && same(d.p3, r9(1 / p.o3)) && same(r9(d.p1 + d.p2 + d.p3), d.book),
+      breaks: (_p, d) => ({ ...d, book: d.book + 0.05 }) },
+    { says: "Sanity: every branch returns the same payout, and the stakes exhaust the bank",
+      holds: (p, d) => same(r9(d.stake1 * p.o1), d.payout) && same(r9(d.stake2 * p.o2), d.payout) && same(r9(d.stake3 * p.o3), d.payout) && same(r9(d.stake1 + d.stake2 + d.stake3), p.bank),
+      breaks: (_p, d) => ({ ...d, stake1: d.stake1 * 2 }) },
+    { says: "The arbitrage exists only because the book comes in under one, and the profit follows its shortfall",
+      holds: (p, d) => P(d.book) < 1 && P(d.payout) > p.bank && P(d.answer) > 0,
+      breaks: (_p, d) => ({ ...d, book: 1.2 }) },
+  ],
+  "finance/triangular-fx-arbitrage": [
+    { says: "Solve: the closing balance recomputed fresh from the rates matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.start * p.r1 * p.r2 * p.r3)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The loop factor is the product of the three quoted rates",
+      holds: (p, d) => same(d.factor, r9(p.r1 * p.r2 * p.r3)) && same(d.perDollar, r9(d.factor - 1)),
+      breaks: (_p, d) => ({ ...d, factor: 1 / d.factor }) },
+    { says: "Sanity: the closing balance is the starting balance scaled by the loop factor, and the loop is never fair",
+      holds: (p, d) => same(d.answer, r9(p.start * d.factor)) && Math.abs(P(d.factor) - 1) >= 0.02,
+      breaks: (_p, d) => ({ ...d, factor: 1 }) },
+    { says: "A loop above one profits and a loop below one loses, by the same per-dollar amount either way",
+      holds: (p, d) => (P(d.factor) > 1) === (P(d.answer) > p.start) && (P(d.factor) > 1) === (P(d.perDollar) > 0),
+      breaks: (_p, d) => ({ ...d, perDollar: -d.perDollar }) },
+  ],
+  "finance/put-call-parity": [
+    { says: "Solve: the put price recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.call - p.spot + p.strike * p.df)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The bond leg is the strike discounted, and it never exceeds the strike itself",
+      holds: (p, d) => same(d.pvK, r9(p.strike * p.df)) && P(d.pvK) < p.strike,
+      breaks: (p, d) => ({ ...d, pvK: p.strike * 1.1 }) },
+    { says: "Sanity: the two time values differ by exactly the interest on the strike — NOT by zero",
+      // The claim this replaces asserted they were equal, which is the textbook line for zero
+      // rates and false for every draw here. The gate rejected it on all 6090.
+      holds: (p, d) => same(r9(d.callTimeValue - d.putTimeValue), d.carry) && same(d.carry, r9(p.strike * (1 - p.df))) && P(d.carry) > 0,
+      breaks: (_p, d) => ({ ...d, carry: d.carry * 2 }) },
+    { says: "Both quoted prices are positive, and the call's intrinsic value never exceeds its price",
+      holds: (p, d) => P(d.answer) > 0 && P(d.intrinsic) <= p.call,
+      breaks: (_p, d) => ({ ...d, intrinsic: 1e6 }) },
+  ],
+  "finance/growing-perpetuity-value": [
+    { says: "Solve: the valuation recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.cf / ((p.yieldPct - p.growthPct) / 100))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The printed gap is the required return less the growth rate, in whole percent and as a decimal",
+      holds: (p, d) => d.spread === p.yieldPct - p.growthPct && same(d.spreadDec, r9(d.spread / 100)),
+      breaks: (_p, d) => ({ ...d, spread: d.spread + 1 }) },
+    { says: "Sanity: growth is worth something, so the growing stream is worth at least the flat one",
+      holds: (p, d) => P(d.answer) >= P(d.flatValue) && same(d.flatValue, r9(p.cf / (p.yieldPct / 100))),
+      nonVacuous: (p) => p.growthPct > 0,
+      breaks: (_p, d) => ({ ...d, flatValue: d.flatValue * 3 }) },
+    { says: "The series converges — the required return strictly beats the growth rate",
+      holds: (p, d) => p.yieldPct > p.growthPct && d.spread > 0 && P(d.answer) > 0,
+      breaks: (_p, d) => ({ ...d, spread: 0, answer: -1 }) },
+  ],
+  "finance/butterfly-max-profit": [
+    { says: "Solve: the maximum profit recomputed fresh from the quotes matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.width - (p.cLow - 2 * p.cMid + p.cHigh))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The strikes are evenly spaced and the debit is the alternating sum of the three quotes",
+      holds: (p, d) => d.k2 === p.k1 + p.width && d.k3 === d.k2 + p.width && same(d.debit, r9(p.cLow - 2 * p.cMid + p.cHigh)),
+      breaks: (_p, d) => ({ ...d, k3: d.k3 + 1 }) },
+    { says: "Sanity: the breakevens sit symmetrically about the middle strike, one debit inside each wing",
+      holds: (p, d) => same(r9(d.breakevenLow - p.k1), d.debit) && same(r9(d.k3 - d.breakevenHigh), d.debit) && same(r9((d.breakevenLow + d.breakevenHigh) / 2), d.k2),
+      breaks: (_p, d) => ({ ...d, breakevenHigh: d.breakevenHigh + 1 }) },
+    { says: "The structure is paid for up front and still has room to profit",
+      holds: (p, d) => P(d.debit) > 0 && P(d.answer) > 0 && P(d.debit) < p.width,
+      breaks: (_p, d) => ({ ...d, debit: -1 }) },
+  ],
   "statistics/portfolio-variance-two-asset": [
     { says: "Solve: the variance recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.w ** 2 * p.varA + (1 - p.w) ** 2 * p.varB + 2 * p.w * (1 - p.w) * p.cov)),
@@ -2208,7 +2281,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "finance/pricing"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
