@@ -28,7 +28,7 @@ given its own solver module (`verification/solvers/statistics.py`, `finance.py`)
 
 **The QuantGuide harvest contradicts COVERAGE.md's difficulty-mix premise.** See
 `../quantguide-2026-08/FINDINGS.md`. 323 pages scraped, 265 unlocked: their mix is
-**41/40/18** Easy/Medium/Hard against our 30/45/25 on a three-level scale needing no
+**41/40/18** Easy/Medium/Hard against our 27/48/25 on a three-level scale needing no
 mapping. The "easy tier is 2.5x overweight, 130 more L2/L3 templates needed" reading rests
 on QuantProf's 1-10 scale mapped to thirds. The obvious objection — platforms unlock easy
 questions — was tested against their playlist cards, which show a difficulty on locked rows
@@ -41,6 +41,9 @@ problems shipped behind it, and omitted `/drills/probability` and `/drills/missi
 entirely; counts are now derived from `PROBLEMS` so it cannot go stale again. And advancing
 past a walkthrough was bound to Enter and nothing else — no route at all on a touch device —
 so there is now a "Next problem" button, with a test that was watched fail without it.
+
+**Whole-bank mix is now 27/48/25 at n=210** (probability-only 31/46/23 at n=180), recomputed
+from `PROBLEMS`. Every one of the twenty templates added this session is L2 or L3.
 
 **New tool: `tools/probe.ts`.** The draw-space gate helpers in a plain tsx script, so a
 template's tuple count, texts/100, maxRepeat and either distinct@band or per-option shares

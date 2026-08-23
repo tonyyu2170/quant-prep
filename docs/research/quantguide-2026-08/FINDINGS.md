@@ -38,7 +38,7 @@ Over the 177 unlocked questions:
 | | Easy | Medium | Hard |
 |---|---|---|---|
 | **QuantGuide, unlocked sample (n=265)** | **41%** | **40%** | **18%** |
-| ours, whole bank (n=206) | 30% | 45% | 25% |
+| ours, whole bank (n=210) | 27% | 48% | 25% |
 | QuantProf, levels 1-3 / 4-6 / 7-10 (n=694) | 16% | 53% | 31% |
 
 `COVERAGE.md` currently carries QuantProf's row as evidence that "our easy tier is roughly
@@ -46,7 +46,13 @@ Over the 177 unlocked questions:
 outside bank says the opposite: on a three-level scale that needs no mapping — QuantGuide
 labels questions Easy/Medium/Hard exactly as we label them L1/L2/L3 — a live commercial
 competitor puts *more* weight on the bottom tier than we do, and our bank is already the
-harder of the two. (An interim reading over the first 177 pages gave 39/46/15; completing
+harder of the two.
+
+Our row is recomputed from `PROBLEMS` at n=210, not carried over from `COVERAGE.md`. That
+matters: the 30/45/25 an earlier draft of this file quoted was the post-B7 count at n=188,
+and the twenty templates added since are all L2/L3, so L1 has not moved while L2 has grown by
+fourteen. COVERAGE.md has a paragraph about making exactly this mistake with the 36/40/23 row,
+and it would have been embarrassing to repeat it in the document superseding it. (An interim reading over the first 177 pages gave 39/46/15; completing
 the harvest moved it to 41/40/18, i.e. slightly further in the same direction.)
 
 ### The obvious objection, tested and rejected

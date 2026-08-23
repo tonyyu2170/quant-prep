@@ -1,49 +1,10 @@
-/* Drafting probe — mirrors the gate helpers in content/problems/draw-space.test.ts so an
- * author can measure a template WITHOUT running vitest (that file imports vitest, so it
- * cannot be imported from a plain tsx script). Keep in step with the gate.
+/* Drafting probe — reports the four numbers the draw-space gate asserts on, for a template
+ * that has not shipped yet. It IMPORTS those counters rather than copying them, so the gate
+ * and the probe cannot drift apart; see the header of content/problems/draw-space.ts.
  *   npx tsx tools/probe.ts <template-id>...   (omit ids to probe the whole bank) */
-import { drawParams, type Params, type ProblemTemplate } from "@qp/engine";
+import type { ProblemTemplate } from "@qp/engine";
+import { distinctAtBand, emittedSpread, forEachLegalDraw } from "../content/problems/draw-space";
 import { PROBLEMS } from "../content/problems";
-
-export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): void {
-  const keys = Object.keys(t.params).sort();
-  const axes = keys.map((k) => {
-    const spec = t.params[k];
-    if (spec.choices) return [...spec.choices];
-    const { min, max, step } = spec.range!;
-    const out: number[] = [];
-    for (let i = 0; i <= Math.round((max - min) / step); i++) out.push(Math.round((min + step * i) * 1e10) / 1e10);
-    return out;
-  });
-  const acc: Params = {};
-  const rec = (i: number) => {
-    if (i === keys.length) { if (!t.constraint || t.constraint(acc)) cb({ ...acc }); return; }
-    for (const v of axes[i]) { acc[keys[i]] = v; rec(i + 1); }
-  };
-  rec(0);
-}
-
-export function distinctAtBand(answers: number[], rel = 0.005): number {
-  const s = [...answers].sort((a, b) => a - b);
-  let runs = 0;
-  for (let i = 0; i < s.length; i++) {
-    if (i === 0) { runs++; continue; }
-    if (!(s[i] - s[i - 1] <= rel * (Math.abs(s[i - 1]) + Math.abs(s[i])))) runs++;
-  }
-  return runs;
-}
-
-export function emittedSpread(t: ProblemTemplate, n = 100) {
-  let h = 2166136261;
-  for (const c of t.id) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
-  const base = h >>> 0;
-  const counts = new Map<string, number>();
-  for (let i = 0; i < n; i++) {
-    const p = drawParams(t, (base + i) >>> 0);
-    counts.set(JSON.stringify(p), (counts.get(JSON.stringify(p)) ?? 0) + 1);
-  }
-  return { texts: counts.size, maxRepeat: Math.max(...counts.values()) };
-}
 
 /** One line per template: the four numbers the gates assert on. */
 export function probe(t: ProblemTemplate): string {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fmtNum, normalCdf, normalQuantile, type Derived, type Params, type ProblemTemplate } from "@qp/engine";
 import { PROBLEMS, byId } from "./index";
-import { forEachLegalDraw } from "./draw-space.test";
+import { forEachLegalDraw } from "./draw-space";
 
 // Every claim the ev-variance prose makes that no other gate covers.
 //
