@@ -190,6 +190,9 @@ import { eggDropMinTrials } from "./brainteasers/egg-drop-min-trials";
 import { antsPoleCollisions } from "./brainteasers/ants-pole-collisions";
 import { bridgeCrossingTime } from "./brainteasers/bridge-crossing-time";
 import { frogWellEscape } from "./brainteasers/frog-well-escape";
+import { subtractionGameLastWins } from "./brainteasers/subtraction-game-last-wins";
+import { subtractionGameLastLoses } from "./brainteasers/subtraction-game-last-loses";
+import { twoPileNim } from "./brainteasers/two-pile-nim";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -380,6 +383,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   antsPoleCollisions,
   bridgeCrossingTime,
   frogWellEscape,
+  subtractionGameLastWins,
+  subtractionGameLastLoses,
+  twoPileNim,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

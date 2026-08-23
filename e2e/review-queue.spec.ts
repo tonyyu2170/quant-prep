@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 // Spec §7 flow 2: answer wrong → problem due in /review → complete a review.
 test("a missed problem lands in the review queue and reschedules after a review", async ({ page }) => {
   await page.goto("/drills/probability");
+  // Scope to a numeric topic: the unfiltered pool contains choice templates, which render
+  // buttons and no answer field, and this flow is about the typed path.
+  await page.getByRole("button", { name: "bayes", exact: true }).click();
   const input = page.getByLabel("answer");
   await expect(input).toBeVisible();
   await input.fill("99999");

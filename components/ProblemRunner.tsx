@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { answerOf, drawParams, fmtNum, grade, parseAnswerExpr, type ProblemTemplate } from "@qp/engine";
+import { answerLabel, answerOf, drawParams, fmtNum, grade, parseAnswerExpr, type ProblemTemplate } from "@qp/engine";
+import ChoiceGrid from "./ChoiceGrid";
 import { enqueueReview, getStore } from "@/lib/store/useStore";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { problemsFor, TOPIC_LABELS } from "@/content/problems";
@@ -55,10 +56,19 @@ export function ProblemSession({ template, seed, onNext, onHarder, mode = "pract
   function submit() {
     const parsed = parseAnswerExpr(value);
     if (parsed === null) { if (value.trim() !== "") setShowHint(true); return; }
-    const ok = grade(parsed, exact, template.accepted.tolerance);
+    finish(grade(parsed, exact, template.accepted.tolerance), value);
+  }
+
+  // A choice problem grades on the 1-based index of the label picked, so the same `grade`
+  // and the same stored `answer` shape (user-visible text) serve both input modes.
+  function pick(label: string) {
+    finish(template.choices!.indexOf(label) + 1 === exact, label);
+  }
+
+  function finish(ok: boolean, given: string) {
     getStore().saveAttempts([{
       problemId: template.id, problemVersion: template.version, seed: (seed + roll) >>> 0, mode,
-      topic: template.topic, answer: value, correct: ok, timeMs: Date.now() - qStart.current,
+      topic: template.topic, answer: given, correct: ok, timeMs: Date.now() - qStart.current,
       sessionId: null, createdAt: new Date().toISOString(),
     }]).catch(() => {});
     if (mode === "review") onGraded?.(ok);
@@ -87,6 +97,9 @@ export function ProblemSession({ template, seed, onNext, onHarder, mode = "pract
         <Tex text={template.statement(p, d)} />
       </p>
       {done === null ? (
+        template.choices ? (
+          <ChoiceGrid options={template.choices} onPick={(o) => { setValue(o); pick(o); }} picked={null} />
+        ) : (
         <>
           <input
             aria-label="answer" autoFocus inputMode="text" value={value}
@@ -98,13 +111,14 @@ export function ProblemSession({ template, seed, onNext, onHarder, mode = "pract
           />
           <p data-testid={showHint ? "parse-hint" : undefined} aria-live="polite" className="mono" style={{ color: "var(--bad)", fontSize: 12, marginTop: 8, minHeight: 18 }}>{showHint ? "couldn't read that answer" : ""}</p>
         </>
+        )
       ) : (
         <div data-testid="walkthrough" tabIndex={0} ref={walkthroughRef}
              onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat && e.target === e.currentTarget) onNext(); }}
              style={{ borderTop: `2px solid ${done ? "var(--good)" : "var(--bad)"}`, paddingTop: 14, maxWidth: "68ch" }}>
           <p data-testid="verdict" className="mono" style={{ color: done ? "var(--good)" : "var(--bad)", fontWeight: 700 }}>
             <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clipPath: "inset(50%)" }}>{done ? "correct" : "incorrect"}</span>
-            {done ? "✓ CORRECT" : "✗"} · you: {value || "—"} · exact: {fmtNum(exact)}
+            {done ? "✓ CORRECT" : "✗"} · you: {value || "—"} · exact: {template.choices ? answerLabel(template, d) : fmtNum(exact)}
           </p>
           <ol style={{ margin: "14px 0 0 18px" }}>
             {template.solution(p, d).map((s, i) => (

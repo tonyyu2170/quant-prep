@@ -199,10 +199,34 @@ describe("distribution-batch draw spaces clear constraint 8", () => {
   it("has templates to measure", () => expect(templates.length).toBeGreaterThan(0));
 
   it("every template yields at least 12 distinct answers over its full legal space", () => {
-    for (const t of templates) {
+    // Choice templates are measured by the balance rule below instead — a two-option "who
+    // wins" answer can never clear a 12-distinct floor, and excluding them without putting
+    // something in its place would leave the category ungated, which is the hole this whole
+    // file exists to close.
+    for (const t of templates.filter((x) => !x.choices)) {
       const answers = legalAnswers(t);
       expect(answers.length, `${t.id}: constraint rejects the entire space`).toBeGreaterThan(0);
       expect(distinctAtBand(answers), `${t.id} distinct answers at band`).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  it("every choice template actually uses all of its options, none below 15% of the space", () => {
+    // The failure this catches is a game whose answer never moves: if Alice wins on every
+    // legal draw, the template is a constant dressed as a question and a student learns to
+    // answer it without reading. A skew floor rather than a bare "both occur" also rejects
+    // the near-degenerate case where one option survives on a handful of corner draws.
+    const choiceTemplates = templates.filter((t) => t.choices);
+    expect(choiceTemplates.length, "no choice templates to measure").toBeGreaterThan(0);
+    for (const t of choiceTemplates) {
+      const answers = legalAnswers(t);
+      expect(answers.length, `${t.id}: constraint rejects the entire space`).toBeGreaterThan(0);
+      const n = t.choices!.length;
+      for (const a of answers)
+        expect(Number.isInteger(a) && a >= 1 && a <= n, `${t.id}: answer ${a} outside 1..${n}`).toBe(true);
+      for (let i = 1; i <= n; i++) {
+        const share = answers.filter((a) => a === i).length / answers.length;
+        expect(share, `${t.id} option ${i} ("${t.choices![i - 1]}") share of legal space`).toBeGreaterThanOrEqual(0.15);
+      }
     }
   });
 

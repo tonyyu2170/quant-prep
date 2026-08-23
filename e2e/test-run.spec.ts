@@ -32,6 +32,9 @@ test("sequences drill reveals the rule after answering", async ({ page }) => {
 
 test("probability drill unfolds a walkthrough and re-rolls", async ({ page }) => {
   await page.goto("/drills/probability");
+  // Scope to a numeric topic: the unfiltered pool now contains choice templates, which show
+  // buttons instead of an answer field, and this test is about the typed path.
+  await page.getByRole("button", { name: "bayes", exact: true }).click();
   const input = page.getByLabel("answer");
   await expect(input).toBeVisible();
   await input.fill("99999");
@@ -67,4 +70,25 @@ test("optiver MC sim runs four-way choice to results", async ({ page }) => {
   await expect(page.locator("p.mono").first()).not.toContainText("08:00");
   for (let i = 0; i < 3; i++) await page.keyboard.press("2");
   await expect(page.getByTestId("score")).toBeVisible();
+});
+
+test("a combinatorial-game problem is answered by choosing a side", async ({ page }) => {
+  await page.goto("/drills/probability");
+  await page.getByRole("button", { name: "brainteasers", exact: true }).click();
+  // Brainteasers mixes numeric and choice templates and the draw is random, so advance
+  // through the pool until a choice one appears rather than assuming the first draw is one.
+  const choices = page.getByTestId("choices");
+  for (let i = 0; i < 30 && !(await choices.isVisible()); i++) {
+    await page.getByLabel("answer").fill("99999");
+    await page.getByLabel("answer").press("Enter");
+    await expect(page.getByTestId("walkthrough")).toBeVisible();
+    await page.getByTestId("walkthrough").press("Enter");   // Enter for next
+  }
+  await expect(choices).toBeVisible();
+  await expect(page.getByLabel("answer")).toHaveCount(0);   // no typed field on a choice problem
+  await page.getByRole("button", { name: /choice 1:/ }).click();
+  await expect(page.getByTestId("walkthrough")).toBeVisible();
+  // The verdict names the label, never the raw 1-based index.
+  await expect(page.getByTestId("verdict")).toContainText(/Alice|Bob/);
+  await expect(page.getByTestId("verdict")).not.toContainText("exact: 1");
 });

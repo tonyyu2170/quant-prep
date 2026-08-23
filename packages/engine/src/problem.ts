@@ -23,6 +23,15 @@ export interface ProblemTemplate {
   derived: (p: Params) => Derived;             // EVERY intermediate number lives here
   statement: (p: Params, d: Derived) => string;
   answerKey: string;                           // derived key that is the answer
+  // Present => this is a CHOICE problem: `answerKey` resolves to a 1-based index into these
+  // labels rather than to a quantity, and the runner shows buttons instead of a number field.
+  // Deliberately a constant array, not (p, d) => string[]: if the labels could move with the
+  // draw, index 2 would mean different things on different seeds and a stored problemId+seed
+  // would no longer replay to the same semantic answer. 1-based, not 0-based, for two reasons
+  // — ChoiceGrid already keys off 1-4, and a 0 answer is a fixed point of the relative
+  // perturbation the verify.py mutation check uses, so an option-0 template would ship with a
+  // verifier that structurally cannot catch a wrong answer.
+  choices?: readonly string[];
   accepted: { tolerance: Tolerance };          // explicit rel OR abs (spec §6)
   solution: (p: Params, d: Derived) => SolutionStep[];
   keyInsight: string;                          // number-free by design
@@ -59,4 +68,14 @@ export function drawParams(t: ProblemTemplate, seed: number): Params {
 
 export function answerOf(t: ProblemTemplate, d: Derived): number {
   return d[t.answerKey];
+}
+
+/** The label a choice problem's answer selects. Throws on a non-choice template or a
+ *  out-of-range index — both are authoring errors that registry.test.ts pins. */
+export function answerLabel(t: ProblemTemplate, d: Derived): string {
+  if (!t.choices) throw new Error(`answerLabel: ${t.id} is not a choice problem`);
+  const i = answerOf(t, d);
+  if (!Number.isInteger(i) || i < 1 || i > t.choices.length)
+    throw new Error(`answerLabel: ${t.id} answer ${i} outside 1..${t.choices.length}`);
+  return t.choices[i - 1];
 }

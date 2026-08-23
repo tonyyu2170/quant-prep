@@ -38,6 +38,28 @@ describe("problem registry invariants", () => {
       }
     }
   });
+  it("choice templates declare usable labels and an in-range integer answer", () => {
+    // `choices` is a new user-visible text surface that printed-precision and prose-claims do
+    // not walk — they scan `statement` and solution bodies. Number-free labels keep it out of
+    // the traceability problem entirely rather than teaching those gates a new field.
+    for (const t of PROBLEMS.filter((x) => x.choices)) {
+      const labels = t.choices!;
+      expect(labels.length, `${t.id}: needs at least two options`).toBeGreaterThanOrEqual(2);
+      expect(labels.length, `${t.id}: ChoiceGrid keys off 1-4`).toBeLessThanOrEqual(4);
+      expect(new Set(labels).size, `${t.id}: duplicate labels`).toBe(labels.length);
+      for (const l of labels) {
+        expect(l.trim().length, `${t.id}: empty label`).toBeGreaterThan(0);
+        expect(l, `${t.id}: label "${l}" contains a digit — labels must be number-free`).not.toMatch(/\d/);
+      }
+      // Exact grading: a 1-based index has no meaningful neighbourhood.
+      expect(t.accepted.tolerance, `${t.id}: choice problems grade exactly`).toEqual({ abs: 0 });
+      for (let seed = 0; seed < 50; seed++) {
+        const a = answerOf(t, t.derived(drawParams(t, seed)));
+        expect(Number.isInteger(a) && a >= 1 && a <= labels.length,
+          `${t.id} seed ${seed}: answer ${a} outside 1..${labels.length}`).toBe(true);
+      }
+    }
+  });
   it("filters by topic and difficulty", () => {
     const bayes = problemsFor("probability/bayes").length;
     const counting = problemsFor("probability/counting").length;
@@ -56,7 +78,7 @@ describe("problem registry invariants", () => {
     expect(geometric).toBe(21);
     expect(markov).toBe(8);
     expect(symmetry).toBe(12);
-    expect(brainteasers).toBe(8);
+    expect(brainteasers).toBe(11);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
@@ -150,7 +172,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(17);
+    expect(exact.length).toBe(20);   // 17 exact counts + the 3 choice templates
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));

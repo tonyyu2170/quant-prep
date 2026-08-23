@@ -1945,6 +1945,51 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.area) > p.threshold && P(d.area) < 1,
       breaks: (_p, d) => ({ ...d, area: 1.5 }) },
   ],
+  "brainteasers/subtraction-game-last-wins": [
+    { says: "Solve: the winner recomputed fresh from params matches the printed choice",
+      holds: (p, d) => d.answer === (p.counters % (p.maxTake + 1) === 0 ? 2 : 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
+    { says: "The remainder and the largest safe pile reconstruct the counters exactly",
+      holds: (p, d) => same(d.lastSafe + d.rem, p.counters) && d.lastSafe % d.period === 0,
+      breaks: (_p, d) => ({ ...d, lastSafe: d.lastSafe + d.period }) },
+    { says: "Sanity: Bob wins exactly when the pile is already a multiple of the period",
+      holds: (_p, d) => (d.answer === 2) === (d.rem === 0),
+      breaks: (_p, d) => ({ ...d, rem: d.rem === 0 ? 1 : 0 }) },
+    { says: "The period is one more than the cap, never the cap itself",
+      holds: (p, d) => d.period === p.maxTake + 1,
+      breaks: (_p, d) => ({ ...d, period: d.period + 1 }) },
+  ],
+  "brainteasers/subtraction-game-last-loses": [
+    { says: "Solve: the winner recomputed fresh from params matches the printed choice",
+      holds: (p, d) => d.answer === (p.counters % (p.maxTake + 1) === 1 ? 2 : 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
+    { says: "Sanity: Bob wins exactly on the piles sitting one above a multiple of the period",
+      holds: (_p, d) => (d.answer === 2) === (d.rem === 1),
+      breaks: (_p, d) => ({ ...d, rem: d.rem === 1 ? 0 : 1 }) },
+    { says: "The target square is always one above a multiple of the period, and never past the pile",
+      // Stated unconditionally on purpose: an "if Alice can move" guard short-circuits to true
+      // on any lost draw, and a claim that is vacuous on the draw the falsifier uses cannot be
+      // made to fail — which the predicate self-test catches rather than tolerates.
+      holds: (p, d) => d.target % d.period === 1 % d.period && d.target <= p.counters,
+      breaks: (_p, d) => ({ ...d, target: d.target + 1 }) },
+    { says: "Misere and normal play disagree on exactly the remainders zero and one",
+      holds: (p, d) => (d.answer === (p.counters % d.period === 0 ? 2 : 1)) === !(d.rem === 0 || d.rem === 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
+  ],
+  "brainteasers/two-pile-nim": [
+    { says: "Solve: the winner recomputed fresh from params matches the printed choice",
+      holds: (p, d) => d.answer === (p.base === p.base + p.offset ? 2 : 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
+    { says: "Sanity: Bob wins exactly when the two piles are already balanced",
+      holds: (_p, d) => (d.answer === 2) === (d.gap === 0),
+      breaks: (_p, d) => ({ ...d, gap: d.gap === 0 ? 1 : 0 }) },
+    { says: "The gap is the difference of the piles and the total is their sum",
+      holds: (p, d) => same(d.gap, d.larger - d.smaller) && same(d.total, p.base + d.other),
+      breaks: (_p, d) => ({ ...d, gap: d.gap + 1 }) },
+    { says: "A balanced position always carries an even total",
+      holds: (_p, d) => d.gap !== 0 || d.total % 2 === 0,
+      breaks: (_p, d) => ({ ...d, gap: 0, total: d.total % 2 === 0 ? d.total + 1 : d.total }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -1991,7 +2036,7 @@ describe("the prose-claim predicates fail when they should", () => {
     }
   });
 
-  it("a 2 percent error in the answer is caught on every template", () => {
+  it("a wrong answer is caught on every template — 2 percent off, or the wrong option", () => {
     // End-to-end: not "some predicate somewhere fails", but every template detects a wrong
     // answer through at least one of its own claims. A template that survives this has
     // claims that never touch what it is actually asked for.
@@ -2000,7 +2045,12 @@ describe("the prose-claim predicates fail when they should", () => {
       const t = byId.get(slug) as ProblemTemplate;
       const p = firstLegalDraw(t);
       const d = t.derived(p);
-      const bent = { ...d, [t.answerKey]: d[t.answerKey] * 1.02 };
+      // A choice answer is a 1-based index, and scaling an index by 1.02 is not a wrong
+      // answer — it is a nonsense one. The real mutation for those is picking a DIFFERENT
+      // legal option, which is exactly the mistake a student makes.
+      const bent = t.choices
+        ? { ...d, [t.answerKey]: (d[t.answerKey] % t.choices.length) + 1 }
+        : { ...d, [t.answerKey]: d[t.answerKey] * 1.02 };
       if (!claims.some((c) => !c.holds(p, bent))) undetected.push(`${slug} (${t.answerKey})`);
     }
     expect(undetected, "a 2% wrong answer passes every claim on these templates").toEqual([]);

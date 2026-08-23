@@ -258,6 +258,102 @@ def trailing_zeros_factorial_brute(p):
     return float(zeros)
 
 
+# --- combinatorial games -------------------------------------------------------
+# `exact` mirrors the template's closed form (double-entry); `brute` never touches a
+# remainder and instead searches the game tree, so the two derivations share nothing
+# but the rules. Answers are 1-based indices into the template's `choices`:
+# 1 = Alice (the player to move), 2 = Bob.
+
+def _subtraction_winner_bruteforce(counters, max_take, last_taker_wins):
+    """Play the pile out. win[n] is True when the player to move from n counters wins.
+    No modular arithmetic anywhere — the recurrence is the definition of the game."""
+    win = [False] * (counters + 1)
+    # Terminal: facing an empty pile, the previous player took the last counter.
+    # Under normal play that player won, so the mover has lost; under misere they lost,
+    # so the mover has won.
+    win[0] = not last_taker_wins
+    for n in range(1, counters + 1):
+        win[n] = any(not win[n - take] for take in range(1, min(max_take, n) + 1))
+    return 1 if win[counters] else 2
+
+
+def subtraction_game_last_wins_exact(p):
+    counters, max_take = int(p["counters"]), int(p["maxTake"])
+    period = max_take + 1
+    rem = counters % period
+    return {
+        "period": period,
+        "rem": rem,
+        "lastSafe": counters - rem,
+        "answer": 2 if rem == 0 else 1,
+    }
+
+
+def subtraction_game_last_wins_brute(p):
+    return _subtraction_winner_bruteforce(int(p["counters"]), int(p["maxTake"]), True)
+
+
+def subtraction_game_last_loses_exact(p):
+    counters, max_take = int(p["counters"]), int(p["maxTake"])
+    period = max_take + 1
+    rem = counters % period
+    last_safe = counters - rem
+    if rem == 1:
+        target = last_safe + 1
+    elif rem == 0:
+        target = last_safe - period + 1
+    else:
+        target = last_safe + 1
+    return {
+        "period": period,
+        "rem": rem,
+        "lastSafe": last_safe,
+        "target": target,
+        "answer": 2 if rem == 1 else 1,
+    }
+
+
+def subtraction_game_last_loses_brute(p):
+    return _subtraction_winner_bruteforce(int(p["counters"]), int(p["maxTake"]), False)
+
+
+def two_pile_nim_exact(p):
+    base, offset = int(p["base"]), int(p["offset"])
+    other = base + offset
+    gap = abs(base - other)
+    return {
+        "other": other,
+        "gap": gap,
+        "smaller": min(base, other),
+        "larger": max(base, other),
+        "total": base + other,
+        "answer": 2 if gap == 0 else 1,
+    }
+
+
+def two_pile_nim_brute(p):
+    """Full game-tree search over (a, b) with memoisation. Never compares the piles —
+    it enumerates every legal removal from either pile, which is what makes it an
+    independent check on the mirroring argument rather than a restatement of it."""
+    base, offset = int(p["base"]), int(p["offset"])
+    other = base + offset
+    from functools import lru_cache
+
+    @lru_cache(maxsize=None)
+    def win(a, b):
+        if a == 0 and b == 0:
+            return False          # nothing to take: the previous player took the last stone
+        for take in range(1, a + 1):
+            if not win(a - take, b):
+                return True
+        for take in range(1, b + 1):
+            if not win(a, b - take):
+                return True
+        return False
+
+    return 1 if win(base, other) else 2
+
+
 SOLVERS = {
     "brainteasers/ants-pole-collisions": {
         "exact": ants_pole_collisions_exact,
@@ -290,5 +386,17 @@ SOLVERS = {
     "brainteasers/trailing-zeros-factorial": {
         "exact": trailing_zeros_factorial_exact,
         "brute": trailing_zeros_factorial_brute,
+    },
+    "brainteasers/subtraction-game-last-wins": {
+        "exact": subtraction_game_last_wins_exact,
+        "brute": subtraction_game_last_wins_brute,
+    },
+    "brainteasers/subtraction-game-last-loses": {
+        "exact": subtraction_game_last_loses_exact,
+        "brute": subtraction_game_last_loses_brute,
+    },
+    "brainteasers/two-pile-nim": {
+        "exact": two_pile_nim_exact,
+        "brute": two_pile_nim_brute,
     },
 }

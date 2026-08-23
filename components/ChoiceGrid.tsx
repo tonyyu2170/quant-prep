@@ -5,13 +5,13 @@ import { useEffect } from "react";
  * Four-way choice answered by click or by pressing 1–4 — the real test runs at ~6s a question,
  * so the keyboard path is the primary one. Enter skips.
  */
-export default function ChoiceGrid({
+export default function ChoiceGrid<T extends string | number>({
   options, onPick, onSkip, picked,
 }: {
-  options: readonly number[];
-  onPick: (value: number) => void;
+  options: readonly T[];
+  onPick: (value: T) => void;
   onSkip?: () => void;
-  picked?: number | null;
+  picked?: T | null;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -35,7 +35,8 @@ export default function ChoiceGrid({
           className="mono"
           style={{
             display: "flex", alignItems: "baseline", gap: 10, justifyContent: "center",
-            padding: "14px 12px", fontSize: 20, cursor: "pointer",
+            padding: "14px 12px", fontSize: typeof o === "string" ? 15 : 20, cursor: "pointer",
+            textAlign: "center", lineHeight: 1.35,
             borderRadius: 8, background: "var(--surface)", color: "var(--ink)",
             border: `1.5px solid ${picked === o ? "var(--teal)" : "var(--card-border)"}`,
           }}
