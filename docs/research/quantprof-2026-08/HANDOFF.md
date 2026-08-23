@@ -202,8 +202,19 @@ Optiver's.
 **A leaderboard bug turned up while checking that ruling.** 0003's canonical CTE listed only
 `optiver-80in8` and `sequences-sprint`, so the join discarded every multiple-choice session and
 that preset could never rank. `0004_leaderboard_mc_preset.sql` recreates the view with it
-added; everything below the CTE is byte-identical to 0003, which `diff` confirms. **It needs
-applying to the live project** — over the shared pooler, per the note further down this file.
+added; everything below the CTE is byte-identical to 0003, which `diff` confirms.
+
+**APPLIED to the live project 2026-08-23**, over the shared pooler
+(`aws-0-ca-central-1.pooler.supabase.com:5432`, user `postgres.<ref>`) — the dedicated host is
+IPv6-only and resolves nowhere from an IPv4 network, and psql's password prompt hangs in a
+runner with no TTY, so `PGPASSWORD` in the environment is the working route. Verified two ways,
+because one of them cannot see what it needs to: over REST the view is anon-readable (200) and
+the exposure surface is unchanged — `user_id`, `target_firms`, `duration_s`, `merged_from_local`
+and `total` each still return 400 / 42703 — but REST **cannot** confirm the canonical list
+changed, since filtering an empty board on the new preset returns `[]` under the old view too.
+The check that settles it reads the view's own definition:
+`select definition ilike '%optiver-mc-80in8%' from pg_views where viewname='leaderboard'`
+returns `t`.
 **Newly open:** Pure Math is QuantGuide's other zero for us — 60 of theirs, and the strand
 that matters is martingales and optional stopping. The raw QuantGuide prompts are in the
 gitignored `.firecrawl/qg/.firecrawl/` (323 files); re-scraping costs a credit each, so look
