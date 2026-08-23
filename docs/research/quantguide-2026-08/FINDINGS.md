@@ -4,7 +4,8 @@ A second outside bank, read the same way `quantprof-2026-08/` was read: for cove
 difficulty calibration, never for wording. **Their prompts are deliberately not in this
 repo.** `catalogue.tsv` carries slug, title, difficulty and category only — facts about
 what exists, not their text. The prompts were read locally to produce the gap list below
-and left in the gitignored `.firecrawl/` scratch directory.
+and left in the gitignored `.firecrawl/qg/.firecrawl/` scratch directory — re-scraping them
+costs one Firecrawl credit per page, so check there before spending any.
 
 ## What was collected, and what it is a sample of
 
@@ -22,8 +23,13 @@ and left in the gitignored `.firecrawl/` scratch directory.
 | Finance | 96 | **0** | 0 |
 | total | 1211 | 191 | 201 |
 
-The slug list came from paginating their question listing, so the 218 are close to an
-arbitrary slice of the catalogue rather than a curated one.
+The slug list came from walking listing pages 8 through 25 of their question index
+(`paginate.sh`, in the scratch directory) under a sort order that was never checked — the
+captured hrefs are not alphabetical, so it is some other ordering. Call it an **uncontrolled
+slice**, not a random sample. It does not flip the result below: the gap between 39% and
+QuantProf's 16% is far too large for a sampling artefact of this size to explain, and the
+locked-versus-unlocked test points the same way. But the headline should be read knowing the
+slice was not drawn deliberately.
 
 ## The headline result: their easy tier is BIGGER than ours
 
@@ -107,7 +113,8 @@ identities and the overlapping-sums construction are still open.
 
 ## Method note
 
-`catalogue.py` parses the scraped pages; `harvest.sh` does the scraping, paced to two URLs at
+Both scripts are committed beside this file. `catalogue.py` parses the scraped pages;
+`harvest.sh` does the scraping, paced to two URLs at
 a time because that is the account's parallel-scrape limit and a larger burst fails the whole
 batch with a per-minute rate-limit error rather than queuing. An unpaced first attempt looked
 like it was working — it printed a batch line per iteration — while landing 10 files out of

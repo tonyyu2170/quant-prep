@@ -34,6 +34,16 @@ solidly covered too.
 
 ### 1. Our bank is bottom-weighted; theirs is middle-weighted
 
+> **SUPERSEDED 2026-08-23 — read `../quantguide-2026-08/FINDINGS.md` before acting on this
+> section.** A second outside bank, QuantGuide, labels its questions Easy/Medium/Hard on a
+> three-level scale needing no mapping to ours, and its unlocked sample runs **39/46/15**
+> against our 30/45/25 — i.e. a live commercial bank is bottom-heavier than we are. The
+> objection that platforms unlock their easy questions was tested and points the other way:
+> inside their own playlists the *locked* half is the easier half (47% Easy against 37%).
+> The "2.5x overweight" reading and the 130-template target below rest on QuantProf's 1-10
+> scale mapped to thirds, which this file already calls a range rather than a target. Treat
+> them as one bank's opinion, not as a defect to close.
+
 Comparing probability-only, their 694 against our 150:
 
 | | bottom third | middle third | top third |
