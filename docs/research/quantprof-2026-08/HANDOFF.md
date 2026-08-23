@@ -38,10 +38,18 @@ before it, nobody had watched this gate fail.
 
 **Open next, in rough value order.** Nothing below is started.
 
-- **Apply `supabase/migrations/0003_leaderboard.sql`.** It is committed and
-  `/leaderboard` builds and passes e2e against local state, but the page cannot
-  work in production until the migration runs against the Supabase project. This
-  is the only thing blocking a shipped feature.
+- ~~Apply `supabase/migrations/0003_leaderboard.sql`~~ **— APPLIED 2026-08-22.**
+  Run against the live project over the *shared* pooler
+  (`aws-0-ca-central-1.pooler.supabase.com:5432`, user `postgres.<ref>`) —
+  `db.<ref>.supabase.co` is IPv6-only and resolves nowhere from an IPv4-only
+  network, which is what the dedicated-IPv4 add-on sells and the shared pooler
+  gives away. Verified from outside: anon gets 200 on the view, and each of
+  `user_id`/`target_firms`/`duration_s`/`merged_from_local`/`total`/`created_at`
+  returns 400 "column does not exist", so the five-column exposure surface holds.
+  The board is empty and will stay so until a session clears
+  `not merged_from_local` with a canonical `total`/`duration_s` — nothing has
+  ever flowed through it in prod. RLS on the base tables remains unverified from
+  outside; it needs `pg_class.relrowsecurity` via psql.
 - ~~The difficulty mix~~ **— scoped, ruled on and landed 2026-08-22.**
   Probability-only is now 31/46/23 (was 34/42/23). The mass re-tag the earlier
   draft proposed was never available: per topic the pace ladders are clean, so
