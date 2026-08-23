@@ -40,6 +40,28 @@ design matrix inverted rather than a factor of two applied, indicator vectors fo
 windows, the implied covariance matrix refitted both ways, and an upward scan for the smallest
 sample size. All ten were mutation-checked: a 2% perturbation is caught 25/25 by both routes.
 
+**Three defects shipped and were fixed in `8d0f0cb`, and all three are one species:** every
+gate checks that the printed numbers are consistent with each other, and none checks that the
+question and the answer are the same question.
+
+1. `duplicated-sample-slope-variance` asked for *the variance of the fitted slope* on the
+   doubled data — which does not change, since duplicating rows leaves the same estimator on the
+   same information. What halves is what the standard formula REPORTS once it takes 2n dependent
+   rows as independent. The solution, key insight and common trap all said this correctly while
+   the question asked for the opposite, so a careful candidate would have been graded wrong.
+   **The Python counterpart could not catch it** — it inverts the doubled design matrix and so
+   shares the template's independence assumption. That is verification-gate-lessons species 4, a
+   checker measuring the wrong population, and it is the first time in this repo the independent
+   route has been wrong in the same direction as the template.
+2. `sample-size-for-margin` graded on rel 0.005, which at an answer of 1000 accepts 995 — and
+   995 measurements provably leave the interval wider than the question asks for. **A template
+   whose answer is a COUNT needs `abs: 0`, not a relative band**, the same family of lesson as
+   the ceiling above. The exact-count pin in `registry.test.ts` moves 27 -> 28.
+3. `overlapping-window-sums`' sanity step counted `a+b` distinct days where there are
+   `a+b-ov`. Followed literally it gives `v(a+b+3ov)`: 72 against the true 64 at a=7, b=5, ov=2,
+   v=4. Only a human reading the rendered sentence finds this one — the prose-claim there
+   asserts the answer beats the disjoint case, which stays true either way.
+
 **Concurrency, worth knowing about.** Through this session another agent was editing the same
 working tree — `symmetry/comparing-heads-counts.ts` (rewritten to the equal-flip-counts version
 of the "who leads" question), `symmetry/disjoint-subsets.ts`, `ev-variance/chord-crossings.ts`,
