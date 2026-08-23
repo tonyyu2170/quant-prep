@@ -42,19 +42,16 @@ before it, nobody had watched this gate fail.
   `/leaderboard` builds and passes e2e against local state, but the page cannot
   work in production until the migration runs against the Supabase project. This
   is the only thing blocking a shipped feature.
-- **The difficulty mix — now scoped; read `COVERAGE.md` before acting.** The
-  scope killed the plan this bullet used to propose. A mass re-tag of the L1
-  tier is *not* available: per topic the `expectedPaceS` ladders are clean, so
-  the L1 tier is genuinely easy and promoting it would move the ratio without
-  making anything harder. Exactly five templates are mis-tagged (one of
-  those five is weak and flagged as needing a second reader), `ruin`'s L1/L2
-  boundary turns out to be arbitrary (identical pace bands), and the overweight
-  traces to the rigid ~12/12/6 authoring template rather than to bad tags. The
-  recommendation is to stop treating 16% as a target, land the five re-tags, and
-  let the mix move through ordinary B8+ authoring. The exact `registry.test.ts`
-  pin edits a re-tag forces are tabulated in `COVERAGE.md`, verified by running
-  the suite against a scratch re-tag rather than by reading the pins. Awaiting a
-  ruling.
+- ~~The difficulty mix~~ **— scoped, ruled on and landed 2026-08-22.**
+  Probability-only is now 31/46/23 (was 34/42/23). The mass re-tag the earlier
+  draft proposed was never available: per topic the pace ladders are clean, so
+  the L1 tier is genuinely easy and promoting it would have moved the ratio
+  without making anything harder. What landed instead: five promotions on a
+  content-derived criterion, and a full re-derivation of the `ruin` ladder
+  (8/8/4 → 4/12/4) whose L1/L2 split had never been derived from anything.
+  `distributions/hypergeom-exact-draw` is the one open thread — it did not
+  survive the criterion and stays L1, pending a human second reader.
+  Do not chase 16%; see `COVERAGE.md` for why that is false precision.
 - Four-term sequence display, still blocked on the answer checker accepting any
   rule consistent with the shown terms.
 - Combinatorial-game brainteasers, still blocked on a non-numeric answer type.

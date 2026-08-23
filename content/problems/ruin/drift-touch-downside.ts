@@ -13,7 +13,7 @@ export const driftTouchDownside: ProblemTemplate = {
   id: "ruin/drift-touch-downside",
   version: 1,
   topic: "probability/ruin",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "flow", weight: 0.35 }, { firm: "drw", weight: 0.3 }],
   source: { kind: "original", inspiration: "one-barrier ruin probability for a drifted random walk" },
   params: {

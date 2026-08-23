@@ -16,7 +16,7 @@ export const unfairReachGoal: ProblemTemplate = {
   id: "ruin/unfair-reach-goal",
   version: 1,
   topic: "probability/ruin",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "sig", weight: 0.35 }, { firm: "optiver", weight: 0.3 }],
   source: { kind: "original", inspiration: "gambler's ruin reach probability with an edge" },
   params: {

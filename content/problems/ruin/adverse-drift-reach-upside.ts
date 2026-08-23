@@ -13,7 +13,7 @@ export const adverseDriftReachUpside: ProblemTemplate = {
   id: "ruin/adverse-drift-reach-upside",
   version: 1,
   topic: "probability/ruin",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "millennium", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "longshot goal probability against adverse drift" },
   params: {

@@ -72,13 +72,18 @@ describe("problem registry invariants", () => {
     expect(geo.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(5);
     expect(geo.length).toBeLessThanOrEqual(21);
   });
-  it("ruin stays inside its 8/8/4 difficulty budget", () => {
-    // An upper bound, not the equality — Task 7 adds the exact pins when the batch closes.
+  it("ruin batch hits the re-derived 4/12/4 difficulty distribution", () => {
+    // The batch closed at 20/20, so this is now the equality the old comment promised.
+    // The 4/12/4 shape is derived from what a template asks rather than from a quota:
+    // L1 applies a fair-game formula forward (s/N, the s(N-s) parabola), L2 either runs
+    // the unfair machinery (the odds ratio, exponential in stack) or inverts/composes a
+    // fair one, and L3 chains two stages. The previous 8/8/4 predated that reading and
+    // split L1 from L2 on nothing — both tiers averaged ~56s over identical 40-85 ranges.
     const ruin = PROBLEMS.filter((t) => t.id.startsWith("ruin/"));
-    expect(ruin.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(8);
-    expect(ruin.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(8);
-    expect(ruin.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(4);
-    expect(ruin.length).toBeLessThanOrEqual(20);
+    expect(ruin.length).toBe(20);
+    expect(ruin.filter((t) => t.difficulty === 1).length).toBe(4);
+    expect(ruin.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(ruin.filter((t) => t.difficulty === 3).length).toBe(4);
   });
   it("distributions batch hits the 10/12/6 difficulty distribution", () => {
     const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
@@ -94,21 +99,21 @@ describe("problem registry invariants", () => {
       expect(t.accepted.tolerance.abs).toBeUndefined();
     }
   });
-  it("counting batch hits the 11/11/5 difficulty distribution", () => {
+  it("counting batch hits the 10/12/5 difficulty distribution", () => {
     const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
     expect(counting.length).toBe(27);
-    expect(counting.filter((t) => t.difficulty === 1).length).toBe(11);
-    expect(counting.filter((t) => t.difficulty === 2).length).toBe(11);
+    expect(counting.filter((t) => t.difficulty === 1).length).toBe(10);
+    expect(counting.filter((t) => t.difficulty === 2).length).toBe(12);
     expect(counting.filter((t) => t.difficulty === 3).length).toBe(5);
   });
-  it("ev-variance stays inside its 13/15/6 difficulty budget", () => {
-    // An upper bound, not the equality — Task 5 adds the exact pins when the batch closes.
-    // The budget has zero slack: L1 is already closed at 12, and Task 4's seven L2 plus
-    // Task 5's one L2 and six L3 fit it exactly. Without this, a misassignment in Task 4
-    // surfaces only at Task 5's pin, with fourteen problems already written.
+  it("ev-variance stays inside its 12/16/6 difficulty budget", () => {
+    // Kept as an upper bound, but the batch closed at 34/34 long ago and the equality pin
+    // below now covers everything this asserts — it survives only because it is the pin a
+    // reader finds first, and a re-tag that updated one and not the other would look green
+    // on the wrong one. Update both together or delete this one.
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
-    expect(ev.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(13);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(15);
+    expect(ev.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(12);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(16);
     expect(ev.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(6);
     expect(ev.length).toBeLessThanOrEqual(34);
   });
@@ -160,11 +165,11 @@ describe("problem registry invariants", () => {
     expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(17);
     expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
   });
-  it("ev-variance batch hits the 13/15/6 difficulty distribution", () => {
+  it("ev-variance batch hits the 12/16/6 difficulty distribution", () => {
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
     expect(ev.length).toBe(34);
-    expect(ev.filter((t) => t.difficulty === 1).length).toBe(13);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBe(15);
+    expect(ev.filter((t) => t.difficulty === 1).length).toBe(12);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBe(16);
     expect(ev.filter((t) => t.difficulty === 3).length).toBe(6);
   });
   it("every ev-variance problem grades on rel 0.005 — never abs", () => {

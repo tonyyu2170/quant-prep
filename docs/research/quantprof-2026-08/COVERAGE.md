@@ -258,3 +258,53 @@ which are real and both of which are small.
   the arithmetic/missing-operand/sequences generators. An empty pool renders a
   placeholder (`ProblemRunner.tsx:21`), and markov/symmetry/brainteasers already
   ship with zero L1, so a topic losing its L1 tier is precedented, not a break.
+
+---
+
+## LANDED 2026-08-22 — what actually shipped, and how it differs from the scope above
+
+Ruled on and applied. **Probability-only moved 34/42/23 → 31/46/23** (counts
+56/82/42 over 180); whole bank 30/45/25 over 188. Two departures from the
+proposal above, both found by doing the work:
+
+**The ruin fix subsumed and outgrew its two re-tags.** Rather than promote the
+two ruin templates the pace evidence named and leave the arbitrary ladder in
+place, all 20 ruin templates were read and the ladder re-derived from what each
+one asks:
+
+- **L1 — apply a fair-game formula forward.** `s/N`, the `s(N−s)` duration
+  parabola. Four templates.
+- **L2 — run the unfair machinery, or invert/compose a fair one.** The odds
+  ratio and its exponential in stack size; or solving for a parameter from a
+  stated outcome (`fit-capital-*`, `fit-goal-from-duration-fair`); or a
+  structural argument (`stake-rescale`, `restart-after-survival`,
+  `complement-ruin-first`). Twelve templates.
+- **L3 — chain two stages**, where stage one recovers a parameter and stage two
+  answers a different question with it. Four templates, unchanged.
+
+That promotes **four**, not two: the two exponential-formula ones the pace found
+plus `adverse-drift-reach-upside` and `drift-touch-downside`, which run the same
+drift machinery at 55s. Ruin goes 8/8/4 → **4/12/4**, and its `<=` budget is now
+the equality pin its own comment always promised (the batch closed at 20/20).
+The derived ladder independently confirms the pace read: `fair-expected-duration`
+stays L1 under it, which is exactly where the content read had already put it.
+
+**`distributions/hypergeom-exact-draw` was NOT promoted.** The scope flagged it
+as the weakest of the five and said to promote it "only if a second reader
+agrees." Applying ruin's forward-vs-inverted criterion to distributions answers
+it instead: one PMF applied forward is the same shape as `binomial-exact-count`
+(L1, 40s). Its 65s pace is the outlier, not its difficulty. **Left at L1 —
+still open for a human second reader to overrule.**
+
+Final: counting 11/11/5 → 10/12/5, ev-variance 13/15/6 → 12/16/6,
+ruin 8/8/4 → 4/12/4, distributions 10/12/6 unchanged, bayes and geometric
+untouched.
+
+**Gates:** typecheck clean, 429 tests / 28 files, `Emitted 188`, `Verified 188`.
+The new `4/12/4` pin was watched fail before being trusted — reverting one
+promotion makes it report `expected 5 to be 4`.
+
+**One trap left in place:** `ev-variance` still carries both a `<=` budget and an
+equality pin on the same numbers. Both were updated together here, and the
+budget's comment now says so, but it is redundant on a closed batch and is a
+live footgun for the next re-tag.

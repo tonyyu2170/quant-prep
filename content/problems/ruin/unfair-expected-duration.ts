@@ -18,7 +18,7 @@ export const unfairExpectedDuration: ProblemTemplate = {
   id: "ruin/unfair-expected-duration",
   version: 1,
   topic: "probability/ruin",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "de-shaw", weight: 0.35 }, { firm: "two-sigma", weight: 0.3 }],
   source: { kind: "original", inspiration: "expected absorption time with an edge" },
   params: {

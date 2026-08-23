@@ -7,7 +7,7 @@ export const stepsToHeight: ProblemTemplate = {
   id: "counting/steps-to-height",
   version: 1,
   topic: "probability/counting",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.5 }, { firm: "sig", weight: 0.4 }],
   source: { kind: "free-resource", inspiration: "counting plus/minus-one step sequences that end at a fixed level" },
   params: {

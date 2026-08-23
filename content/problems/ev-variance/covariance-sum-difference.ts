@@ -8,7 +8,7 @@ export const covarianceSumDifference: ProblemTemplate = {
   version: 1,
   firms: [{ firm: "de-shaw", weight: 0.4 }, { firm: "two-sigma", weight: 0.35 }, { firm: "imc", weight: 0.25 }],
   topic: "probability/ev-variance",
-  difficulty: 1,
+  difficulty: 2,
   source: { kind: "free-resource", inspiration: "covariance of the sum and difference of two independent uniform draws" },
   params: {
     facesA: { range: { min: 4, max: 24, step: 1 } },
