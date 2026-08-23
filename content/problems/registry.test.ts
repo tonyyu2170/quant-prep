@@ -50,12 +50,12 @@ describe("problem registry invariants", () => {
     const brainteasers = problemsFor("brainteasers/logic").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(27);
-    expect(ev).toBe(30);
-    expect(distributions).toBe(25);
+    expect(ev).toBe(34);
+    expect(distributions).toBe(28);
     expect(ruin).toBe(20);
-    expect(geometric).toBe(20);
+    expect(geometric).toBe(21);
     expect(markov).toBe(8);
-    expect(symmetry).toBe(10);
+    expect(symmetry).toBe(12);
     expect(brainteasers).toBe(8);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
@@ -63,12 +63,14 @@ describe("problem registry invariants", () => {
     expect(byId.get("bayes/base-rate-test")).toBeDefined();
     expect(byId.get("counting/committee-selection")).toBeDefined();
   });
-  it("geometric stays inside its 8/8/4 difficulty budget", () => {
+  it("geometric stays inside its 8/8/5 difficulty budget", () => {
+    // L3 widened by one for unit-square-product: the hyperbolic region needs a real integral
+    // rather than an area ratio, which is a tier above the rest of the batch.
     const geo = PROBLEMS.filter((t) => t.id.startsWith("geometric/"));
     expect(geo.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(8);
     expect(geo.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(8);
-    expect(geo.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(4);
-    expect(geo.length).toBeLessThanOrEqual(20);
+    expect(geo.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(5);
+    expect(geo.length).toBeLessThanOrEqual(21);
   });
   it("ruin stays inside its 8/8/4 difficulty budget", () => {
     // An upper bound, not the equality — Task 7 adds the exact pins when the batch closes.
@@ -78,12 +80,12 @@ describe("problem registry invariants", () => {
     expect(ruin.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(4);
     expect(ruin.length).toBeLessThanOrEqual(20);
   });
-  it("distributions batch hits the 10/10/5 difficulty distribution", () => {
+  it("distributions batch hits the 10/12/6 difficulty distribution", () => {
     const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
-    expect(dist.length).toBe(25);
+    expect(dist.length).toBe(28);
     expect(dist.filter((t) => t.difficulty === 1).length).toBe(10);
-    expect(dist.filter((t) => t.difficulty === 2).length).toBe(10);
-    expect(dist.filter((t) => t.difficulty === 3).length).toBe(5);
+    expect(dist.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(dist.filter((t) => t.difficulty === 3).length).toBe(6);
   });
   it("every distributions problem grades on rel 0.005 — never abs", () => {
     const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
@@ -99,16 +101,16 @@ describe("problem registry invariants", () => {
     expect(counting.filter((t) => t.difficulty === 2).length).toBe(11);
     expect(counting.filter((t) => t.difficulty === 3).length).toBe(5);
   });
-  it("ev-variance stays inside its 12/12/6 difficulty budget", () => {
+  it("ev-variance stays inside its 13/15/6 difficulty budget", () => {
     // An upper bound, not the equality — Task 5 adds the exact pins when the batch closes.
     // The budget has zero slack: L1 is already closed at 12, and Task 4's seven L2 plus
     // Task 5's one L2 and six L3 fit it exactly. Without this, a misassignment in Task 4
     // surfaces only at Task 5's pin, with fourteen problems already written.
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
-    expect(ev.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(12);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(12);
+    expect(ev.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(13);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(15);
     expect(ev.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(6);
-    expect(ev.length).toBeLessThanOrEqual(30);
+    expect(ev.length).toBeLessThanOrEqual(34);
   });
   it("a module-level helper exists only if constraint reaches it", () => {
     // Constraint 2 licenses a module-local helper for exactly one reason: `constraint` never
@@ -158,11 +160,11 @@ describe("problem registry invariants", () => {
     expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(17);
     expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
   });
-  it("ev-variance batch hits the 12/12/6 difficulty distribution", () => {
+  it("ev-variance batch hits the 13/15/6 difficulty distribution", () => {
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
-    expect(ev.length).toBe(30);
-    expect(ev.filter((t) => t.difficulty === 1).length).toBe(12);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(ev.length).toBe(34);
+    expect(ev.filter((t) => t.difficulty === 1).length).toBe(13);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBe(15);
     expect(ev.filter((t) => t.difficulty === 3).length).toBe(6);
   });
   it("every ev-variance problem grades on rel 0.005 — never abs", () => {

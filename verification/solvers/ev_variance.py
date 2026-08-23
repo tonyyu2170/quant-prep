@@ -10,6 +10,8 @@ from fractions import Fraction
 from itertools import combinations, permutations, product
 from math import factorial
 
+import numpy as np
+
 
 def two_outcome_bet_exact(p):
     k, w, loss = int(p["k"]), int(p["w"]), int(p["l"])
@@ -967,6 +969,116 @@ def sampling_without_replacement_variance_brute(p):
     return float(sum(w * (c - mean) ** 2 for c, w in enumerate(hist)) / n)
 
 
+
+def chord_crossings_exact(p):
+    chords, bounty = int(p["chords"]), int(p["bounty"])
+    pairs = (chords * (chords - 1)) // 2
+    return {"pairs": pairs, "numer": bounty * pairs, "ev": (bounty * pairs) / 3}
+
+
+def chord_crossings_sim(p, rng):
+    """Draw the chords and count the crossings geometrically: two chords cross exactly when one
+    endpoint of the second falls inside the arc cut by the first and the other falls outside.
+    Nothing here knows the one-third, which is the claim being checked.
+
+    Trials are scaled by the pair count: the noisiest case relative to tolerance is the smallest
+    board (few pairs), and that is also the cheapest one to run many times."""
+    chords, bounty = int(p["chords"]), int(p["bounty"])
+    pairs = (chords * (chords - 1)) // 2
+    trials = min(2_000_000, max(30_000, int(4e7 / pairs)))
+    idx_i, idx_j = np.triu_indices(chords, k=1)
+    total = 0.0
+    total_sq = 0.0
+    done = 0
+    chunk = max(1, min(20_000, trials))
+    while done < trials:
+        m = min(chunk, trials - done)
+        ends = rng.random((m, chords, 2))
+        lo = ends.min(axis=2)
+        hi = ends.max(axis=2)
+        b1 = ends[:, :, 0]
+        b2 = ends[:, :, 1]
+        in1 = (lo[:, idx_i] < b1[:, idx_j]) & (b1[:, idx_j] < hi[:, idx_i])
+        in2 = (lo[:, idx_i] < b2[:, idx_j]) & (b2[:, idx_j] < hi[:, idx_i])
+        counts = (in1 ^ in2).sum(axis=1).astype(np.float64)
+        total += counts.sum()
+        total_sq += (counts * counts).sum()
+        done += m
+    mean = total / trials
+    var = max(total_sq / trials - mean * mean, 0.0)
+    return bounty * mean, bounty * (var / trials) ** 0.5
+
+
+def spread_of_three_spins_exact(p):
+    sectors, rate = int(p["sectors"]), int(p["rate"])
+    sq_minus = sectors * sectors - 1
+    twice_s = 2 * sectors
+    return {
+        "sqMinus": sq_minus,
+        "twiceS": twice_s,
+        "meanMax": ((3 * sectors - 1) * (sectors + 1)) / (4 * sectors),
+        "meanMin": ((sectors + 1) * (sectors + 1)) / (4 * sectors),
+        "maxGap": sectors - 1,
+        "meanRange": sq_minus / twice_s,
+        "ev": (rate * sq_minus) / twice_s,
+    }
+
+
+def spread_of_three_spins_brute(p):
+    """Enumerate all s^3 outcomes of the three spins and average the observed gap. No order
+    statistics, no reflection argument."""
+    sectors, rate = int(p["sectors"]), int(p["rate"])
+    total = 0
+    for a in range(1, sectors + 1):
+        for b in range(1, sectors + 1):
+            for c in range(1, sectors + 1):
+                total += max(a, b, c) - min(a, b, c)
+    return float(rate * Fraction(total, sectors ** 3))
+
+
+def local_maxima_exact(p):
+    days, bounty = int(p["days"]), int(p["bounty"])
+    interior = days - 2
+    return {"interior": interior, "numer": bounty * interior, "ev": (bounty * interior) / 3}
+
+
+def local_maxima_brute(p):
+    """Sum one indicator per interior day, and get each indicator's probability by enumerating
+    the six relative orders of that day's three-price window rather than quoting one third."""
+    days, bounty = int(p["days"]), int(p["bounty"])
+    orders = list(permutations(range(3)))
+    peak = Fraction(sum(1 for o in orders if o[1] == max(o)), len(orders))
+    return float(bounty * sum(peak for _ in range(days - 2)))
+
+
+def covariance_sum_difference_exact(p):
+    a, b = int(p["facesA"]), int(p["facesB"])
+    a_sq, b_sq = a * a, b * b
+    return {
+        "aSq": a_sq,
+        "bSq": b_sq,
+        "diffSq": a_sq - b_sq,
+        "varA": (a_sq - 1) / 12,
+        "varB": (b_sq - 1) / 12,
+        "cov": (a_sq - b_sq) / 12,
+    }
+
+
+def covariance_sum_difference_brute(p):
+    """Walk the whole a-by-b outcome grid and apply the definition of covariance to the two
+    recorded quantities. No bilinearity expansion and no closed-form uniform variance."""
+    a, b = int(p["facesA"]), int(p["facesB"])
+    cells = a * b
+    e_s = Fraction(0)
+    e_d = Fraction(0)
+    e_sd = Fraction(0)
+    for x in range(1, a + 1):
+        for y in range(1, b + 1):
+            e_s += Fraction(x + y, cells)
+            e_d += Fraction(x - y, cells)
+            e_sd += Fraction((x + y) * (x - y), cells)
+    return float(e_sd - e_s * e_d)
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -998,4 +1110,20 @@ SOLVERS = {
     "ev-variance/truncated-doubling-game": {"exact": truncated_doubling_game_exact, "brute": truncated_doubling_game_brute},
     "ev-variance/wald-random-sum": {"exact": wald_random_sum_exact, "brute": wald_random_sum_brute},
     "ev-variance/sampling-without-replacement-variance": {"exact": sampling_without_replacement_variance_exact, "brute": sampling_without_replacement_variance_brute},
+    "ev-variance/chord-crossings": {
+        "exact": chord_crossings_exact,
+        "simulate": chord_crossings_sim,
+    },
+    "ev-variance/spread-of-three-spins": {
+        "exact": spread_of_three_spins_exact,
+        "brute": spread_of_three_spins_brute,
+    },
+    "ev-variance/local-maxima": {
+        "exact": local_maxima_exact,
+        "brute": local_maxima_brute,
+    },
+    "ev-variance/covariance-sum-difference": {
+        "exact": covariance_sum_difference_exact,
+        "brute": covariance_sum_difference_brute,
+    },
 }

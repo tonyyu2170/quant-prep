@@ -86,6 +86,10 @@ import { twoRerollStoppingValue } from "./ev-variance/two-reroll-stopping-value"
 import { truncatedDoublingGame } from "./ev-variance/truncated-doubling-game";
 import { waldRandomSum } from "./ev-variance/wald-random-sum";
 import { samplingWithoutReplacementVariance } from "./ev-variance/sampling-without-replacement-variance";
+import { chordCrossings } from "./ev-variance/chord-crossings";
+import { spreadOfThreeSpins } from "./ev-variance/spread-of-three-spins";
+import { localMaxima } from "./ev-variance/local-maxima";
+import { covarianceSumDifference } from "./ev-variance/covariance-sum-difference";
 import { binomialExactCount } from "./distributions/binomial-exact-count";
 import { binomialAtMost } from "./distributions/binomial-at-most";
 import { binomialAtLeastOne } from "./distributions/binomial-at-least-one";
@@ -111,6 +115,9 @@ import { normalBelow } from "./distributions/normal-below";
 import { normalAbove } from "./distributions/normal-above";
 import { normalBetween } from "./distributions/normal-between";
 import { normalQuantileThenRange } from "./distributions/normal-quantile-then-range";
+import { maxSerialDraw } from "./distributions/max-serial-draw";
+import { spareChainUptime } from "./distributions/spare-chain-uptime";
+import { firstContactRace } from "./distributions/first-contact-race";
 import { fairReachGoal } from "./ruin/fair-reach-goal";
 import { unfairReachGoal } from "./ruin/unfair-reach-goal";
 import { walkHitUpperFirst } from "./ruin/walk-hit-upper-first";
@@ -151,6 +158,7 @@ import { fitWindowThenOtherWindow } from "./geometric/fit-window-then-other-wind
 import { buffonFitThenOtherBoard } from "./geometric/buffon-fit-then-other-board";
 import { delayedArrivalMeeting } from "./geometric/delayed-arrival-meeting";
 import { concentricFitThenRing } from "./geometric/concentric-fit-then-ring";
+import { unitSquareProduct } from "./geometric/unit-square-product";
 
 import { deuceWinByTwo } from "./markov/deuce-win-by-two";
 import { machineUptimeStationary } from "./markov/machine-uptime-stationary";
@@ -171,6 +179,8 @@ import { friendsTogetherRoundTable } from "./symmetry/friends-together-round-tab
 import { relativeOrderOfPicks } from "./symmetry/relative-order-of-picks";
 import { decisiveFaceWait } from "./symmetry/decisive-face-wait";
 import { antsCircleDirections } from "./symmetry/ants-circle-directions";
+import { comparingHeadsCounts } from "./symmetry/comparing-heads-counts";
+import { disjointSubsets } from "./symmetry/disjoint-subsets";
 
 import { clockHandsAngle } from "./brainteasers/clock-hands-angle";
 import { lightSwitchesLeftOn } from "./brainteasers/light-switches-left-on";
@@ -269,6 +279,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   truncatedDoublingGame,
   waldRandomSum,
   samplingWithoutReplacementVariance,
+  chordCrossings,
+  spreadOfThreeSpins,
+  localMaxima,
+  covarianceSumDifference,
   binomialExactCount,
   binomialAtMost,
   binomialAtLeastOne,
@@ -294,6 +308,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   normalAbove,
   normalBetween,
   normalQuantileThenRange,
+  maxSerialDraw,
+  spareChainUptime,
+  firstContactRace,
   fairReachGoal,
   unfairReachGoal,
   walkHitUpperFirst,
@@ -334,6 +351,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   buffonFitThenOtherBoard,
   delayedArrivalMeeting,
   concentricFitThenRing,
+  unitSquareProduct,
   deuceWinByTwo,
   machineUptimeStationary,
   mazeFoodBeforeTrap,
@@ -352,6 +370,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   relativeOrderOfPicks,
   decisiveFaceWait,
   antsCircleDirections,
+  comparingHeadsCounts,
+  disjointSubsets,
   clockHandsAngle,
   lightSwitchesLeftOn,
   trailingZerosFactorial,

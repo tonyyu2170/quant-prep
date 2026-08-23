@@ -5,6 +5,7 @@ brute()/simulate(): recompute the ANSWER by an independent path per spec §5's t
 re-calling the template's closed form."""
 
 import itertools
+from fractions import Fraction
 from math import comb, exp, log
 
 import numpy as np
@@ -590,6 +591,80 @@ def normal_quantile_then_range_sim(p, rng, trials=15_000_000, chunk=3_000_000):
     return est, se
 
 
+
+def max_serial_draw_exact(p):
+    stock, picked = int(p["stock"]), int(p["picked"])
+    gaps = picked + 1
+    n_plus_1 = stock + 1
+    return {
+        "gaps": gaps,
+        "nPlus1": n_plus_1,
+        "unsampled": stock - picked,
+        "topGap": (stock - picked) / gaps,
+        "numer": picked * n_plus_1,
+        "answer": (picked * n_plus_1) / gaps,
+    }
+
+
+def max_serial_draw_brute(p):
+    """Sum m times P(largest tag = m) over the hypergeometric position distribution. The gap
+    symmetry the template leans on never appears."""
+    stock, picked = int(p["stock"]), int(p["picked"])
+    total = comb(stock, picked)
+    exp_max = Fraction(0)
+    for m in range(picked, stock + 1):
+        exp_max += m * Fraction(comb(m - 1, picked - 1), total)
+    return float(exp_max)
+
+
+def spare_chain_uptime_exact(p):
+    units, mean_life, earnings = int(p["units"]), float(p["meanLife"]), int(p["earnings"])
+    return {"uptime": units * mean_life, "ev": earnings * units * mean_life}
+
+
+def spare_chain_uptime_sim(p, rng, trials=8_000_000, chunk=1_000_000):
+    """Run the chain: draw each cell's exponential life and add them. This is the Erlang mean
+    arrived at by sampling rather than by asserting that the means add."""
+    units, mean_life, earnings = int(p["units"]), float(p["meanLife"]), int(p["earnings"])
+    total = 0.0
+    total_sq = 0.0
+    done = 0
+    while done < trials:
+        m = min(chunk, trials - done)
+        lives = rng.exponential(mean_life, size=(m, units)).sum(axis=1)
+        total += lives.sum()
+        total_sq += (lives * lives).sum()
+        done += m
+    mean = total / trials
+    var = max(total_sq / trials - mean * mean, 0.0)
+    return earnings * mean, earnings * (var / trials) ** 0.5
+
+
+def first_contact_race_exact(p):
+    email, call, days = int(p["emailRate"]), int(p["callRate"]), int(p["days"])
+    merged = email + call
+    return {
+        "merged": merged,
+        "share": email / merged,
+        "numer": days * email,
+        "ev": (days * email) / merged,
+    }
+
+
+def first_contact_race_sim(p, rng, trials=25_000_000, chunk=2_500_000):
+    """Race the two streams directly: draw the waiting time to the first email and to the first
+    call and see which lands sooner. No merging property, no rate-share formula."""
+    email, call, days = int(p["emailRate"]), int(p["callRate"]), int(p["days"])
+    wins = 0
+    done = 0
+    while done < trials:
+        m = min(chunk, trials - done)
+        wins += int((rng.exponential(1 / email, m) < rng.exponential(1 / call, m)).sum())
+        done += m
+    est = wins / trials
+    se = (est * (1 - est) / trials) ** 0.5
+    return days * est, days * se
+
 SOLVERS = {
     "distributions/binomial-exact-count": {"exact": binomial_exact_count_exact, "brute": binomial_exact_count_brute},
     "distributions/binomial-at-most": {"exact": binomial_at_most_exact, "brute": binomial_at_most_brute},
@@ -616,4 +691,16 @@ SOLVERS = {
     "distributions/normal-above": {"exact": normal_above_exact, "simulate": normal_above_sim},
     "distributions/normal-between": {"exact": normal_between_exact, "simulate": normal_between_sim},
     "distributions/normal-quantile-then-range": {"exact": normal_quantile_then_range_exact, "simulate": normal_quantile_then_range_sim},
+    "distributions/max-serial-draw": {
+        "exact": max_serial_draw_exact,
+        "brute": max_serial_draw_brute,
+    },
+    "distributions/spare-chain-uptime": {
+        "exact": spare_chain_uptime_exact,
+        "simulate": spare_chain_uptime_sim,
+    },
+    "distributions/first-contact-race": {
+        "exact": first_contact_race_exact,
+        "simulate": first_contact_race_sim,
+    },
 }

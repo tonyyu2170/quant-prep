@@ -298,6 +298,62 @@ def ants_circle_directions_brute(p):
             clean += 1
     return float(bounty * replays * Fraction(clean, 2 ** ants))
 
+
+def comparing_heads_counts_exact(p):
+    a, b, contests = int(p["flipsA"]), int(p["flipsB"]), int(p["contests"])
+    total = a + b
+    tie_ways = 1
+    for i in range(a):
+        tie_ways = tie_ways * (total - i) // (i + 1)
+    total_ways = 2 ** total
+    tie_prob = tie_ways / total_ways
+    return {
+        "total": total,
+        "tieWays": tie_ways,
+        "totalWays": total_ways,
+        "tieProb": tie_prob,
+        "ev": contests * tie_prob,
+    }
+
+
+def comparing_heads_counts_brute(p):
+    """Convolve the two binomials and add the matching-count terms one at a time. That is the
+    sum Vandermonde's identity is claimed to collapse, so the counterpart must not use the
+    identity — evaluating it term by term is the whole check."""
+    a, b, contests = int(p["flipsA"]), int(p["flipsB"]), int(p["contests"])
+    pa = [Fraction(_choose(a, i), 2 ** a) for i in range(a + 1)]
+    pb = [Fraction(_choose(b, j), 2 ** b) for j in range(b + 1)]
+    draw = Fraction(0)
+    for k in range(min(a, b) + 1):
+        draw += pa[k] * pb[k]
+    return float(contests * draw)
+
+
+def disjoint_subsets_exact(p):
+    items, bounty, rounds = int(p["items"]), int(p["bounty"]), int(p["rounds"])
+    favourable = 3 ** items
+    outcomes = 4 ** items
+    prob = favourable / outcomes
+    return {
+        "favourable": favourable,
+        "outcomes": outcomes,
+        "prob": prob,
+        "payout": bounty * rounds,
+        "ev": bounty * rounds * prob,
+    }
+
+
+def disjoint_subsets_brute(p):
+    """Count the disjoint pairs by choosing the first diner's set and then the second's from
+    what is left: sum over sizes of C(n,s)*C(n-s,t). That is a different decomposition from the
+    template's per-dish product, and it has to land on the same 3^n."""
+    items, bounty, rounds = int(p["items"]), int(p["bounty"]), int(p["rounds"])
+    pairs = 0
+    for s in range(items + 1):
+        for t in range(items - s + 1):
+            pairs += _choose(items, s) * _choose(items - s, t)
+    return float(bounty * rounds * Fraction(pairs, 4 ** items))
+
 SOLVERS = {
     "symmetry/all-wins-before-loss": {
         "exact": all_wins_before_loss_exact,
@@ -338,5 +394,13 @@ SOLVERS = {
     "symmetry/ants-circle-directions": {
         "exact": ants_circle_directions_exact,
         "brute": ants_circle_directions_brute,
+    },
+    "symmetry/comparing-heads-counts": {
+        "exact": comparing_heads_counts_exact,
+        "brute": comparing_heads_counts_brute,
+    },
+    "symmetry/disjoint-subsets": {
+        "exact": disjoint_subsets_exact,
+        "brute": disjoint_subsets_brute,
     },
 }

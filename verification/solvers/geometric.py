@@ -172,6 +172,31 @@ def chord_angle_cap_sim(p, rng, trials=15_000_000, chunk=1_500_000):
     return _bernoulli_sim(hits, trials, rng, chunk)
 
 
+
+def unit_square_product_exact(p):
+    threshold, bounty = float(p["threshold"]), int(p["bounty"])
+    pos_log = -math.log(threshold)
+    area = threshold + threshold * pos_log
+    return {
+        "posLog": pos_log,
+        "strip": threshold,
+        "curved": threshold * pos_log,
+        "area": area,
+        "ev": bounty * area,
+    }
+
+
+def unit_square_product_sim(p, rng, trials=25_000_000, chunk=2_500_000):
+    """Throw darts at the square and check the product against the threshold. The hyperbolic
+    region and its logarithm are exactly what is being tested, so neither appears here."""
+    threshold, bounty = float(p["threshold"]), int(p["bounty"])
+
+    def hits(m):
+        return int((rng.uniform(0.0, 1.0, m) * rng.uniform(0.0, 1.0, m) <= threshold).sum())
+
+    est, se = _bernoulli_sim(hits, trials, rng, chunk)
+    return bounty * est, bounty * se
+
 SOLVERS = {
     "geometric/segment-subinterval": {"exact": segment_subinterval_exact, "simulate": segment_subinterval_sim},
     "geometric/two-points-gap": {"exact": two_points_gap_exact, "simulate": two_points_gap_sim},
@@ -447,4 +472,8 @@ SOLVERS.update({
     "geometric/buffon-fit-then-other-board": {"exact": buffon_fit_then_other_board_exact, "simulate": buffon_fit_then_other_board_sim},
     "geometric/delayed-arrival-meeting": {"exact": delayed_arrival_meeting_exact, "simulate": delayed_arrival_meeting_sim},
     "geometric/concentric-fit-then-ring": {"exact": concentric_fit_then_ring_exact, "simulate": concentric_fit_then_ring_sim},
+    "geometric/unit-square-product": {
+        "exact": unit_square_product_exact,
+        "simulate": unit_square_product_sim,
+    },
 })
