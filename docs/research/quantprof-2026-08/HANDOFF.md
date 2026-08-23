@@ -46,11 +46,15 @@ before it, nobody had watched this gate fail.
   scope killed the plan this bullet used to propose. A mass re-tag of the L1
   tier is *not* available: per topic the `expectedPaceS` ladders are clean, so
   the L1 tier is genuinely easy and promoting it would move the ratio without
-  making anything harder. Exactly six templates are mis-tagged, `ruin`'s L1/L2
+  making anything harder. Exactly five templates are mis-tagged (one of
+  those five is weak and flagged as needing a second reader), `ruin`'s L1/L2
   boundary turns out to be arbitrary (identical pace bands), and the overweight
   traces to the rigid ~12/12/6 authoring template rather than to bad tags. The
-  recommendation is to stop treating 16% as a target, land the six re-tags, and
-  let the mix move through ordinary B8+ authoring. Awaiting a ruling.
+  recommendation is to stop treating 16% as a target, land the five re-tags, and
+  let the mix move through ordinary B8+ authoring. The exact `registry.test.ts`
+  pin edits a re-tag forces are tabulated in `COVERAGE.md`, verified by running
+  the suite against a scratch re-tag rather than by reading the pins. Awaiting a
+  ruling.
 - Four-term sequence display, still blocked on the answer checker accepting any
   rule consistent with the shown terms.
 - Combinatorial-game brainteasers, still blocked on a non-numeric answer type.

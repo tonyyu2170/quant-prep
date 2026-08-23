@@ -158,21 +158,32 @@ there are correctly tagged. **The L1 tier is, with six exceptions, genuinely
 easy.** Promoting it would improve the measured mix without making one problem
 harder, which is the failure mode `[[verification-gate-lessons]]` is about.
 
-## The six that are genuinely mis-tagged
+## The five that are genuinely mis-tagged
 
-L1 templates paced above their *own topic's* L2 average:
+"Paced above its own topic's L2 average" was the first criterion tried and it is
+too weak to carry a promotion: distributions' L2 band is 40–110 and ruin's is
+40–85, so clearing a mean by three or four seconds means nothing. The criterion
+that survives is **paced inside its own topic's L3 band**, which is a claim about
+where the template actually sits rather than about one summary statistic.
 
-| template | pace | own-topic L2 avg | verdict |
+Five templates qualify. All five were read, not just counted:
+
+| template | pace | own-topic L3 band | what it actually asks |
 |---|---|---|---|
-| `ev-variance/covariance-sum-difference` | 90 | 69.7 | mis-tagged → L2. Needs `Cov(X+Y, X−Y) = Var X − Var Y`; it is paced at ev-variance's *L3 minimum*. |
-| `ruin/unfair-expected-duration` | 80 | 56.9 | mis-tagged → L2. Asymmetric-ruin duration, the hardest closed form in the family. |
-| `counting/steps-to-height` | 75 | 72.3 | mis-tagged → L2. Endpoint-constrained walk count. |
-| `ruin/unfair-reach-goal` | 75 | 56.9 | mis-tagged → L2. Carries the odds-ratio exponential. |
-| `distributions/hypergeom-exact-draw` | 65 | 61.2 | mis-tagged → L2, marginal. |
-| `ruin/fair-expected-duration` | 60 | 56.9 | mis-tagged → L2, marginal. |
+| `ev-variance/covariance-sum-difference` | 90 | 90–120 | `Cov(X+Y, X−Y) = Var X − Var Y`. Sits at ev-variance's L3 floor. |
+| `ruin/unfair-expected-duration` | 80 | 65–85 | Asymmetric-ruin duration — the hardest closed form in the family. |
+| `ruin/unfair-reach-goal` | 75 | 65–85 | Solves the recursion to the odds-ratio exponential; 5 solution steps. |
+| `counting/steps-to-height` | 75 | 70–120 | Endpoint-constrained walk count, two linear equations then a binomial. |
+| `distributions/hypergeom-exact-draw` | 65 | 65–120 | **Weakest of the five.** One PMF, three binomial coefficients, divide — 4 steps, and on content it is barely above `binomial-exact-count` (L1, 40s). It qualifies only by sitting exactly on distributions' L3 floor. Treat its 65s as a possibly over-estimated pace, not as evidence, and promote it only if a second reader agrees. |
 
-Promoting all six moves probability-only from 34/42/23 to 31/45/23. That is
-honest and it is nearly nothing.
+**Dropped on the content read: `ruin/fair-expected-duration`** (60s). It cleared
+the weak criterion by 3.1s over ruin's L2 mean, but it is below ruin's L3
+minimum of 65 and its content — fit a parabola to two boundaries — is the
+standard fair-ruin derivation. It is not mis-tagged; it is caught up in the ruin
+ladder problem below.
+
+Promoting all five moves probability-only from 34/42/23 to 32/45/23 — counts
+57/81/42 over 180. That is honest and it is nearly nothing.
 
 ## Separate finding: the `ruin` ladder is not real
 
@@ -195,28 +206,47 @@ That leaves three real options, and only the third is free of a cost:
 1. **Retire surplus L1 templates.** Deleting ~30 correctly-tagged working
    problems to improve a ratio. Cheapest diff, worst trade.
 2. **Author L2/L3 mass.** With L1 fixed at 62, reaching 20% bottom-tier needs a
-   bank of ~310, i.e. ~120 more L2/L3 templates. Honest, and it is B8–B12.
+   bank of ~310, i.e. **130** more L2/L3 templates. Honest, and it is B8–B12.
 3. **Re-scope the metric.** Their 976 rows are a browsable catalogue where a user
    picks a problem; ours is a randomized drill pool. `/drills/probability`
    defaults to `difficulty: undefined`, so the default pool *is* all 188 and a
    third of served problems are warm-ups — which is a defensible thing for a
    drill to do, and is not what a 16%-bottom catalogue is measuring.
 
-**Recommendation: 3, then the six re-tags, then 2 as ordinary batch authoring.**
+**Recommendation: 3, then the five re-tags, then 2 as ordinary batch authoring.**
 Do not chase 16%. COVERAGE.md already says the 1–10 and 1–3 scales have no
 canonical mapping and the rows should be read "as a range rather than a target";
 treating 16% as a number to hit is false precision on top of that caveat. The
-defect worth naming is the arbitrary ruin ladder and the six mis-tags, both of
+defect worth naming is the arbitrary ruin ladder and the five mis-tags, both of
 which are real and both of which are small.
 
 ## Constraints anyone editing tags must know
 
-- **`registry.test.ts` will go red, by design.** Four batches carry *equality*
-  pins — bayes 12/12/6, counting 11/11/5, distributions 10/12/6,
-  ev-variance 13/15/6 — and geometric (8/8/5) and ruin (8/8/4) carry `<=`
-  budgets. They exist to catch a misassignment *during authoring*, so a
-  deliberate re-tag must update them to the new intended shape and keep them as
-  equality pins. Loosening them to `<=` would delete the guard.
+- **`registry.test.ts` will go red, by design — and the failure list undercounts
+  the edit.** This was verified rather than reasoned: the five promotions were
+  applied to a scratch tree and the suite run. It reports **5 failed tests**, at
+  `registry.test.ts:79, :86, :100, :111, :166`. But vitest abandons a test at its
+  *first* failed assertion, so the L2 half of every equality pin never executes.
+  The complete set of assertions a five-template promotion must rewrite:
+
+  | topic | pin | assertion | now | after |
+  |---|---|---|---|---|
+  | ruin | `<=` budget `:78-80` | L1 `<=8` | 8 | 6 (still passes, update anyway) |
+  | ruin | `<=` budget `:78-80` | L2 `<=8` **fails** | 8 | 10 |
+  | distributions | equality `:86-88` | L1 `toBe(10)` **fails** | 10 | 9 |
+  | distributions | equality `:86-88` | L2 `toBe(12)` *(masked)* | 12 | 13 |
+  | counting | equality `:100-102` | L1 `toBe(11)` **fails** | 11 | 10 |
+  | counting | equality `:100-102` | L2 `toBe(11)` *(masked)* | 11 | 12 |
+  | ev-variance | `<=` budget `:110-112` | L2 `<=15` **fails** | 15 | 16 |
+  | ev-variance | equality `:166-168` | L1 `toBe(13)` **fails** | 13 | 12 |
+  | ev-variance | equality `:166-168` | L2 `toBe(15)` *(masked)* | 15 | 16 |
+
+  **`ev-variance` carries two pins, not one** — a `<=` budget at `:104-112` and an
+  equality pin at `:163-168` — and a promotion trips both independently. bayes and
+  geometric are untouched by these five. The pins exist to catch a misassignment
+  *during authoring*, so a deliberate re-tag updates them to the new intended
+  shape and keeps the equality pins as equalities; loosening them to `<=` would
+  delete the guard.
 - **`expectedPaceS` is authored, not measured.** Everything above tests the tag
   against the same author's own estimate — a consistency check, not ground
   truth. Real per-template solve times from `attempts` would settle it properly
