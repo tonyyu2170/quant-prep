@@ -25,3 +25,4 @@ playwright-report/
 verification/instances.json
 verification/.venv/
 __pycache__/
+.firecrawl/
