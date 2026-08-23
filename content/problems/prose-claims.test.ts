@@ -28,6 +28,12 @@ const P = (x: number) => Number(fmtNum(x));
 /** Two printed quantities render to the same string. */
 const same = (a: number, b: number) => fmtNum(a) === fmtNum(b);
 const EPS = 1e-9;
+/** The float-dirt rounding the statistics templates apply inside `derived`. A claim that
+ *  recomputes a value from params has to round the same way, or it compares two renderings of
+ *  the SAME number and fails on the boundary draws: 0.3*9/16 is 0.16874999999999998 in floats
+ *  and 0.16875 once rounded, which display as 0.1687 and 0.1688. Rounding at the ninth decimal
+ *  cannot hide a wrong formula — the 2% mutation is nine orders of magnitude larger. */
+const r9 = (x: number) => Math.round(x * 1e9) / 1e9;
 /** Half a step of fmtNum's 4-significant-figure display — the most a printed value can differ
  *  from its true value. A "these add back to N" claim is about what the page shows, so its
  *  slack has to be the display's, not a constant guessed at the small end of the range. */
@@ -1976,6 +1982,77 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => (d.answer === (p.counters % d.period === 0 ? 2 : 1)) === !(d.rem === 0 || d.rem === 1),
       breaks: (_p, d) => ({ ...d, answer: d.answer === 1 ? 2 : 1 }) },
   ],
+  "statistics/portfolio-variance-two-asset": [
+    { says: "Solve: the variance recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.w ** 2 * p.varA + (1 - p.w) ** 2 * p.varB + 2 * p.w * (1 - p.w) * p.cov)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The three printed terms add back to the answer, and the weights add to one",
+      holds: (p, d) => same(r9(d.termA + d.termB + d.cross), d.answer) && same(r9(p.w + d.wB), 1),
+      breaks: (_p, d) => ({ ...d, cross: d.cross + 1 }) },
+    { says: "Sanity: dropping the cross term misses by exactly the cross term, in the direction of its sign",
+      holds: (_p, d) => same(r9(d.answer - d.noCross), d.cross) && (d.cross < 0 ? P(d.answer) < P(d.noCross) : P(d.answer) > P(d.noCross)),
+      nonVacuous: (p) => p.cov < 0,   // a hedged book, where the naive sum overstates the risk
+      breaks: (_p, d) => ({ ...d, noCross: d.noCross + 2 * d.cross }) },
+    { says: "The covariance matrix is a legal one, so the implied correlation stays inside its range and the variance is positive",
+      holds: (_p, d) => Math.abs(d.rho) < 1 && d.answer > 0,
+      breaks: (_p, d) => ({ ...d, rho: 1.5 }) },
+  ],
+  "statistics/min-variance-weight": [
+    { says: "Solve: the minimising weight recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.varB - p.cov) / (p.varA + p.varB - 2 * p.cov))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The printed numerator and denominator are the ones the ratio is taken over",
+      holds: (p, d) => d.num === p.varB - p.cov && d.den === p.varA + p.varB - d.twoCov && d.twoCov === 2 * p.cov,
+      breaks: (_p, d) => ({ ...d, den: d.den + 1 }) },
+    { says: "Sanity: the minimum beats both single-asset books, and the two weights add to one",
+      holds: (p, d) => P(d.minVar) < P(p.varA) && P(d.minVar) < P(p.varB) && same(r9(d.answer + d.other), 1),
+      breaks: (p, d) => ({ ...d, minVar: p.varA }) },
+    { says: "The weight is an interior split — both legs are held long",
+      holds: (_p, d) => d.answer > 0 && d.answer < 1 && d.other > 0,
+      breaks: (_p, d) => ({ ...d, answer: 1.4, other: -0.4 }) },
+  ],
+  "statistics/correlation-bound-third-pair": [
+    { says: "Solve: the bound recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.rhoXY * p.rhoYZ + (p.want === 1 ? 1 : -1) * Math.sqrt((1 - p.rhoXY ** 2) * (1 - p.rhoYZ ** 2)))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The interval is centred on the product of the two given correlations, with the residual product as its half-width",
+      holds: (_p, d) => same(r9(d.upper - d.lower), r9(2 * d.spread)) && same(r9((d.upper + d.lower) / 2), d.prod),
+      breaks: (_p, d) => ({ ...d, upper: d.upper + 0.1 }) },
+    { says: "Sanity: the interval never escapes the range a correlation is allowed",
+      holds: (_p, d) => P(d.lower) >= -1 && P(d.upper) <= 1,
+      breaks: (_p, d) => ({ ...d, upper: 1.3 }) },
+    { says: "Each residual variance is one less the squared correlation, and both stay positive",
+      holds: (p, d) => same(d.residXY, r9(1 - p.rhoXY ** 2)) && same(d.residYZ, r9(1 - p.rhoYZ ** 2)) && d.residXY > 0 && d.residYZ > 0,
+      breaks: (_p, d) => ({ ...d, residXY: d.residXY + 0.1 }) },
+  ],
+  "statistics/regression-slope-from-moments": [
+    { says: "Solve: the slope recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.rho * p.sdY) / p.sdX)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The slope is the correlation times the ratio of spreads, Y's over X's",
+      holds: (p, d) => same(d.ratio, r9(p.sdY / p.sdX)) && same(d.answer, r9(p.rho * d.ratio)),
+      breaks: (_p, d) => ({ ...d, ratio: 1 / d.ratio }) },
+    { says: "Sanity: the two regressions are not reciprocals — their slopes multiply to the squared correlation",
+      holds: (p, d) => same(r9(d.answer * d.reverseSlope), d.r2) && same(d.r2, r9(p.rho ** 2)),
+      breaks: (_p, d) => ({ ...d, reverseSlope: 1 / d.answer }) },
+    { says: "Explained and unexplained shares of variance add to the whole",
+      holds: (_p, d) => same(r9(d.r2 + d.unexplained), 1) && d.r2 >= 0 && d.r2 <= 1,
+      breaks: (_p, d) => ({ ...d, unexplained: d.unexplained + 0.1 }) },
+  ],
+  "statistics/sharpe-time-scaling": [
+    { says: "Solve: the horizon Sharpe recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.edge / p.sd) * Math.sqrt(p.periods))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Total edge over total standard deviation is the same ratio the answer states",
+      holds: (p, d) => same(r9(d.totalEdge / d.totalSd), d.answer) && d.totalEdge === p.edge * p.periods,
+      breaks: (_p, d) => ({ ...d, totalSd: d.totalSd * 2 }) },
+    { says: "Sanity: the horizon Sharpe beats the per-day Sharpe, by the square root of the horizon and no more",
+      holds: (p, d) => P(d.answer) > P(d.perDay) && same(d.answer, r9(d.perDay * d.root)) && same(d.root, r9(Math.sqrt(p.periods))),
+      breaks: (_p, d) => ({ ...d, root: d.root * d.root }) },
+    { says: "Variance scales with the horizon while the deviation scales with its square root",
+      holds: (p, d) => same(d.totalVar, p.sd ** 2 * p.periods) && same(d.totalSd, r9(Math.sqrt(d.totalVar))),
+      breaks: (_p, d) => ({ ...d, totalSd: d.totalVar }) },
+  ],
   "brainteasers/chocolate-bar-breaks": [
     { says: "Solve: the winner recomputed fresh from params matches the printed choice",
       holds: (p, d) => d.answer === ((p.rows * p.cols - p.pieces) % 2 === 1 ? 1 : 2),
@@ -2131,7 +2208,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

@@ -7,5 +7,6 @@ from .geometric import SOLVERS as _geometric
 from .markov import SOLVERS as _markov
 from .symmetry import SOLVERS as _symmetry
 from .brainteasers import SOLVERS as _brainteasers
+from .statistics import SOLVERS as _statistics
 
-SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric, **_markov, **_symmetry, **_brainteasers}
+SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric, **_markov, **_symmetry, **_brainteasers, **_statistics}

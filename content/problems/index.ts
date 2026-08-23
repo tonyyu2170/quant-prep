@@ -198,6 +198,11 @@ import { mutilatedBoardTiling } from "./brainteasers/mutilated-board-tiling";
 import { josephusEverySecond } from "./brainteasers/josephus-every-second";
 import { coinRowTakeEnds } from "./brainteasers/coin-row-take-ends";
 import { nimThreePileMove } from "./brainteasers/nim-three-pile-move";
+import { portfolioVarianceTwoAsset } from "./statistics/portfolio-variance-two-asset";
+import { minVarianceWeight } from "./statistics/min-variance-weight";
+import { correlationBoundThirdPair } from "./statistics/correlation-bound-third-pair";
+import { regressionSlopeFromMoments } from "./statistics/regression-slope-from-moments";
+import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -396,6 +401,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   josephusEverySecond,
   coinRowTakeEnds,
   nimThreePileMove,
+  portfolioVarianceTwoAsset,
+  minVarianceWeight,
+  correlationBoundThirdPair,
+  regressionSlopeFromMoments,
+  sharpeTimeScaling,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
@@ -414,4 +424,5 @@ export const TOPIC_LABELS: Record<string, string> = {
   "probability/markov": "markov chains",
   "probability/symmetry": "symmetry",
   "brainteasers/logic": "brainteasers",
+  "statistics/moments": "statistics",
 };
