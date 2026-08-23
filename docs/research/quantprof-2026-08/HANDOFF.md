@@ -3,9 +3,9 @@
 ## SESSION OF 2026-08-23 (overnight) — READ THIS FIRST
 
 `main` is at the `fix(nav)` commit; everything below in this section is landed, pushed and
-green. Bank went **191 -> 206** and the site gained two whole families.
+green. Bank went **191 -> 210** and the site gained two whole families.
 
-**Content — three batches, sixteen templates, all L2/L3.**
+**Content — four batches, twenty templates, all L2/L3.**
 
 - **B8, five combinatorial-game brainteasers** (`brainteasers/logic`, 11 -> 16):
   chocolate-bar-breaks and mutilated-board-tiling as choice templates, plus
@@ -16,6 +16,10 @@ green. Bank went **191 -> 206** and the site gained two whole families.
 - **B10, a new `finance/` family** (5 templates): book-overround-arbitrage,
   triangular-fx-arbitrage, put-call-parity, growing-perpetuity-value,
   butterfly-max-profit.
+- **B11, four more brainteasers** (16 -> 20): painted-block-one-face,
+  divisor-count-factorisation, average-speed-round-trip, bird-between-trains.
+  Brainteasers are QuantGuide's second-biggest category (246 to our 20) and cost
+  no new wiring, so they are the cheapest remaining coverage.
 
 **Two new families means two new prefixes.** `registry.test.ts` now pins four:
 `probability/`, `brainteasers/`, `statistics/`, `finance/`. Each new topic was added to the
