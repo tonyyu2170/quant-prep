@@ -15,7 +15,22 @@ brute(): recomputes the ANSWER without the identity the template teaches.
   the tail is negligible, then Richardson-extrapolated to the limit.
 - butterfly: the payoff is evaluated across a fine grid of terminal prices and the maximum is
   taken — no reasoning about where the peak sits.
+- payment stream: the cash flows are rolled backwards one period at a time through the
+  one-period forward factors implied by the quoted curve, so the sum of discounted flows the
+  template teaches never appears.
+- put hedge: a Black-Scholes world is CONSTRUCTED whose call delta is the quoted one, the put's
+  delta is read from that model rather than from parity, and both deltas are checked against a
+  finite difference of the model's own prices. Parity is what the template asserts; here it is
+  a conclusion.
+- covered call: the payoff is evaluated across a grid of terminal prices and the maximum read
+  off it, with no argument about where the peak sits.
+- call lower bound: the trade is assembled leg by leg into a cash ledger, and the answer is the
+  WORST total profit across a grid of terminal prices rather than a bound formula.
+- box spread: the four legs are evaluated across a grid, the payout is asserted constant, and
+  the width used to discount is the constant read off that grid — not the strike difference.
 """
+
+import math
 
 import numpy as np
 
@@ -170,6 +185,146 @@ def butterfly_max_profit_brute(p):
     return _round9(float(payoff.max()) - debit)
 
 
+def _norm_cdf(x):
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def payment_stream_present_value_exact(p):
+    pmt, df1, drop, n = float(p["pmt"]), float(p["df1"]), float(p["drop"]), int(p["n"])
+    df2, df3, df4 = _round9(df1 - drop), _round9(df1 - 2 * drop), _round9(df1 - 3 * drop)
+    sum_used = _round9(df1 + df2 + df3 + (df4 if n == 4 else 0.0))
+    answer = _round9(pmt * sum_used)
+    nominal = _round9(pmt * n)
+    return {
+        "df2": df2, "df3": df3, "df4": df4, "sumUsed": sum_used,
+        "nominal": nominal, "timeCost": _round9(nominal - answer), "answer": answer,
+    }
+
+
+def payment_stream_present_value_brute(p):
+    """Roll the payments backwards through the ONE-PERIOD factors the curve implies, instead of
+    summing discounted flows. The forward factor from year i-1 to year i is DF_i/DF_{i-1}, and
+    walking the stream back through them reprices it without ever writing the sum down."""
+    pmt, df1, drop, n = float(p["pmt"]), float(p["df1"]), float(p["drop"]), int(p["n"])
+    curve = [df1 - i * drop for i in range(n)]           # DF_1 .. DF_n
+    fwd = [curve[0]] + [curve[i] / curve[i - 1] for i in range(1, n)]
+    value = 0.0
+    for i in range(n - 1, -1, -1):                        # stand at year i+1, walk back to today
+        value = (value + pmt) * fwd[i]
+    assert value > 0
+    return _round9(value)
+
+
+def put_hedge_from_parity_exact(p):
+    n, dc = float(p["n"]), float(p["dc"])
+    return {
+        "putDelta": _round9(dc - 1),
+        "perPut": _round9(1 - dc),
+        "callHedge": _round9(n * dc),
+        "answer": _round9(n * (1 - dc)),
+    }
+
+
+def put_hedge_from_parity_brute(p):
+    """Build a Black-Scholes world whose call delta IS the quoted one, then read the put's delta
+    out of that model. Parity is never used: the strike is solved so that N(d1) equals the given
+    delta, the put delta is N(d1)-1 by differentiating the model's own formula, and a central
+    difference of the model's put price confirms it."""
+    n, dc = float(p["n"]), float(p["dc"])
+    spot, vol, t = 100.0, 0.2, 1.0
+    lo, hi = -10.0, 10.0                                  # invert the normal CDF by bisection
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if _norm_cdf(mid) < dc:
+            lo = mid
+        else:
+            hi = mid
+    d1 = 0.5 * (lo + hi)
+    strike = spot * math.exp(vol * vol * t / 2 - d1 * vol * math.sqrt(t))
+
+    def put_price(s):
+        a = (math.log(s / strike) + vol * vol * t / 2) / (vol * math.sqrt(t))
+        b = a - vol * math.sqrt(t)
+        return strike * _norm_cdf(-b) - s * _norm_cdf(-a)
+
+    h = 1e-4
+    fd = (put_price(spot + h) - put_price(spot - h)) / (2 * h)
+    model_put_delta = _norm_cdf(d1) - 1
+    assert abs(fd - model_put_delta) < 1e-6, f"finite difference {fd} vs model {model_put_delta}"
+    return _round9(-n * model_put_delta)
+
+
+def covered_call_max_profit_exact(p):
+    spot, strike, call = float(p["spot"]), float(p["strike"]), float(p["call"])
+    return {
+        "upside": _round9(strike - spot),
+        "breakeven": _round9(spot - call),
+        "answer": _round9(strike - spot + call),
+    }
+
+
+def covered_call_max_profit_brute(p):
+    """Evaluate the buy-write's profit across a grid of terminal prices and take the maximum. The
+    grid steps in quarters and the strike is a multiple of five, so the peak is a grid point and
+    the maximum is exact rather than approached."""
+    spot, strike, call = float(p["spot"]), float(p["strike"]), float(p["call"])
+    grid = np.arange(0.0, 3 * strike + 0.25, 0.25)
+    profit = np.minimum(grid, strike) - spot + call        # share capped by the short call
+    best = float(profit.max())
+    assert np.isclose(profit[grid >= strike], best).all(), "the payoff is not flat above the strike"
+    return _round9(best)
+
+
+def call_lower_bound_arbitrage_exact(p):
+    spot, strike, df, call = float(p["spot"]), float(p["strike"]), float(p["df"]), float(p["call"])
+    return {
+        "pvK": _round9(strike * df),
+        "floor": _round9(spot - strike * df),
+        "intrinsic": _round9(max(spot - strike, 0.0)),
+        "answer": _round9(spot - strike * df - call),
+    }
+
+
+def call_lower_bound_arbitrage_brute(p):
+    """Assemble the trade as a ledger — short the share, buy the call, buy `strike` units of the
+    zero — and take the WORST profit over a grid of terminal prices. The bound the template
+    teaches never appears; the answer is what the position is guaranteed to make."""
+    spot, strike, df, call = float(p["spot"]), float(p["strike"]), float(p["df"]), float(p["call"])
+    cash_today = spot - call - strike * df                 # +short share, -call, -bonds
+    grid = np.arange(0.0, 3 * max(spot, strike) + 0.25, 0.25)
+    at_expiry = np.maximum(grid - strike, 0.0) - grid + strike   # call + bond redemption - buy back share
+    worst = float(at_expiry.min())
+    assert worst >= -1e-12, "the position is not riskless"
+    assert np.isclose(at_expiry[grid >= strike], 0.0).all(), "the expiry leg should close at zero above the strike"
+    return _round9(cash_today + df * worst)
+
+
+def box_spread_arbitrage_exact(p):
+    k1, width = float(p["k1"]), float(p["width"])
+    cs, ps, df = float(p["callSpread"]), float(p["putSpread"]), float(p["df"])
+    return {
+        "k2": _round9(k1 + width),
+        "cost": _round9(cs + ps),
+        "fairValue": _round9(width * df),
+        "answer": _round9(width * df - (cs + ps)),
+    }
+
+
+def box_spread_arbitrage_brute(p):
+    """Evaluate all four legs across a grid of terminal prices, assert the payout is the same
+    number everywhere, and discount THAT number. The strike width is read off the payoff rather
+    than assumed to be what the box pays."""
+    k1, width = float(p["k1"]), float(p["width"])
+    cs, ps, df = float(p["callSpread"]), float(p["putSpread"]), float(p["df"])
+    k2 = k1 + width
+    grid = np.arange(0.0, 3 * k2 + 0.25, 0.25)
+    payoff = (np.maximum(grid - k1, 0.0) - np.maximum(grid - k2, 0.0)
+              + np.maximum(k2 - grid, 0.0) - np.maximum(k1 - grid, 0.0))
+    assert np.allclose(payoff, payoff[0]), "a box does not pay a constant here"
+    certain = float(payoff[0])
+    return _round9(certain * df - (cs + ps))
+
+
 SOLVERS = {
     "finance/book-overround-arbitrage": {
         "exact": book_overround_arbitrage_exact,
@@ -186,6 +341,26 @@ SOLVERS = {
     "finance/growing-perpetuity-value": {
         "exact": growing_perpetuity_value_exact,
         "brute": growing_perpetuity_value_brute,
+    },
+    "finance/payment-stream-present-value": {
+        "exact": payment_stream_present_value_exact,
+        "brute": payment_stream_present_value_brute,
+    },
+    "finance/put-hedge-from-parity": {
+        "exact": put_hedge_from_parity_exact,
+        "brute": put_hedge_from_parity_brute,
+    },
+    "finance/covered-call-max-profit": {
+        "exact": covered_call_max_profit_exact,
+        "brute": covered_call_max_profit_brute,
+    },
+    "finance/call-lower-bound-arbitrage": {
+        "exact": call_lower_bound_arbitrage_exact,
+        "brute": call_lower_bound_arbitrage_brute,
+    },
+    "finance/box-spread-arbitrage": {
+        "exact": box_spread_arbitrage_exact,
+        "brute": box_spread_arbitrage_brute,
     },
     "finance/butterfly-max-profit": {
         "exact": butterfly_max_profit_exact,

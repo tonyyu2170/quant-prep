@@ -208,6 +208,11 @@ import { triangularFxArbitrage } from "./finance/triangular-fx-arbitrage";
 import { putCallParity } from "./finance/put-call-parity";
 import { growingPerpetuityValue } from "./finance/growing-perpetuity-value";
 import { butterflyMaxProfit } from "./finance/butterfly-max-profit";
+import { paymentStreamPresentValue } from "./finance/payment-stream-present-value";
+import { putHedgeFromParity } from "./finance/put-hedge-from-parity";
+import { coveredCallMaxProfit } from "./finance/covered-call-max-profit";
+import { callLowerBoundArbitrage } from "./finance/call-lower-bound-arbitrage";
+import { boxSpreadArbitrage } from "./finance/box-spread-arbitrage";
 import { paintedBlockOneFace } from "./brainteasers/painted-block-one-face";
 import { divisorCountFactorisation } from "./brainteasers/divisor-count-factorisation";
 import { averageSpeedRoundTrip } from "./brainteasers/average-speed-round-trip";
@@ -424,6 +429,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   divisorCountFactorisation,
   averageSpeedRoundTrip,
   birdBetweenTrains,
+  paymentStreamPresentValue,
+  putHedgeFromParity,
+  coveredCallMaxProfit,
+  callLowerBoundArbitrage,
+  boxSpreadArbitrage,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
