@@ -21,6 +21,25 @@ describe("ProblemSession", () => {
     expect(screen.getByText(/Common trap/)).toBeInTheDocument();
     expect(screen.getByText(/Report issue/)).toBeInTheDocument();
   });
+  it("offers a pointer-reachable way forward, not only the Enter key", () => {
+    // The regression this pins: advancing used to be keyboard-only, so a touch device had
+    // no way off the walkthrough at all. Both routes must keep working.
+    const byClick = vi.fn();
+    const { unmount } = render(<ProblemSession template={template} seed={7} onNext={byClick} onHarder={null} />);
+    fireEvent.change(screen.getByLabelText("answer"), { target: { value: "0.999" } });
+    fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });
+    fireEvent.click(screen.getByTestId("next-problem"));
+    expect(byClick).toHaveBeenCalledTimes(1);
+    unmount();
+
+    const byKey = vi.fn();
+    render(<ProblemSession template={template} seed={7} onNext={byKey} onHarder={null} />);
+    fireEvent.change(screen.getByLabelText("answer"), { target: { value: "0.999" } });
+    fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });
+    const walkthrough = screen.getByTestId("walkthrough");
+    fireEvent.keyDown(walkthrough, { key: "Enter", target: walkthrough });
+    expect(byKey).toHaveBeenCalledTimes(1);
+  });
   it("accepts a correct answer within tolerance", () => {
     const d = template.derived(drawParams(template, 7));
     const exact = answerOf(template, d);

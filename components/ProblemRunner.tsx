@@ -137,6 +137,13 @@ export function ProblemSession({ template, seed, onNext, onHarder, mode = "pract
             seen at: {template.firms.map((f) => f.firm).join(" · ") || "—"} · expected pace ~{template.expectedPaceS}s
           </p>
           <p className="mono" style={{ marginTop: 14, fontSize: 12 }}>
+            {/* Advancing was keyboard-only until now — the Enter hint below is real but it is
+                not reachable on a touch device, which left a phone user stuck on the
+                walkthrough with no way forward but a reload. */}
+            <button type="button" onClick={onNext} data-testid="next-problem"
+                    style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 700, marginRight: 16, padding: 0 }}>
+              {mode === "review" ? "Next in queue →" : "Next problem →"}
+            </button>
             {/* No re-roll in review: a second submission would grade the same queue row again from stale state. */}
             {mode === "practice" && (
               <button type="button" onClick={reroll} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 700 }}>Re-roll numbers</button>
