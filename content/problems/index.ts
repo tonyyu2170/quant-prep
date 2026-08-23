@@ -213,6 +213,11 @@ import { putHedgeFromParity } from "./finance/put-hedge-from-parity";
 import { coveredCallMaxProfit } from "./finance/covered-call-max-profit";
 import { callLowerBoundArbitrage } from "./finance/call-lower-bound-arbitrage";
 import { boxSpreadArbitrage } from "./finance/box-spread-arbitrage";
+import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
+import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
+import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
+import { reverseRegressionSlope } from "./statistics/reverse-regression-slope";
+import { sampleSizeForMargin } from "./statistics/sample-size-for-margin";
 import { paintedBlockOneFace } from "./brainteasers/painted-block-one-face";
 import { divisorCountFactorisation } from "./brainteasers/divisor-count-factorisation";
 import { averageSpeedRoundTrip } from "./brainteasers/average-speed-round-trip";
@@ -434,6 +439,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   coveredCallMaxProfit,
   callLowerBoundArbitrage,
   boxSpreadArbitrage,
+  adjustedRSquaredFromSums,
+  duplicatedSampleSlopeVariance,
+  overlappingWindowSums,
+  reverseRegressionSlope,
+  sampleSizeForMargin,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

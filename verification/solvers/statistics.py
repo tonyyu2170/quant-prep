@@ -18,7 +18,21 @@ the value returned comes from an exact but different derivation:
   vertex read off, checked against a least-squares fit to a drawn sample.
 - Sharpe: the window's mean and standard deviation are built from the summed daily moments and
   then divided, checked against summed sampled windows.
+- adjusted R-squared: a data set is CONSTRUCTED with exactly the given sums of squares over an
+  orthonormal design, the regression is actually run, and the answer is read off the fitted
+  residuals as a ratio of two variance estimates — never as a correction applied to a share.
+- duplicated sample: the doubled design matrix is built and the slope's variance read out of
+  s^2 (X'X)^-1, so nothing is ever multiplied or divided by two.
+- overlapping windows: the two windows are indicator vectors over the days, and the variance is
+  the quadratic form of their sum against the diagonal covariance — no cross-term formula.
+- reverse regression: the covariance matrix implied by the quoted slope and correlation is
+  built, the reverse slope is read off as covariance over the variance of the NEW regressor, and
+  both slopes are checked against fits to a Cholesky-drawn sample.
+- sample size: the smallest count is found by SCANNING upward until the standard error clears
+  the margin, and the count below it is asserted to fail — the squared formula never appears.
 """
+
+import math
 
 import numpy as np
 
@@ -235,7 +249,180 @@ def sharpe_time_scaling_brute(p):
     return _round9(built)
 
 
+def _z_for(conf):
+    return 1.645 if int(conf) == 90 else 1.96 if int(conf) == 95 else 2.576
+
+
+def adjusted_r_squared_from_sums_exact(p):
+    ssr, sse, n, k = float(p["ssr"]), float(p["sse"]), int(p["n"]), int(p["k"])
+    sst = ssr + sse
+    return {
+        "sst": sst,
+        "r2": _round9(ssr / sst),
+        "unexplained": _round9(sse / sst),
+        "dfRes": n - k - 1,
+        "dfTot": n - 1,
+        "answer": _round9(1 - (sse / sst) * ((n - 1) / (n - k - 1))),
+    }
+
+
+def adjusted_r_squared_from_sums_brute(p):
+    """Build a data set that HAS these sums of squares and then actually regress it. An
+    orthonormal basis makes the construction exact: one direction carries the mean, one carries
+    the explained variation, and a direction outside the design carries the residual. The answer
+    is then the ratio of two variance estimates read off the fit, not a correction applied to a
+    share of sums."""
+    ssr, sse, n, k = float(p["ssr"]), float(p["sse"]), int(p["n"]), int(p["k"])
+    rng = np.random.default_rng(20260823)
+    a = rng.standard_normal((n, k + 2))
+    a[:, 0] = 1.0
+    q, _ = np.linalg.qr(a)
+    y = 10.0 * q[:, 0] + math.sqrt(ssr) * q[:, 1] + math.sqrt(sse) * q[:, k + 1]
+    design = np.column_stack([np.ones(n)] + [q[:, j] for j in range(1, k + 1)])
+    beta, *_ = np.linalg.lstsq(design, y, rcond=None)
+    resid = y - design @ beta
+    sse_fit = float(resid @ resid)
+    sst_fit = float(((y - y.mean()) ** 2).sum())
+    assert abs(sse_fit - sse) < 1e-6, f"construction missed SSE: {sse_fit} vs {sse}"
+    assert abs(sst_fit - (ssr + sse)) < 1e-6, f"construction missed SST: {sst_fit} vs {ssr + sse}"
+    return _round9(1 - (sse_fit / (n - k - 1)) / (sst_fit / (n - 1)))
+
+
+def duplicated_sample_slope_variance_exact(p):
+    s2, sxx, n = float(p["s2"]), float(p["sxx"]), int(p["n"])
+    return {
+        "varBefore": _round9(s2 / sxx),
+        "sxxNew": 2 * sxx,
+        "rowsNew": 2 * n,
+        "answer": _round9(s2 / (2 * sxx)),
+    }
+
+
+def duplicated_sample_slope_variance_brute(p):
+    """Build the doubled design matrix and read the slope's variance out of s^2 (X'X)^-1. The
+    factor of two the template argues for never appears — it arrives, if it is right, inside the
+    matrix inverse."""
+    s2, sxx, n = float(p["s2"]), float(p["sxx"]), int(p["n"])
+    assert n % 2 == 0, "the alternating construction needs an even count to centre exactly"
+    step = math.sqrt(sxx / n)
+    x = np.array([step if i % 2 == 0 else -step for i in range(n)])
+    assert abs(((x - x.mean()) ** 2).sum() - sxx) < 1e-9, "constructed spread is not Sxx"
+    doubled = np.concatenate([x, x])
+    design = np.column_stack([np.ones(2 * n), doubled])
+    cov_beta = s2 * np.linalg.inv(design.T @ design)
+    return _round9(float(cov_beta[1, 1]))
+
+
+def overlapping_window_sums_exact(p):
+    v, a, b, ov = float(p["v"]), int(p["a"]), int(p["b"]), int(p["ov"])
+    return {
+        "varX": v * a,
+        "varY": v * b,
+        "cov": v * ov,
+        "crossTerm": 2 * v * ov,
+        "answer": v * (a + b + 2 * ov),
+    }
+
+
+def overlapping_window_sums_brute(p):
+    """Write each window as an indicator vector over the days and take the quadratic form of
+    their sum against the diagonal covariance. The shared days show up as entries of two in that
+    vector rather than as a cross term anyone wrote down."""
+    v, a, b, ov = float(p["v"]), int(p["a"]), int(p["b"]), int(p["ov"])
+    days = a + b
+    first = np.zeros(days)
+    first[:a] = 1.0
+    second = np.zeros(days)
+    second[a - ov:a - ov + b] = 1.0
+    assert int((first * second).sum()) == ov, "the two windows do not share the stated days"
+    weights = first + second
+    sigma = v * np.eye(days)
+    return _round9(float(weights @ sigma @ weights))
+
+
+def reverse_regression_slope_exact(p):
+    byx, rho = float(p["byx"]), float(p["rho"])
+    return {
+        "r2": _round9(rho * rho),
+        "reciprocal": _round9(1 / byx),
+        "answer": _round9((rho * rho) / byx),
+    }
+
+
+def reverse_regression_slope_brute(p):
+    """Rebuild the covariance matrix the quoted slope and correlation imply, then read the other
+    regression's slope as covariance over the variance of the variable now being regressed on.
+    A Cholesky-drawn sample is fitted both ways as a check; the returned value is exact."""
+    byx, rho = float(p["byx"]), float(p["rho"])
+    sd_x = 1.0
+    sd_y = byx * sd_x / rho
+    cov = rho * sd_x * sd_y
+    sigma = np.array([[sd_x ** 2, cov], [cov, sd_y ** 2]])
+    forward = cov / sd_x ** 2
+    reverse = cov / sd_y ** 2
+    assert abs(forward - byx) < 1e-9, "the constructed moments do not reproduce the quoted slope"
+
+    rng = np.random.default_rng(20260823)
+    # Same spurious SIMD matmul warning the portfolio brute documents above: wholly finite
+    # operands, a "divide by zero" that says nothing about the data. The finiteness assert is
+    # the real guard.
+    with np.errstate(all="ignore"):
+        sample = rng.standard_normal((200_000, 2)) @ np.linalg.cholesky(sigma).T
+    assert np.isfinite(sample).all(), "the Cholesky draw produced non-finite pairs"
+    c = np.cov(sample.T)
+    assert abs(c[0, 1] / c[0, 0] - forward) < 0.02 * abs(forward), "sampled forward slope drifted"
+    assert abs(c[0, 1] / c[1, 1] - reverse) < 0.02 * abs(reverse), "sampled reverse slope drifted"
+    return _round9(reverse)
+
+
+def sample_size_for_margin_exact(p):
+    sd, margin, conf = float(p["sd"]), float(p["margin"]), int(p["conf"])
+    z = _z_for(conf)
+    return {
+        "z": z,
+        "zsd": _round9(z * sd),
+        "raw": _round9(((z * sd) / margin) ** 2),
+        "answer": math.ceil(_round9(((z * sd) / margin) ** 2)),
+    }
+
+
+def sample_size_for_margin_brute(p):
+    """Scan upward for the smallest count whose standard error clears the margin, and assert the
+    count below it does not. Nothing is squared and nothing is rounded up: the answer is found by
+    trying. The relative slack is float noise only — the exact-arithmetic boundary cases are the
+    reason the template rounds before its own ceiling."""
+    sd, margin, conf = float(p["sd"]), float(p["margin"]), int(p["conf"])
+    z = _z_for(conf)
+    n = 1
+    while z * sd / math.sqrt(n) > margin * (1 + 1e-12):
+        n += 1
+        assert n <= 100_000, "scan ran away"
+    if n > 1:
+        assert z * sd / math.sqrt(n - 1) > margin * (1 + 1e-12), "a smaller count would also have done"
+    return float(n)
+
+
 SOLVERS = {
+    "statistics/adjusted-r-squared-from-sums": {
+        "exact": adjusted_r_squared_from_sums_exact,
+        "brute": adjusted_r_squared_from_sums_brute,
+    },
+    "statistics/duplicated-sample-slope-variance": {
+        "exact": duplicated_sample_slope_variance_exact,
+        "brute": duplicated_sample_slope_variance_brute,
+    },
+    "statistics/overlapping-window-sums": {
+        "exact": overlapping_window_sums_exact,
+        "brute": overlapping_window_sums_brute,
+    },
+    "statistics/reverse-regression-slope": {
+        "exact": reverse_regression_slope_exact,
+        "brute": reverse_regression_slope_brute,
+    },
+    "statistics/sample-size-for-margin": {
+        "exact": sample_size_for_margin_exact,
+        "brute": sample_size_for_margin_brute,
+    },
     "statistics/portfolio-variance-two-asset": {
         "exact": portfolio_variance_two_asset_exact,
         "brute": portfolio_variance_two_asset_brute,

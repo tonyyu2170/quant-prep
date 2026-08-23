@@ -82,7 +82,7 @@ describe("problem registry invariants", () => {
     expect(markov).toBe(8);
     expect(symmetry).toBe(12);
     expect(brainteasers).toBe(20);
-    expect(statistics).toBe(5);
+    expect(statistics).toBe(10);
     expect(finance).toBe(10);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + finance).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
