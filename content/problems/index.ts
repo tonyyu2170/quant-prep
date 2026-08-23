@@ -193,6 +193,11 @@ import { frogWellEscape } from "./brainteasers/frog-well-escape";
 import { subtractionGameLastWins } from "./brainteasers/subtraction-game-last-wins";
 import { subtractionGameLastLoses } from "./brainteasers/subtraction-game-last-loses";
 import { twoPileNim } from "./brainteasers/two-pile-nim";
+import { chocolateBarBreaks } from "./brainteasers/chocolate-bar-breaks";
+import { mutilatedBoardTiling } from "./brainteasers/mutilated-board-tiling";
+import { josephusEverySecond } from "./brainteasers/josephus-every-second";
+import { coinRowTakeEnds } from "./brainteasers/coin-row-take-ends";
+import { nimThreePileMove } from "./brainteasers/nim-three-pile-move";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -386,6 +391,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   subtractionGameLastWins,
   subtractionGameLastLoses,
   twoPileNim,
+  chocolateBarBreaks,
+  mutilatedBoardTiling,
+  josephusEverySecond,
+  coinRowTakeEnds,
+  nimThreePileMove,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

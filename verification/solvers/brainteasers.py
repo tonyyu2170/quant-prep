@@ -354,6 +354,199 @@ def two_pile_nim_brute(p):
     return 1 if win(base, other) else 2
 
 
+def chocolate_bar_breaks_exact(p):
+    rows, cols, pieces = int(p["rows"]), int(p["cols"]), int(p["pieces"])
+    squares = rows * cols
+    snaps = squares - pieces
+    return {"squares": squares, "snaps": snaps, "answer": 1 if snaps % 2 == 1 else 2}
+
+
+def chocolate_bar_breaks_brute(p):
+    """Actually snap the bar, from whole to crumbs, in a deliberately lopsided order —
+    shear off a bottom row while one exists, otherwise peel a single square off the right.
+    Counting the snaps this run takes re-derives the total the closed form assumes; the
+    first `pieces - 1` of them are the damage already done before play starts."""
+    rows, cols, pieces = int(p["rows"]), int(p["cols"]), int(p["pieces"])
+    shelf = [(rows, cols)]
+    total = 0
+    while True:
+        for i, (r, c) in enumerate(shelf):
+            if r > 1:
+                shelf[i] = (r - 1, c)
+                shelf.append((1, c))
+                break
+            if c > 1:
+                shelf[i] = (r, c - 1)
+                shelf.append((r, 1))
+                break
+        else:
+            break
+        total += 1
+    assert all(x == (1, 1) for x in shelf) and len(shelf) == rows * cols
+    snaps = total - (pieces - 1)          # the snaps still to be played
+    return 1 if snaps % 2 == 1 else 2
+
+
+def mutilated_board_tiling_exact(p):
+    side = int(p["side"])
+    squares = side * side
+    half = squares // 2
+    d1 = 1 if (int(p["r1"]) + int(p["c1"])) % 2 == 0 else 0
+    d2 = 1 if (int(p["r2"]) + int(p["c2"])) % 2 == 0 else 0
+    return {
+        "squares": squares,
+        "half": half,
+        "sum1": int(p["r1"]) + int(p["c1"]),
+        "sum2": int(p["r2"]) + int(p["c2"]),
+        "darkLeft": half - d1 - d2,
+        "lightLeft": half - (1 - d1) - (1 - d2),
+        "remaining": squares - 2,
+        "answer": 1 if half - d1 - d2 == half - (1 - d1) - (1 - d2) else 2,
+    }
+
+
+def mutilated_board_tiling_brute(p):
+    """Try to build the covering. Augmenting-path matching between dark and light squares of
+    the mutilated board, where an edge joins squares that share a side. This never counts
+    colours to decide — it either produces a perfect matching (a domino covering) or exhausts
+    the search — so it is an independent check on both halves of the claim: that a colour
+    mismatch is fatal, and that a colour match is always enough."""
+    side = int(p["side"])
+    gone = {(int(p["r1"]), int(p["c1"])), (int(p["r2"]), int(p["c2"]))}
+    cells = [(r, c) for r in range(1, side + 1) for c in range(1, side + 1) if (r, c) not in gone]
+    dark = [x for x in cells if (x[0] + x[1]) % 2 == 0]
+    light_ix = {x: i for i, x in enumerate(x for x in cells if (x[0] + x[1]) % 2 == 1)}
+    if len(dark) != len(light_ix):
+        return 2
+    adj = [[light_ix[(r + dr, c + dc)]
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            if (r + dr, c + dc) in light_ix]
+           for r, c in dark]
+    match = [-1] * len(light_ix)
+
+    def augment(u, seen):
+        for v in adj[u]:
+            if v in seen:
+                continue
+            seen.add(v)
+            if match[v] == -1 or augment(match[v], seen):
+                match[v] = u
+                return True
+        return False
+
+    for u in range(len(dark)):
+        if not augment(u, set()):
+            return 2
+    return 1
+
+
+def josephus_every_second_exact(p):
+    n, first = int(p["n"]), int(p["first"])
+    power = 1
+    while power * 2 <= n:
+        power *= 2
+    excess = n - power
+    return {
+        "power": power,
+        "excess": excess,
+        "last": first + n - 1,
+        "secondBadge": first + 1,
+        "twiceExcess": 2 * excess,
+        "answer": first + 2 * excess,
+    }
+
+
+def josephus_every_second_brute(p):
+    """Run the circle. A live list of badges and an index at the person about to be skipped;
+    remove the next one, close the list up, and repeat until one badge is left. No power of
+    two appears anywhere in it."""
+    n, first = int(p["n"]), int(p["first"])
+    ring = list(range(first, first + n))
+    idx = 0                                   # the next person to be SKIPPED
+    while len(ring) > 1:
+        rem = (idx + 1) % len(ring)
+        ring.pop(rem)
+        idx = rem % len(ring)                 # the one after the removal is skipped next
+    return ring[0]
+
+
+def coin_row_take_ends_exact(p):
+    n, v, d = int(p["n"]), int(p["v"]), int(p["d"])
+    row = [v + i * d for i in range(n)]
+    odd = sum(row[0::2])
+    even = sum(row[1::2])
+    return {
+        "last": v + (n - 1) * d,
+        "second": v + d,
+        "half": n // 2,
+        "odd": odd,
+        "even": even,
+        "total": odd + even,
+        "gap": abs(even - odd),
+        "answer": max(odd, even),
+    }
+
+
+def coin_row_take_ends_brute(p):
+    """Solve the game, rather than assert the parity strategy is optimal. Standard
+    minimax over intervals: the mover takes an end and then concedes the opponent's best
+    play on what is left. If the odd/even bound were merely a bound and not the value,
+    this is what would disagree with it."""
+    n, v, d = int(p["n"]), int(p["v"]), int(p["d"])
+    row = [v + i * d for i in range(n)]
+    prefix = [0]
+    for x in row:
+        prefix.append(prefix[-1] + x)
+    from functools import lru_cache
+
+    @lru_cache(maxsize=None)
+    def best(i, j):
+        if i > j:
+            return 0
+        total = prefix[j + 1] - prefix[i]
+        return total - min(best(i + 1, j), best(i, j - 1))
+
+    return best(0, n - 1)
+
+
+def nim_three_pile_move_exact(p):
+    big, mid, small = int(p["big"]), int(p["mid"]), int(p["small"])
+    balance = mid ^ small
+    return {
+        "balance": balance,
+        "binBig": int(format(big, "b")),
+        "binMid": int(format(mid, "b")),
+        "binSmall": int(format(small, "b")),
+        "binBalance": int(format(balance, "b")),
+        "total": big + mid + small,
+        "answer": big - balance,
+    }
+
+
+def nim_three_pile_move_brute(p):
+    """Find the winning move by searching the game, with no XOR anywhere. Memoised
+    win/lose over every reachable triple, then the unique reduction of the largest pile
+    that hands the opponent a lost position. Asserts uniqueness rather than assuming it —
+    if two reductions of that pile both won, the question would not have one answer."""
+    big, mid, small = int(p["big"]), int(p["mid"]), int(p["small"])
+    from functools import lru_cache
+
+    @lru_cache(maxsize=None)
+    def win(a, b, c):
+        piles = (a, b, c)
+        for i, n in enumerate(piles):
+            for take in range(1, n + 1):
+                nxt = list(piles)
+                nxt[i] -= take
+                if not win(*nxt):
+                    return True
+        return False
+
+    winning = [take for take in range(1, big + 1) if not win(big - take, mid, small)]
+    assert len(winning) == 1, f"expected one winning move from the largest pile, got {winning}"
+    return winning[0]
+
+
 SOLVERS = {
     "brainteasers/ants-pole-collisions": {
         "exact": ants_pole_collisions_exact,
@@ -398,5 +591,25 @@ SOLVERS = {
     "brainteasers/two-pile-nim": {
         "exact": two_pile_nim_exact,
         "brute": two_pile_nim_brute,
+    },
+    "brainteasers/chocolate-bar-breaks": {
+        "exact": chocolate_bar_breaks_exact,
+        "brute": chocolate_bar_breaks_brute,
+    },
+    "brainteasers/mutilated-board-tiling": {
+        "exact": mutilated_board_tiling_exact,
+        "brute": mutilated_board_tiling_brute,
+    },
+    "brainteasers/josephus-every-second": {
+        "exact": josephus_every_second_exact,
+        "brute": josephus_every_second_brute,
+    },
+    "brainteasers/coin-row-take-ends": {
+        "exact": coin_row_take_ends_exact,
+        "brute": coin_row_take_ends_brute,
+    },
+    "brainteasers/nim-three-pile-move": {
+        "exact": nim_three_pile_move_exact,
+        "brute": nim_three_pile_move_brute,
     },
 }

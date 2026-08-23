@@ -62,7 +62,10 @@ export function probe(t: ProblemTemplate): string {
   return `${t.id.padEnd(46)} ${parts.join("  ")}`;
 }
 
-const want = process.argv.slice(2);
-const list = want.length ? PROBLEMS.filter((t) => want.some((w) => t.id.includes(w))) : PROBLEMS;
-if (!list.length) { console.error("no templates matched"); process.exit(1); }
-for (const t of list) console.log(probe(t));
+// CLI only when run directly, so a scratch script can `import { probe }` without this firing.
+if (process.argv[1]?.endsWith("probe.ts")) {
+  const want = process.argv.slice(2);
+  const list = want.length ? PROBLEMS.filter((t) => want.some((w) => t.id.includes(w))) : PROBLEMS;
+  if (!list.length) { console.error("no templates matched"); process.exit(1); }
+  for (const t of list) console.log(probe(t));
+}
