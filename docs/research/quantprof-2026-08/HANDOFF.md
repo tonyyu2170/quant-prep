@@ -1,5 +1,74 @@
 # Handoff — integrating the QuantProf findings
 
+## SESSION OF 2026-08-23 (overnight) — READ THIS FIRST
+
+`main` is at the `fix(nav)` commit; everything below in this section is landed, pushed and
+green. Bank went **191 -> 206** and the site gained two whole families.
+
+**Content — three batches, sixteen templates, all L2/L3.**
+
+- **B8, five combinatorial-game brainteasers** (`brainteasers/logic`, 11 -> 16):
+  chocolate-bar-breaks and mutilated-board-tiling as choice templates, plus
+  josephus-every-second, coin-row-take-ends and nim-three-pile-move.
+- **B9, a new `statistics/` family** (5 templates): portfolio-variance-two-asset,
+  min-variance-weight, correlation-bound-third-pair, regression-slope-from-moments,
+  sharpe-time-scaling.
+- **B10, a new `finance/` family** (5 templates): book-overround-arbitrage,
+  triangular-fx-arbitrage, put-call-parity, growing-perpetuity-value,
+  butterfly-max-profit.
+
+**Two new families means two new prefixes.** `registry.test.ts` now pins four:
+`probability/`, `brainteasers/`, `statistics/`, `finance/`. Each new topic was added to the
+draw-space, printed-precision and prose-claims scopes, given a `TOPIC_LABELS` entry, and
+given its own solver module (`verification/solvers/statistics.py`, `finance.py`).
+
+**The QuantGuide harvest contradicts COVERAGE.md's difficulty-mix premise.** See
+`../quantguide-2026-08/FINDINGS.md`. 323 pages scraped, 265 unlocked: their mix is
+**41/40/18** Easy/Medium/Hard against our 30/45/25 on a three-level scale needing no
+mapping. The "easy tier is 2.5x overweight, 130 more L2/L3 templates needed" reading rests
+on QuantProf's 1-10 scale mapped to thirds. The obvious objection — platforms unlock easy
+questions — was tested against their playlist cards, which show a difficulty on locked rows
+too: the locked half is the *easier* half (47% Easy against 37%). COVERAGE.md now carries a
+SUPERSEDED banner pointing here. **Author L2/L3 because it is worth more to a candidate, not
+to chase a ratio two outside banks disagree about by a factor of two.**
+
+**Two UI fixes.** The landing page advertised the probability bank as "coming next" while 191
+problems shipped behind it, and omitted `/drills/probability` and `/drills/missing-operand`
+entirely; counts are now derived from `PROBLEMS` so it cannot go stale again. And advancing
+past a walkthrough was bound to Enter and nothing else — no route at all on a touch device —
+so there is now a "Next problem" button, with a test that was watched fail without it.
+
+**New tool: `tools/probe.ts`.** The draw-space gate helpers in a plain tsx script, so a
+template's tuple count, texts/100, maxRepeat and either distinct@band or per-option shares
+can be measured *while drafting*. Every batch before this re-derived that harness by hand.
+`npx tsx tools/probe.ts <id-fragment>`; no argument probes the whole bank.
+
+**Three authoring lessons this session, worth the read before B11:**
+
+1. **Measure the parameter space before writing prose.** Probing is why the statistics
+   templates quote variances and a covariance as integers rather than standard deviations and
+   a correlation: it keeps every printed term exact. It also showed two templates could
+   produce an answer of 1e-17, which at rel 0.005 is exact-equality grading and outside the
+   emitter's decimal-safe window — hence their answer-floor constraints.
+2. **A new topic must contribute at least one claim-free segment.** `printed-precision.test.ts`
+   asserts the partition per topic, and a topic whose every math segment is arithmetic fails at
+   zero. Stating the formula symbolically before plugging numbers in satisfies it and reads
+   better anyway.
+3. **The gates caught a false prose claim, not just a false number.** "Parity gives the call
+   and the put the same time value" is the textbook line for zero rates and is false on every
+   draw here — they differ by the strike times one less the discount factor. No amount of
+   arithmetic checking would have found it; the prose predicate did.
+
+**Still open, unchanged by this session:** the `optiver-80in8` naming collision (needs a
+ruling), and `distributions/hypergeom-exact-draw` staying L1 pending a human second reader.
+**Newly open:** Pure Math is QuantGuide's other zero for us — 60 of theirs, and the strand
+that matters is martingales and optional stopping. The raw QuantGuide prompts are in the
+gitignored `.firecrawl/qg/.firecrawl/` (323 files); re-scraping costs a credit each, so look
+there first.
+
+---
+
+
 ## NEXT SESSION STARTS HERE (resumed and landed 2026-08-22)
 
 **Everything below is landed and pushed.** `main` is at `057c5ba`. The four
