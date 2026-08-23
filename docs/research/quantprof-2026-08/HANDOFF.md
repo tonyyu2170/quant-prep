@@ -62,15 +62,39 @@ question and the answer are the same question.
    v=4. Only a human reading the rendered sentence finds this one — the prose-claim there
    asserts the answer beats the disjoint case, which stays true either way.
 
-**Concurrency, worth knowing about.** Through this session another agent was editing the same
+**The in-flight rewrite is finished and landed as `848007c`** — bank 220 -> 221. What it needed,
+recorded because the same shape will recur whenever a shipped template is restyled:
+
+- **A renamed derived key breaks two things silently.** `verify.py` requires every derived key
+  to be re-derived in Python, and a stale key name there raises `KeyError` at import — which
+  aborts the gate for the WHOLE bank, not just that template. `favourable`/`outcomes` and
+  `numer` were renamed in the templates only; the prose claims reading them returned `undefined`
+  and crashed on `toPrecision`.
+- **Dropping a parameter axis is a draw-space change, not a prose change.** Both symmetry
+  templates went from three axes to two and fell to 57 and 62 distinct texts per 100 against a
+  floor of 70. `disjoint-subsets` deleted the very comment that explained why its third axis
+  existed. Restored: 92 and 84.
+- **A changed question needs a version bump.** `comparing-heads-counts` now asks a different
+  question (equal flip counts and a lead, rather than unequal counts and a draw count), so it is
+  `version: 2`; stored attempts carry `problemVersion` and would otherwise be attributed to a
+  question that no longer exists. Its equal-flip framing is correct, and the header comment
+  recording WHY — the B7 exchangeability trap — is back, since deleting it is how that error
+  returns.
+- `median-of-three` was sound but registered nowhere, so no gate could see it. It now draws its
+  spin count over {3,5,7} rather than fixing it at three: the reflection argument never counts
+  the spins, so any odd number gives the same mean, and the axis buys the draw space its third
+  dimension at the same time.
+- **Two chains written while finishing this drifted at display precision** — `10 x 2 x 0.3953`
+  renders 7.906 against an answer of 7.905. Same rounded-operand trap as ever. Both steps now
+  state the product rather than chaining it, with the exact-integer form one step above.
+
+**How it arrived.** Through this session another agent was editing the same
 working tree — `symmetry/comparing-heads-counts.ts` (rewritten to the equal-flip-counts version
 of the "who leads" question), `symmetry/disjoint-subsets.ts`, `ev-variance/chord-crossings.ts`,
-and a new untracked `ev-variance/median-of-three.ts`. That work is mid-flight and red: it fails
-draw-space (57 texts per 100) and prose-claims, because the params moved and the Python solver
-and claims did not follow. **None of it is in either B12 commit** — both were staged path by
-path rather than with `git add -A`, and the pushed tree is green. Whoever picks that work up
-needs `symmetry.py`'s `comparing_heads_counts_exact` updated to the new params, its CLAIMS entry
-rewritten, and a version bump, since the shipped question changed.
+and a new untracked `ev-variance/median-of-three.ts`. It stopped at 08:04 and left that work red.
+**None of it is in either B12 commit** — both were staged path by path rather than with
+`git add -A`, so each pushed tree was green on its own. It was finished separately in `848007c`,
+above.
 
 ---
 
