@@ -60,8 +60,15 @@ before it, nobody had watched this gate fail.
   `distributions/hypergeom-exact-draw` is the one open thread — it did not
   survive the criterion and stays L1, pending a human second reader.
   Do not chase 16%; see `COVERAGE.md` for why that is false precision.
-- Four-term sequence display, still blocked on the answer checker accepting any
-  rule consistent with the shown terms.
+- ~~Four-term sequence display~~ **— tried and reverted 2026-08-22; the blocker is
+  not the answer checker.** At four terms `ratio-linear-offset`, 47% of the hard
+  tier, is underdetermined within its own parameter range: the drawn prompt
+  `3, -1, -5, -17` fits every multiplier from -6 to 12, nineteen different next
+  terms, none preferable. "Accept any consistent rule" would mean accepting
+  nineteen numbers. A tripwire test now fails if anyone shortens the term count.
+  What would actually unblock it is a measurement, not code — sweep their 652
+  harvested four-term prompts in `sequences.txt` and count how many admit more
+  than one next term. See `COVERAGE.md`.
 - Combinatorial-game brainteasers, still blocked on a non-numeric answer type.
 - The `optiver-80in8` naming collision, which needs a ruling rather than a fix.
 

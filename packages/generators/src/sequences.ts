@@ -51,6 +51,11 @@ function pickFamily(rng: Rng, difficulty: 1 | 2 | 3): SeqFamily {
 
 function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: number[]; answer: number; rule: string; extra?: Record<string, number> } {
   // Shown terms: difficulty-driven, except the SHORT families above, which show 5 at every difficulty.
+  // NOT four. Four is what QuantProf shows and the research named it the headline finding, but
+  // it does not survive our family set: at four terms `ratio-linear-offset` — 47% of the hard
+  // tier — is underdetermined within its OWN parameter range. `3, -1, -5, -17` fits every
+  // multiplier from -6 to 12 and each predicts a different next term, 19 answers for one
+  // prompt. See the note in docs/research/quantprof-2026-08/COVERAGE.md.
   const n = SHORT.has(family) ? 5 : difficulty === 1 ? 5 : 6;
   // Per (family, difficulty) the number of rng draws is fixed — changing a family's draw count breaks seed replay.
   switch (family) {

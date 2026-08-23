@@ -308,3 +308,54 @@ promotion makes it report `expected 5 to be 4`.
 equality pin on the same numbers. Both were updated together here, and the
 budget's comment now says so, but it is redundant on a closed batch and is a
 live footgun for the next re-tag.
+
+---
+
+# Four-term sequence display — TRIED AND REVERTED 2026-08-22
+
+The handoff carried this as integration candidate 3, blocked on "the answer checker
+accepting any rule consistent with the shown terms." That framing is wrong, and the
+real blocker is more fundamental: **at four terms our sequences stop having an answer.**
+
+**What was measured.** Term count was set to 4 and 180,000 draws were generated across
+all sixteen families and three tiers.
+
+- Against the four rule classes a solver actually tries — constant first difference,
+  constant second difference, `x[i] = a·x[i-1] + b`, and `x[i] = x[i-1] + x[i-2]` —
+  **0.5%** of four-term draws are contradicted: a plausible rule fits the shown terms
+  and predicts a different next term. Concentrated in `fiblike` (3.5%) and
+  `ratio-linear-offset` (1.6%). The textbook case is `2, 3, 5, 8`, which is fiblike's
+  13 and a quadratic's 12 with equal justice.
+- That 0.5% is fixable by rejecting ambiguous draws, and a rejection loop was built and
+  shown to drive it to 0 over 180,000 draws.
+
+**Then the existing family verifiers caught what that check could not.** The ambiguity
+that matters is not between families, it is *within* one. `ratio-linear-offset` —
+**47% of the hard tier** — has more free parameters than four terms can pin down. The
+drawn prompt `3, -1, -5, -17` fits every multiplier from -6 to 12 and each predicts a
+different next term:
+
+```
+p=-6 → -13   p=-5 → -21   p=-4 → -29   ...   p=1 → -69 (intended)   ...   p=12 → -157
+```
+
+Nineteen answers for one prompt, all correct, none preferable. "Accept any rule
+consistent with the shown terms" would mean accepting nineteen different numbers, at
+which point it is not a question. No checker change rescues this, because there is
+nothing to check against.
+
+**Why QuantProf can show four terms and we cannot** is not settled. Either their
+`ratio-linear-offset` draws from a narrower parameter range than ours, or their
+four-term questions are genuinely ambiguous and graded against one intended answer
+anyway. `sequences.txt` holds the raw harvest if anyone wants to test the first
+hypothesis — fit each of their 652 four-term prompts across a parameter sweep and count
+how many admit more than one next term. That measurement, not a checker, is what would
+unblock this.
+
+**What was kept.** The four solver-rule fitters live in
+`packages/generators/test/sequences.test.ts` as a gate rather than in the generator: at
+the shipped 5-6 terms, ambiguity against them is **0 of 192,000 draws**, so a runtime
+rejection loop would have been machinery that never fires. As a test it is a tripwire —
+it passes now and fails the moment anyone shortens the term count, so the next person to
+have this idea meets the evidence rather than the idea. Verified by setting the count to
+4 and watching both it and the pre-existing family verifiers go red.
