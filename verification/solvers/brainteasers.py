@@ -547,6 +547,113 @@ def nim_three_pile_move_brute(p):
     return winning[0]
 
 
+def painted_block_one_face_exact(p):
+    a, b, c = int(p["a"]), int(p["b"]), int(p["c"])
+    ia, ib, ic = a - 2, b - 2, c - 2
+    face_ab, face_ac, face_bc = ia * ib, ia * ic, ib * ic
+    return {
+        "ia": ia, "ib": ib, "ic": ic,
+        "faceAB": face_ab, "faceAC": face_ac, "faceBC": face_bc,
+        "panelSum": face_ab + face_ac + face_bc,
+        "total": a * b * c,
+        "hidden": ia * ib * ic,
+        "answer": 2 * (face_ab + face_ac + face_bc),
+    }
+
+
+def painted_block_one_face_brute(p):
+    """Walk every unit cube and count its exposed faces directly. No formula about sides,
+    edges or corners — each cube is asked how many of the six block faces it touches."""
+    a, b, c = int(p["a"]), int(p["b"]), int(p["c"])
+    n = 0
+    for x in range(a):
+        for y in range(b):
+            for z in range(c):
+                faces = ((x == 0) + (x == a - 1) + (y == 0) + (y == b - 1)
+                         + (z == 0) + (z == c - 1))
+                n += faces == 1
+    return n
+
+
+def divisor_count_factorisation_exact(p):
+    a, b, c, d = int(p["a"]), int(p["b"]), int(p["c"]), int(p["d"])
+    return {
+        "n": 2 ** a * 3 ** b * 5 ** c * 7 ** d,
+        "ea": a + 1, "eb": b + 1, "ec": c + 1, "ed": d + 1,
+        "answer": (a + 1) * (b + 1) * (c + 1) * (d + 1),
+    }
+
+
+def divisor_count_factorisation_brute(p):
+    """Enumerate the divisors as actual integers and count the distinct ones. Building them
+    from exponent tuples and then de-duplicating is what checks unique factorisation rather
+    than assuming it; trial division up to the root would be far slower at this size."""
+    a, b, c, d = int(p["a"]), int(p["b"]), int(p["c"]), int(p["d"])
+    n = 2 ** a * 3 ** b * 5 ** c * 7 ** d
+    divisors = set()
+    for i in range(a + 1):
+        for j in range(b + 1):
+            for k in range(c + 1):
+                for m in range(d + 1):
+                    q = 2 ** i * 3 ** j * 5 ** k * 7 ** m
+                    assert n % q == 0, f"{q} built from exponents does not divide {n}"
+                    divisors.add(q)
+    assert 1 in divisors and n in divisors
+    return len(divisors)
+
+
+def average_speed_round_trip_exact(p):
+    v1, v2, dist = int(p["v1"]), int(p["v2"]), int(p["dist"])
+    return {
+        "num": 2 * v1 * v2,
+        "den": v1 + v2,
+        "twiceDist": 2 * dist,
+        "arithmeticMean": round((v1 + v2) / 2 * 1e9) / 1e9,
+        "answer": round((2 * v1 * v2) / (v1 + v2) * 1e9) / 1e9,
+    }
+
+
+def average_speed_round_trip_brute(p):
+    """Total distance over total time, from the two legs as stated. The harmonic mean never
+    appears — the legs are timed separately and the distance is only cancelled by arithmetic."""
+    v1, v2, dist = int(p["v1"]), int(p["v2"]), int(p["dist"])
+    t1 = dist / v1
+    t2 = dist / v2
+    return round((2 * dist) / (t1 + t2) * 1e9) / 1e9
+
+
+def bird_between_trains_exact(p):
+    d, v1, v2, vb = int(p["d"]), int(p["v1"]), int(p["v2"]), int(p["vb"])
+    return {
+        "closing": v1 + v2,
+        "hours": round(d / (v1 + v2) * 1e9) / 1e9,
+        "firstLeg": round((vb * d) / (vb + v2) * 1e9) / 1e9,
+        "answer": round((vb * d) / (v1 + v2) * 1e9) / 1e9,
+    }
+
+
+def bird_between_trains_brute(p):
+    """Fly the legs. Shuttles the bird back and forth, advancing both trains each time, and
+    accumulates the distance until the gap closes — the route the template argues AGAINST.
+    That the series converges to the same number is the check; 400 turns puts the residual
+    gap far below the tolerance verify.py compares at, and the remaining flight over that gap
+    is added in closed form so the return value is exact."""
+    d, v1, v2, vb = float(p["d"]), float(p["v1"]), float(p["v2"]), float(p["vb"])
+    gap, flown, toward_far = d, 0.0, True
+    for _ in range(400):
+        if gap <= 0:
+            break
+        # closing speed between the bird and whichever train it is flying at
+        leg_time = gap / (vb + (v2 if toward_far else v1))
+        flown += vb * leg_time
+        gap -= (v1 + v2) * leg_time
+        toward_far = not toward_far
+    flown += vb * gap / (v1 + v2)          # the unresolved remainder, in closed form
+    exact = (vb * d) / (v1 + v2)
+    assert abs(flown - exact) < 1e-9 * exact, f"legs summed to {flown} vs {exact}"
+    return round(exact * 1e9) / 1e9
+
+
 SOLVERS = {
     "brainteasers/ants-pole-collisions": {
         "exact": ants_pole_collisions_exact,
@@ -611,5 +718,21 @@ SOLVERS = {
     "brainteasers/nim-three-pile-move": {
         "exact": nim_three_pile_move_exact,
         "brute": nim_three_pile_move_brute,
+    },
+    "brainteasers/painted-block-one-face": {
+        "exact": painted_block_one_face_exact,
+        "brute": painted_block_one_face_brute,
+    },
+    "brainteasers/divisor-count-factorisation": {
+        "exact": divisor_count_factorisation_exact,
+        "brute": divisor_count_factorisation_brute,
+    },
+    "brainteasers/average-speed-round-trip": {
+        "exact": average_speed_round_trip_exact,
+        "brute": average_speed_round_trip_brute,
+    },
+    "brainteasers/bird-between-trains": {
+        "exact": bird_between_trains_exact,
+        "brute": bird_between_trains_brute,
     },
 }

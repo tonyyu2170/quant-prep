@@ -81,7 +81,7 @@ describe("problem registry invariants", () => {
     expect(geometric).toBe(21);
     expect(markov).toBe(8);
     expect(symmetry).toBe(12);
-    expect(brainteasers).toBe(16);
+    expect(brainteasers).toBe(20);
     expect(statistics).toBe(5);
     expect(finance).toBe(5);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + finance).toBe(PROBLEMS.length);
@@ -177,7 +177,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(25);   // 17 counting exact counts, 5 choice templates, 3 exact brainteaser answers
+    expect(exact.length).toBe(27);   // 17 counting exact counts, 5 choice templates, 5 exact brainteaser answers
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));

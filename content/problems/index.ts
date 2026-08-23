@@ -208,6 +208,10 @@ import { triangularFxArbitrage } from "./finance/triangular-fx-arbitrage";
 import { putCallParity } from "./finance/put-call-parity";
 import { growingPerpetuityValue } from "./finance/growing-perpetuity-value";
 import { butterflyMaxProfit } from "./finance/butterfly-max-profit";
+import { paintedBlockOneFace } from "./brainteasers/painted-block-one-face";
+import { divisorCountFactorisation } from "./brainteasers/divisor-count-factorisation";
+import { averageSpeedRoundTrip } from "./brainteasers/average-speed-round-trip";
+import { birdBetweenTrains } from "./brainteasers/bird-between-trains";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -416,6 +420,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   putCallParity,
   growingPerpetuityValue,
   butterflyMaxProfit,
+  paintedBlockOneFace,
+  divisorCountFactorisation,
+  averageSpeedRoundTrip,
+  birdBetweenTrains,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
