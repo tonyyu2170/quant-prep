@@ -14,11 +14,20 @@ const pmfOf = (par: Params) => {
   return tot === 0 ? 0 : (comb(par.K, par.k) * comb(par.N - par.K, par.n - par.k)) / tot;
 };
 
+// L2 since 2026-08-23, on a second read that COVERAGE.md's scope did not have. Its own sibling
+// `hypergeom-zero-successes` is L2 at 55s, and that one is the DEGENERATE case of this formula:
+// at k=0 the first coefficient collapses to 1 and only one product survives. A family's general
+// case cannot rank below its own special case. The earlier read compared it to
+// `binomial-exact-count` (L1, one coefficient and a power) rather than to the three coefficients
+// and the ratio it actually asks for, and it was the slowest L1 in the topic at 65s against a
+// 49s tier mean. It is NOT L3: distributions' L3 is uniformly two-stage — fit-then-pmf,
+// quantile-then-range — and this is one stage. Its pace matching that band's floor is a
+// coincidence of an L2 band that runs 40 to 110.
 export const hypergeomExactDraw: ProblemTemplate = {
   id: "distributions/hypergeom-exact-draw",
   version: 1,
   topic: "probability/distributions",
-  difficulty: 1,
+  difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
   source: { kind: "original", inspiration: "hypergeometric PMF as a ratio of favorable to total sampling arrangements" },
   params: {

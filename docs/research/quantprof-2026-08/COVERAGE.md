@@ -299,12 +299,28 @@ the equality pin its own comment always promised (the batch closed at 20/20).
 The derived ladder independently confirms the pace read: `fair-expected-duration`
 stays L1 under it, which is exactly where the content read had already put it.
 
-**`distributions/hypergeom-exact-draw` was NOT promoted.** The scope flagged it
-as the weakest of the five and said to promote it "only if a second reader
-agrees." Applying ruin's forward-vs-inverted criterion to distributions answers
-it instead: one PMF applied forward is the same shape as `binomial-exact-count`
-(L1, 40s). Its 65s pace is the outlier, not its difficulty. **Left at L1 —
-still open for a human second reader to overrule.**
+**`distributions/hypergeom-exact-draw` — RESOLVED 2026-08-23: promoted to L2.**
+
+The scope flagged it as the weakest of the five and said to promote it "only if a second
+reader agrees." An earlier pass declined, on the ground that one PMF applied forward is the
+same shape as `binomial-exact-count` (L1, 40s), and left it open. The reading that settles it
+is one neither pass had, and it is about the family rather than about the pace:
+
+**Its own sibling `hypergeom-zero-successes` is already L2, at 55s — and that one is the
+DEGENERATE case of this same formula.** At k=0 the first coefficient collapses to one and a
+single product survives. A family's general case cannot rank a tier below its own special
+case, whatever either pace says.
+
+The comparison the earlier pass made was also the wrong one: `binomial-exact-count` prints one
+coefficient and a power, where this prints three coefficients and a ratio, and it was the
+slowest L1 in the topic at 65s against a 49s tier mean — the only L1 carrying three
+coefficients at all.
+
+**Not L3**, though its 65s sits exactly on that band's floor. Distributions' L3 is uniformly
+two-stage — `binomial-fit-then-pmf`, `poisson-fit-then-tail`, `normal-quantile-then-range` —
+and this is one stage. The pace coincidence comes from an L2 band that runs 40 to 110.
+
+Distributions is now 9/13/6; `registry.test.ts` moves with it.
 
 Final: counting 11/11/5 → 10/12/5, ev-variance 13/15/6 → 12/16/6,
 ruin 8/8/4 → 4/12/4, distributions 10/12/6 unchanged, bayes and geometric

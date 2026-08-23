@@ -3,7 +3,7 @@ import type { Preset } from "./types";
 export const PRESETS: Record<string, Preset> = {
   "optiver-80in8": {
     id: "optiver-80in8",
-    title: "Optiver-style 80 in 8",
+    title: "80 in 8 — free-entry numerical sprint",
     topic: "arithmetic",
     count: 80,
     durationS: 480,
@@ -12,10 +12,13 @@ export const PRESETS: Record<string, Preset> = {
   },
   // Their real Optiver 80-in-8 is four-way multiple choice with a blanked slot, not free entry —
   // see docs/research/quantprof-2026-08/optiver-80.txt. `optiver-80in8` above is a Zetamac-style
-  // sprint that predates that finding; both are kept so stored runs stay comparable.
+  // sprint that predates that finding, and its ID is deliberately NOT being corrected: the slug
+  // is an identifier, persisted in test_sessions.preset and in every visitor's localStorage, and
+  // renaming it would drop their own sim history off the stats chart to fix something only the
+  // URL shows. The titles carry the truth instead — ruled 2026-08-23.
   "optiver-mc-80in8": {
     id: "optiver-mc-80in8",
-    title: "Optiver 80 in 8 (multiple choice)",
+    title: "Optiver 80 in 8 — their real format",
     topic: "missing-operand",
     count: 80,
     durationS: 480,

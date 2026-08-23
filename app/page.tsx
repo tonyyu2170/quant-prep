@@ -6,8 +6,8 @@ import { FIRMS, PROBLEMS } from "@/content/problems";
 const TOPICS = new Set(PROBLEMS.map((t) => t.topic)).size;
 
 const sims = [
-  { href: "/test/optiver-80in8", label: "80-in-8 numerical sim", sub: "80 questions · 8 minutes · +1/−2 scoring" },
-  { href: "/test/optiver-mc-80in8", label: "80-in-8, multiple choice", sub: "Optiver's real format · blanked operand · 4 options" },
+  { href: "/test/optiver-80in8", label: "80-in-8 numerical sprint", sub: "Free entry · 8 minutes · +1/−2 scoring" },
+  { href: "/test/optiver-mc-80in8", label: "Optiver 80-in-8", sub: "Their real format · blanked operand · 4 options" },
   { href: "/test/sequences-sprint", label: "Sequences sprint", sub: "20 patterns · 8 minutes · rule shown on every miss" },
 ];
 

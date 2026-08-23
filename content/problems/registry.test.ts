@@ -112,11 +112,11 @@ describe("problem registry invariants", () => {
     expect(ruin.filter((t) => t.difficulty === 2).length).toBe(12);
     expect(ruin.filter((t) => t.difficulty === 3).length).toBe(4);
   });
-  it("distributions batch hits the 10/12/6 difficulty distribution", () => {
+  it("distributions batch hits the 9/13/6 difficulty distribution", () => {
     const dist = PROBLEMS.filter((t) => t.id.startsWith("distributions/"));
     expect(dist.length).toBe(28);
-    expect(dist.filter((t) => t.difficulty === 1).length).toBe(10);
-    expect(dist.filter((t) => t.difficulty === 2).length).toBe(12);
+    expect(dist.filter((t) => t.difficulty === 1).length).toBe(9);
+    expect(dist.filter((t) => t.difficulty === 2).length).toBe(13);
     expect(dist.filter((t) => t.difficulty === 3).length).toBe(6);
   });
   it("every distributions problem grades on rel 0.005 — never abs", () => {
