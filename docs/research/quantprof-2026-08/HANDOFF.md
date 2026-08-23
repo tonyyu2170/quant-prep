@@ -189,8 +189,21 @@ can be measured *while drafting*. Every batch before this re-derived that harnes
    draw here — they differ by the strike times one less the discount factor. No amount of
    arithmetic checking would have found it; the prose predicate did.
 
-**Still open, unchanged by this session:** the `optiver-80in8` naming collision (needs a
-ruling), and `distributions/hypergeom-exact-draw` staying L1 pending a human second reader.
+**Both of those long-open rulings are CLOSED as of 2026-08-23 (`0408723`).**
+`distributions/hypergeom-exact-draw` is L2 — its own sibling `hypergeom-zero-successes` is
+already L2 at 55s and is the degenerate k=0 case of the same formula, so the general case
+cannot rank below it; see COVERAGE.md for the full reading and why it is not L3. And
+`optiver-80in8` KEEPS its slug: a slug is an identifier, persisted in `test_sessions.preset`
+and in every visitor's localStorage, and renaming it would drop their own sim history off the
+stats chart to fix something only the URL shows. The titles carry the truth instead — ours is a
+free-entry numerical sprint, and the multiple-choice preset is the one that is actually
+Optiver's.
+
+**A leaderboard bug turned up while checking that ruling.** 0003's canonical CTE listed only
+`optiver-80in8` and `sequences-sprint`, so the join discarded every multiple-choice session and
+that preset could never rank. `0004_leaderboard_mc_preset.sql` recreates the view with it
+added; everything below the CTE is byte-identical to 0003, which `diff` confirms. **It needs
+applying to the live project** — over the shared pooler, per the note further down this file.
 **Newly open:** Pure Math is QuantGuide's other zero for us — 60 of theirs, and the strand
 that matters is martingales and optional stopping. The raw QuantGuide prompts are in the
 gitignored `.firecrawl/qg/.firecrawl/` (323 files); re-scraping costs a credit each, so look
