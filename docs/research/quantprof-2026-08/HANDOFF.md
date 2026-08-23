@@ -1,5 +1,57 @@
 # Handoff — integrating the QuantProf findings
 
+## B12 — TEN TEMPLATES, FINANCE AND STATISTICS DOUBLED (2026-08-23)
+
+Bank **215 -> 220** across two commits, `bf1a0ab` (finance) and `98a0a6b` (statistics). Both
+families were five templates, thinner than a single sitting; both are now ten. No new wiring —
+both topics were already in every gate scope, which is why this was worth more than opening
+Pure Math as a sixth thin family.
+
+**Finance (b12a):** payment-stream-present-value, put-hedge-from-parity, covered-call-max-profit
+(L2), call-lower-bound-arbitrage, box-spread-arbitrage (L3).
+**Statistics (b12b):** adjusted-r-squared-from-sums (L3), duplicated-sample-slope-variance,
+overlapping-window-sums, reverse-regression-slope, sample-size-for-margin (L2).
+
+**Measuring the draw space first killed the obvious finance design.** A coupon bond's full
+price scores **3 distinct answers against a floor of 12** — bond prices sit within a few percent
+of par whatever the curve does, so the space collapses under the transitive merge rule. The
+payment stream alone scores 56, teaches the same technique, and its last solution step names
+the principal leg that would make it a bond. The same probe showed a half-cent grid on the
+curve drops the count to 9 where whole cents give 56: the count is carried by the payment size
+and the three-or-four-year term, not by the curve's fine structure.
+
+**Two gates caught things no amount of reading would have.**
+
+1. `\Delta` is not in the printed-precision command allowlist, so the parity relation reports
+   unevaluable rather than being quietly accepted. Written with a plain `D` it passes.
+2. **A float boundary made an answer wrong, not just imprecise.** At a multiplier of 1.96, a
+   spread of 5 and a margin of 0.7, the ratio is exactly 14 in real arithmetic and
+   14.000000000000002 in floats; squaring lands a hair above 196 and a bare `Math.ceil` returns
+   197. That is one measurement too many, and it would have graded a correct 196 as WRONG on 6
+   of 392 draws. The template now rounds at the ninth decimal before rounding up. **Any template
+   whose answer passes through a ceiling or a floor needs this** — rounding is not cosmetic when
+   an integer boundary is what the answer is made of.
+
+**Every answer is reached twice.** The independent Python routes avoid the identity each
+template teaches: backward induction through implied forward factors, a Black-Scholes world
+constructed to have the quoted call delta, payoff grids for the three option structures, a data
+set constructed to HAVE the given sums of squares and then actually regressed, the doubled
+design matrix inverted rather than a factor of two applied, indicator vectors for the two
+windows, the implied covariance matrix refitted both ways, and an upward scan for the smallest
+sample size. All ten were mutation-checked: a 2% perturbation is caught 25/25 by both routes.
+
+**Concurrency, worth knowing about.** Through this session another agent was editing the same
+working tree — `symmetry/comparing-heads-counts.ts` (rewritten to the equal-flip-counts version
+of the "who leads" question), `symmetry/disjoint-subsets.ts`, `ev-variance/chord-crossings.ts`,
+and a new untracked `ev-variance/median-of-three.ts`. That work is mid-flight and red: it fails
+draw-space (57 texts per 100) and prose-claims, because the params moved and the Python solver
+and claims did not follow. **None of it is in either B12 commit** — both were staged path by
+path rather than with `git add -A`, and the pushed tree is green. Whoever picks that work up
+needs `symmetry.py`'s `comparing_heads_counts_exact` updated to the new params, its CLAIMS entry
+rewritten, and a version bump, since the shipped question changed.
+
+---
+
 ## FIRM TRACKS — shipped 2026-08-23 (morning)
 
 The landing page had advertised "firm tracks · market-making game" as coming next — the same
