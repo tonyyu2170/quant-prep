@@ -177,7 +177,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(27);   // 17 counting exact counts, 5 choice templates, 5 exact brainteaser answers
+    expect(exact.length).toBe(28);   // 17 counting exact counts, 5 choice templates, 5 exact brainteaser answers, 1 statistics sample size
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));

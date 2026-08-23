@@ -42,7 +42,10 @@ export const sampleSizeForMargin: ProblemTemplate = {
     };
   },
   answerKey: "answer",
-  accepted: { tolerance: { rel: 0.005 } },
+  // A count grades exactly. Under rel 0.005 an answer of 1000 accepts 995, and 995 measurements
+  // provably leave the interval wider than the one the question asks for — the off-by-one this
+  // question is ABOUT would have graded correct on most of the space.
+  accepted: { tolerance: { abs: 0 } },
   statement: (p, d) =>
     `A quantity varies with a known standard deviation of ${fmtNum(p.sd)}, and you will estimate its mean from independent measurements. You want a ${fmtNum(p.conf)} percent confidence interval for that mean no wider than plus or minus ${fmtNum(p.margin)}, which at that level uses a multiplier of ${fmtNum(d.z)}. ` +
     `What is the smallest number of measurements that does it?`,
