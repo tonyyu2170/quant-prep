@@ -300,43 +300,46 @@ def ants_circle_directions_brute(p):
 
 
 def comparing_heads_counts_exact(p):
-    a, b, contests = int(p["flipsA"]), int(p["flipsB"]), int(p["contests"])
-    total = a + b
-    tie_ways = 1
-    for i in range(a):
-        tie_ways = tie_ways * (total - i) // (i + 1)
-    total_ways = 2 ** total
+    flips, bounty, contests = int(p["flipsEach"]), int(p["bounty"]), int(p["contests"])
+    sum_flips = 2 * flips
+    tie_ways = _choose(sum_flips, flips)
+    total_ways = 2 ** sum_flips
     tie_prob = tie_ways / total_ways
+    lead_prob = (total_ways - tie_ways) / (2 * total_ways)
     return {
-        "total": total,
+        "sumFlips": sum_flips,
         "tieWays": tie_ways,
         "totalWays": total_ways,
         "tieProb": tie_prob,
-        "ev": contests * tie_prob,
+        "leadProb": lead_prob,
+        "ev": contests * bounty * lead_prob,
     }
 
 
 def comparing_heads_counts_brute(p):
-    """Convolve the two binomials and add the matching-count terms one at a time. That is the
-    sum Vandermonde's identity is claimed to collapse, so the counterpart must not use the
-    identity — evaluating it term by term is the whole check."""
-    a, b, contests = int(p["flipsA"]), int(p["flipsB"]), int(p["contests"])
-    pa = [Fraction(_choose(a, i), 2 ** a) for i in range(a + 1)]
-    pb = [Fraction(_choose(b, j), 2 ** b) for j in range(b + 1)]
-    draw = Fraction(0)
-    for k in range(min(a, b) + 1):
-        draw += pa[k] * pb[k]
-    return float(contests * draw)
+    """Convolve the two binomials and add up every outcome in which Ana's count strictly beats
+    Ben's, term by term in exact rationals. Neither of the template's two moves appears: the tie
+    count is never collapsed by Vandermonde, and the leads are never assumed equally likely — if
+    the exchangeability argument were wrong, this sum would say so."""
+    flips, bounty, contests = int(p["flipsEach"]), int(p["bounty"]), int(p["contests"])
+    pmf = [Fraction(_choose(flips, i), 2 ** flips) for i in range(flips + 1)]
+    lead = Fraction(0)
+    for i in range(flips + 1):
+        for j in range(i):
+            lead += pmf[i] * pmf[j]
+    tie = sum(pmf[k] * pmf[k] for k in range(flips + 1))
+    assert lead + lead + tie == 1, "leads and ties do not partition the space"
+    return float(contests * bounty * lead)
 
 
 def disjoint_subsets_exact(p):
     items, bounty, rounds = int(p["items"]), int(p["bounty"]), int(p["rounds"])
-    favourable = 3 ** items
-    outcomes = 4 ** items
-    prob = favourable / outcomes
+    p3n = 3 ** items
+    p4n = 4 ** items
+    prob = p3n / p4n
     return {
-        "favourable": favourable,
-        "outcomes": outcomes,
+        "p3n": p3n,
+        "p4n": p4n,
         "prob": prob,
         "payout": bounty * rounds,
         "ev": bounty * rounds * prob,

@@ -90,6 +90,7 @@ import { chordCrossings } from "./ev-variance/chord-crossings";
 import { spreadOfThreeSpins } from "./ev-variance/spread-of-three-spins";
 import { localMaxima } from "./ev-variance/local-maxima";
 import { covarianceSumDifference } from "./ev-variance/covariance-sum-difference";
+import { medianOfThree } from "./ev-variance/median-of-three";
 import { binomialExactCount } from "./distributions/binomial-exact-count";
 import { binomialAtMost } from "./distributions/binomial-at-most";
 import { binomialAtLeastOne } from "./distributions/binomial-at-least-one";
@@ -315,6 +316,7 @@ export const PROBLEMS: ProblemTemplate[] = [
   spreadOfThreeSpins,
   localMaxima,
   covarianceSumDifference,
+  medianOfThree,
   binomialExactCount,
   binomialAtMost,
   binomialAtLeastOne,

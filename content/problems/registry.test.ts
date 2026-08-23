@@ -75,7 +75,7 @@ describe("problem registry invariants", () => {
     const finance = problemsFor("finance/pricing").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(27);
-    expect(ev).toBe(34);
+    expect(ev).toBe(35);
     expect(distributions).toBe(28);
     expect(ruin).toBe(20);
     expect(geometric).toBe(21);
@@ -133,16 +133,16 @@ describe("problem registry invariants", () => {
     expect(counting.filter((t) => t.difficulty === 2).length).toBe(12);
     expect(counting.filter((t) => t.difficulty === 3).length).toBe(5);
   });
-  it("ev-variance stays inside its 12/16/6 difficulty budget", () => {
+  it("ev-variance stays inside its 12/17/6 difficulty budget", () => {
     // Kept as an upper bound, but the batch closed at 34/34 long ago and the equality pin
     // below now covers everything this asserts — it survives only because it is the pin a
     // reader finds first, and a re-tag that updated one and not the other would look green
     // on the wrong one. Update both together or delete this one.
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
     expect(ev.filter((t) => t.difficulty === 1).length).toBeLessThanOrEqual(12);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(16);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBeLessThanOrEqual(17);
     expect(ev.filter((t) => t.difficulty === 3).length).toBeLessThanOrEqual(6);
-    expect(ev.length).toBeLessThanOrEqual(34);
+    expect(ev.length).toBeLessThanOrEqual(35);
   });
   it("a module-level helper exists only if constraint reaches it", () => {
     // Constraint 2 licenses a module-local helper for exactly one reason: `constraint` never
@@ -192,11 +192,11 @@ describe("problem registry invariants", () => {
     expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(17);
     expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
   });
-  it("ev-variance batch hits the 12/16/6 difficulty distribution", () => {
+  it("ev-variance batch hits the 12/17/6 difficulty distribution", () => {
     const ev = PROBLEMS.filter((t) => t.id.startsWith("ev-variance/"));
-    expect(ev.length).toBe(34);
+    expect(ev.length).toBe(35);
     expect(ev.filter((t) => t.difficulty === 1).length).toBe(12);
-    expect(ev.filter((t) => t.difficulty === 2).length).toBe(16);
+    expect(ev.filter((t) => t.difficulty === 2).length).toBe(17);
     expect(ev.filter((t) => t.difficulty === 3).length).toBe(6);
   });
   it("every ev-variance problem grades on rel 0.005 — never abs", () => {

@@ -1813,26 +1813,25 @@ const CLAIMS: Record<string, Claim[]> = {
   ],
 
   "symmetry/comparing-heads-counts": [
-    { says: "Solve: expected draws recomputed fresh from params matches the printed value",
-      holds: (p, d) => same(d.ev, p.contests * (comb(p.flipsA + p.flipsB, p.flipsA) / Math.pow(2, p.flipsA + p.flipsB))),
+    { says: "Solve: the expected total recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.ev, r9((p.contests * p.bounty * (Math.pow(2, 2 * p.flipsEach) - comb(2 * p.flipsEach, p.flipsEach))) / (2 * Math.pow(2, 2 * p.flipsEach)))),
       breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
-    { says: "The sum over head counts collapses to one coefficient on the pooled flips",
+    { says: "The sum over matching head counts collapses to one coefficient on the pooled flips",
       holds: (p, d) => {
-        let s = 0;
-        for (let k = 0; k <= Math.min(p.flipsA, p.flipsB); k++) s += comb(p.flipsA, k) * comb(p.flipsB, k);
-        return same(d.tieWays, s);
+        let sum = 0;
+        for (let k = 0; k <= p.flipsEach; k++) sum += comb(p.flipsEach, k) * comb(p.flipsEach, k);
+        return same(d.tieWays, sum) && same(d.tieWays, comb(d.sumFlips, p.flipsEach));
       },
       breaks: (_p, d) => ({ ...d, tieWays: d.tieWays * 2 }) },
-    { says: "All the flips pooled are fair and independent",
-      holds: (_p, d) => same(d.totalWays, Math.pow(2, d.total)),
+    { says: "Both players flip the same number of fair independent coins",
+      holds: (p, d) => d.sumFlips === 2 * p.flipsEach && same(d.totalWays, Math.pow(2, d.sumFlips)),
       breaks: (_p, d) => ({ ...d, totalWays: d.totalWays * 2 }) },
-    { says: "Sanity: draws are commonest when the two flip counts match",
-      holds: (p, d) => (p.flipsA === p.flipsB ? d.tieProb > 0.1 : true) && d.tieProb <= 1,
-      nonVacuous: (p) => p.flipsA === p.flipsB,
-      breaks: (_p, d) => ({ ...d, tieProb: 0.01 }) },
-    { says: "Sanity: the expected draws cannot exceed the contests played",
-      holds: (p, d) => P(d.ev) <= p.contests + shown(d.ev) + EPS,
-      breaks: (p, d) => ({ ...d, ev: p.contests * 2 }) },
+    { says: "Ties are real, so a lead is strictly less likely than a half — and the three events exhaust the space",
+      holds: (_p, d) => P(d.leadProb) < 0.5 && P(d.tieProb) > 0 && same(r9(2 * d.leadProb + d.tieProb), 1),
+      breaks: (_p, d) => ({ ...d, leadProb: 0.5 }) },
+    { says: "Sanity: the total falls short of what winning every contest would pay",
+      holds: (p, d) => P(d.ev) < P(p.contests * p.bounty),
+      breaks: (p, d) => ({ ...d, ev: p.contests * p.bounty }) },
   ],
   "symmetry/disjoint-subsets": [
     { says: "Solve: expected payment recomputed fresh from params matches the printed value",
@@ -1842,11 +1841,25 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(d.prob, Math.pow(0.75, p.items)),
       breaks: (_p, d) => ({ ...d, prob: d.prob * 1.2 }) },
     { says: "Each dish is decided four ways, independently across dishes",
-      holds: (p, d) => same(d.outcomes, Math.pow(4, p.items)),
-      breaks: (_p, d) => ({ ...d, outcomes: d.outcomes * 4 }) },
+      holds: (p, d) => same(d.p4n, Math.pow(4, p.items)) && same(d.p3n, Math.pow(3, p.items)),
+      breaks: (_p, d) => ({ ...d, p4n: d.p4n * 4 }) },
     { says: "Sanity: the total stays under the payment for an all-clean run",
       holds: (_p, d) => P(d.ev) <= P(d.payout) + shown(d.ev) + shown(d.payout) + EPS,
       breaks: (_p, d) => ({ ...d, ev: d.payout * 2 }) },
+  ],
+  "ev-variance/median-of-three": [
+    { says: "Solve: the ticket value recomputed fresh from params matches the printed value",
+      holds: (p, d) => same(d.ev, r9((p.rate * (p.sectors + 1)) / 2)),
+      breaks: (_p, d) => ({ ...d, ev: d.ev * 1.02 }) },
+    { says: "The midpoint is the centre of the wheel, strictly inside the extreme faces",
+      holds: (p, d) => same(d.mid, r9((p.sectors + 1) / 2)) && P(d.mid) > 1 && P(d.mid) < p.sectors,
+      breaks: (p, d) => ({ ...d, mid: p.sectors + 5 }) },
+    { says: "The ticket pays the rate on that midpoint — the rate is not left out and not applied twice",
+      holds: (p, d) => same(d.ev, r9(p.rate * d.mid)),
+      breaks: (_p, d) => ({ ...d, ev: d.mid }) },
+    { says: "Sanity: the ticket is worth more than the worst face pays and less than the best",
+      holds: (p, d) => P(d.ev) > p.rate && P(d.ev) < P(p.rate * p.sectors),
+      breaks: (p, d) => ({ ...d, ev: p.rate * p.sectors * 2 }) },
   ],
   "ev-variance/chord-crossings": [
     { says: "Solve: expected payment recomputed fresh from params matches the printed value",

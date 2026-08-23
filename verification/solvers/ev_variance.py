@@ -8,7 +8,7 @@ in Fraction where the space is rational, and returns float() explicitly."""
 
 from fractions import Fraction
 from itertools import combinations, permutations, product
-from math import factorial
+from math import comb, factorial
 
 import numpy as np
 
@@ -973,7 +973,7 @@ def sampling_without_replacement_variance_brute(p):
 def chord_crossings_exact(p):
     chords, bounty = int(p["chords"]), int(p["bounty"])
     pairs = (chords * (chords - 1)) // 2
-    return {"pairs": pairs, "numer": bounty * pairs, "ev": (bounty * pairs) / 3}
+    return {"pairs": pairs, "crossings": pairs / 3, "ev": (bounty * pairs) / 3}
 
 
 def chord_crossings_sim(p, rng):
@@ -1079,6 +1079,37 @@ def covariance_sum_difference_brute(p):
             e_sd += Fraction((x + y) * (x - y), cells)
     return float(e_sd - e_s * e_d)
 
+def median_of_three_exact(p):
+    sectors, rate = int(p["sectors"]), int(p["rate"])
+    mid = (sectors + 1) / 2
+    return {"mid": mid, "ev": rate * mid}
+
+
+def median_of_three_brute(p):
+    """Build the median's exact distribution from the order statistics and average it. The
+    reflection symmetry the template runs on is never used: P(median <= k) is summed from the
+    binomial tail over how many spins land at or below k, the pmf is differenced out of that,
+    and the mean is a term-by-term sum in exact rationals."""
+    sectors, rate, spins = int(p["sectors"]), int(p["rate"]), int(p["spins"])
+    assert spins % 2 == 1, "a median of an even number of spins is not a face value"
+    need = spins // 2 + 1          # a median <= k needs at least this many spins <= k
+
+    def at_most(k):
+        """P(median <= k), from the binomial tail of the count of spins landing at or below k."""
+        q = Fraction(k, sectors)
+        return sum(Fraction(comb(spins, j)) * q ** j * (1 - q) ** (spins - j)
+                   for j in range(need, spins + 1))
+
+    mean = Fraction(0)
+    below = Fraction(0)
+    for k in range(1, sectors + 1):
+        upto = at_most(k)
+        mean += k * (upto - below)
+        below = upto
+    assert below == 1, "the median pmf does not sum to one"
+    return float(rate * mean)
+
+
 SOLVERS = {
     "ev-variance/two-outcome-bet": {"exact": two_outcome_bet_exact, "brute": two_outcome_bet_brute},
     "ev-variance/die-payoff-table": {"exact": die_payoff_table_exact, "brute": die_payoff_table_brute},
@@ -1110,6 +1141,10 @@ SOLVERS = {
     "ev-variance/truncated-doubling-game": {"exact": truncated_doubling_game_exact, "brute": truncated_doubling_game_brute},
     "ev-variance/wald-random-sum": {"exact": wald_random_sum_exact, "brute": wald_random_sum_brute},
     "ev-variance/sampling-without-replacement-variance": {"exact": sampling_without_replacement_variance_exact, "brute": sampling_without_replacement_variance_brute},
+    "ev-variance/median-of-three": {
+        "exact": median_of_three_exact,
+        "brute": median_of_three_brute,
+    },
     "ev-variance/chord-crossings": {
         "exact": chord_crossings_exact,
         "simulate": chord_crossings_sim,

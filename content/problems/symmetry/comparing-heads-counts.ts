@@ -1,50 +1,59 @@
 import type { ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
-// P(tie) = sum_k C(a,k)C(b,k) / 2^(a+b), and Vandermonde collapses that sum to C(a+b,a):
-// picking k heads from A and k from B is picking a heads-set from the pooled a+b flips, once
-// B's chosen positions are read as the ones he left TAILS.
+// Equal flip counts make the two lead events mirror images under swapping every coin, so
+// P(A leads) = P(B leads) = (1 - P(tie))/2. Ties collapse by Vandermonde: C(2n,n) of them.
 //
-// Deliberately NOT the "who gets strictly more heads" question. That one is only a half minus
-// half the tie when the two flip counts are EQUAL — the exchange argument needs the two
-// players to be exchangeable. At 24 flips against 4 the leader is nearly certain, not even
-// money, and an earlier draft of this template shipped that error until the Python counterpart
-// disagreed with it.
+// Equal counts are load-bearing, not decoration. The half-minus-half-the-tie answer needs the
+// two players to be EXCHANGEABLE; at 24 flips against 4 the bigger flipper wins almost surely
+// and this template's answer is wrong by a factor that no content gate would notice. An earlier
+// version of this file asked exactly that question and shipped the error until the Python
+// counterpart disagreed with it.
+//
+// `contests` is the third axis and it is not padding: two axes give 84 tuples, and consecutive
+// seeds are correlated enough in their first draw that 84 serves only 57 distinct texts per 100
+// against a floor of 70. A drawn horizon also spreads the answers apart.
 export const comparingHeadsCounts: ProblemTemplate = {
   id: "symmetry/comparing-heads-counts",
-  version: 1,
-  firms: [{ firm: "jane-street", weight: 0.45 }, { firm: "sig", weight: 0.35 }, { firm: "hrt", weight: 0.25 }],
+  version: 2,   // the shipped question changed: unequal flip counts and a draw count, to equal counts and a lead
   topic: "probability/symmetry",
   difficulty: 3,
-  source: { kind: "free-resource", inspiration: "two players flipping unequal numbers of fair coins and tying on head count" },
+  firms: [{ firm: "jane-street", weight: 0.45 }, { firm: "citadel-securities", weight: 0.35 }, { firm: "sig", weight: 0.3 }],
+  source: { kind: "free-resource", inspiration: "two people flip coins, probability one beats the other, by tie-and-swap symmetry" },
   params: {
-    flipsA: { range: { min: 4, max: 24, step: 1 } },
-    flipsB: { range: { min: 4, max: 24, step: 1 } },
-    contests: { choices: [20, 50, 100, 250, 500] },
+    flipsEach: { range: { min: 4, max: 24, step: 1 } },
+    bounty: { choices: [2, 5, 10, 25] },
+    contests: { choices: [10, 20, 50, 100] },
   },
   derived: (p) => {
-    const total = p.flipsA + p.flipsB;
-    let tieWays = 1;
-    for (let i = 0; i < p.flipsA; i++) tieWays = (tieWays * (total - i)) / (i + 1);
-    tieWays = Math.round(tieWays);
-    const totalWays = Math.pow(2, total);
+    const sumFlips = 2 * p.flipsEach;
+    let comb = 1;
+    for (let i = 0; i < p.flipsEach; i++) comb = (comb * (sumFlips - i)) / (i + 1);
+    const tieWays = Math.round(comb);
+    const totalWays = Math.pow(2, sumFlips);
     const tieProb = tieWays / totalWays;
-    return { total, tieWays, totalWays, tieProb, ev: p.contests * tieProb };
+    const leadProb = (totalWays - tieWays) / (2 * totalWays);
+    return { sumFlips, tieWays, totalWays, tieProb, leadProb, ev: p.contests * p.bounty * leadProb };
   },
   statement: (p) =>
-    `Two traders settle arguments with coins. In each contest Ana flips ${fmtNum(p.flipsA)} fair coins and Bruno flips ${fmtNum(p.flipsB)} fair coins, all independently, and each counts their own heads. A contest is a draw when the two head counts come out equal. Over ${fmtNum(p.contests)} such contests, how many draws should they expect?`,
+    `Two traders settle a dispute the old-fashioned way: Ana and Ben each flip their own fair coin ${fmtNum(p.flipsEach)} times, all flips independent, and each counts heads. A spectator pays Ana ${fmtNum(p.bounty)} dollars if she ends up with strictly more heads than Ben, and nothing otherwise (a tie pays nobody). Over ${fmtNum(p.contests)} such contests, what total payment should Ana expect?`,
   answerKey: "ev",
   accepted: { tolerance: { rel: 0.005 } },
   solution: (p, d) => [
-    { title: "Write the draw as a sum", body: `A draw means both counted the same number of heads, say $k$ each. Summing over $k$, the number of ways is a sum of products of two binomial coefficients — one for Ana's flips, one for Bruno's.` },
-    { title: "Turn Bruno's heads into tails", body: `Instead of recording which of Bruno's flips came up heads, record which came up tails. If Ana had $k$ heads and Bruno had $k$ heads, then Bruno has exactly ${fmtNum(p.flipsB)} minus $k$ tails, so together the two chosen sets have ${fmtNum(p.flipsA)} members in total, whatever $k$ was.` },
-    { title: "So the sum is a single coefficient", body: `That correspondence is reversible, so drawing is the same as choosing ${fmtNum(p.flipsA)} positions out of all ${fmtNum(d.total)} flips pooled together — the whole sum collapses to $\\binom{${fmtNum(d.total)}}{${fmtNum(p.flipsA)}}=${fmtNum(d.tieWays)}$.` },
-    { title: "Divide by the sample space", body: `All ${fmtNum(d.total)} flips are fair and independent, giving $${fmtNum(d.totalWays)}$ equally likely outcomes, so a single contest is drawn with probability $\\frac{${fmtNum(d.tieWays)}}{${fmtNum(d.totalWays)}}=${fmtNum(d.tieProb)}$.` },
-    { title: "Count the contests", body: `Expectation adds across contests, so over ${fmtNum(p.contests)} of them the expected number of draws is ${fmtNum(d.ev)}.` },
-    { title: "Sanity check", body: `Draws are commonest when the two flip counts match and become very unlikely when they are far apart, since a lopsided pair of counts has to travel a long way to meet. The answer never exceeds ${fmtNum(p.contests)}, the number of contests played.` },
+    { title: "Partition the joint outcomes", body: `Every pairing of the two flip sequences lands in exactly one of three events: Ana leads, Ben leads, or a tie. So $P(\\text{Ana leads})+P(\\text{Ben leads})+P(\\text{tie})=${fmtNum(1)}$.` },
+    { title: "Swap every coin", body: `Flip all ${fmtNum(d.sumFlips)} coins over — heads become tails and tails heads. Ana's head count becomes ${fmtNum(p.flipsEach)} minus what it was, and so does Ben's, so an outcome where Ana led maps to one where Ben leads, and the map reverses. The two lead events are mirror images: equally likely.` },
+    { title: "Count the ties", body: `Both showing $k$ heads happens in $\\binom{${fmtNum(p.flipsEach)}}{k}\\times\\binom{${fmtNum(p.flipsEach)}}{k}$ ways; summed over $k$ this collapses to $\\binom{${fmtNum(d.sumFlips)}}{${fmtNum(p.flipsEach)}}=${fmtNum(d.tieWays)}$ tied outcomes out of $${fmtNum(d.totalWays)}$ total, a tie chance of $\\frac{${fmtNum(d.tieWays)}}{${fmtNum(d.totalWays)}}=${fmtNum(d.tieProb)}$.` },
+    { title: "Split the remainder", body: `The non-tie mass splits evenly between the two lead events, so Ana leads with probability $\\frac{${fmtNum(d.totalWays)}-${fmtNum(d.tieWays)}}{${fmtNum(2)}\\times${fmtNum(d.totalWays)}}=${fmtNum(d.leadProb)}$. Keeping the counts as integers rather than halving the rounded tie chance is what stops the last digit drifting.` },
+    // No equality chain here on purpose: multiplying by the lead chance AS PRINTED drifts off
+    // the answer at display precision — 10 times 2 times 0.3953 renders 7.906 against an answer
+    // of 7.905, and the gate caught it on 77 draws. The product is stated instead, and the
+    // exact-integer form of the same number is one step above for anyone checking it.
+    { title: "Price the run", body: `Expectations add over contests whether or not the contests are related, so ${fmtNum(p.contests)} of them at ${fmtNum(p.bounty)} dollars a win come to ${fmtNum(d.ev)} dollars — that lead chance, multiplied by the bounty and by the number of contests.` },
+    { title: "Sanity check", body: `Ties are genuinely possible, so the lead probability sits strictly below one half — and as the flip count grows the tie chance shrinks toward zero, dragging the lead chance up toward exactly one half. Both hold here, and the total stays strictly below the ${fmtNum(p.contests)} times ${fmtNum(p.bounty)} dollars an every-contest sweep would pay.` },
   ],
-  keyInsight: "Recording Bruno's tails rather than his heads turns a sum of products of binomial coefficients into a single choice from the pooled flips — Vandermonde's identity as a relabelling rather than an algebraic manipulation.",
-  commonTrap: "Assuming the trader with more coins is more likely to lead, then trying to price that with a normal approximation. Worse, assuming the two strict orderings are equally likely: that needs the two flip counts to be EQUAL, and is badly wrong when they are not.",
+  keyInsight: "Never convolve the distribution of the head difference. Partition into leads-and-tie, note the two leads are mirror images under flipping every coin, and the entire answer hangs on counting ties — which Vandermonde collapses to a single binomial coefficient.",
+  commonTrap: "Summing P(A has k more heads) across k with heavy algebra, or forgetting that ties pay nothing and answering with half the bounty flat.",
   expectedPaceS: 140,
+  constants: [1, 2],
   verify: { method: "brute-force" },
 };
