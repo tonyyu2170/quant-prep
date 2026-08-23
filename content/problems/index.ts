@@ -428,9 +428,20 @@ export const PROBLEMS: ProblemTemplate[] = [
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
 
-export function problemsFor(topic?: string, difficulty?: 1 | 2 | 3): ProblemTemplate[] {
-  return PROBLEMS.filter((t) => (!topic || t.topic === topic) && (!difficulty || t.difficulty === difficulty));
+export function problemsFor(topic?: string, difficulty?: 1 | 2 | 3, firm?: string): ProblemTemplate[] {
+  return PROBLEMS.filter((t) =>
+    (!topic || t.topic === topic) &&
+    (!difficulty || t.difficulty === difficulty) &&
+    (!firm || t.firms.some((f) => f.firm === firm)));
 }
+
+// A firm track is the tags every template already carries, nothing new stored. Derived so a
+// new slug shows up in the UI the moment a template names it — most-covered firm first.
+export const FIRMS: string[] = [...PROBLEMS
+  .flatMap((t) => t.firms.map((f) => f.firm))
+  .reduce((m, f) => m.set(f, (m.get(f) ?? 0) + 1), new Map<string, number>())]
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .map(([firm]) => firm);
 
 export const TOPIC_LABELS: Record<string, string> = {
   "probability/bayes": "bayes",

@@ -8,20 +8,20 @@ import { problemsFor, TOPIC_LABELS } from "@/content/problems";
 import Tex from "./Tex";
 
 // Outer: hydration-safe randomness (mirrors DrillRunner).
-export default function ProblemRunner({ topic, difficulty }: { topic?: string; difficulty?: 1 | 2 | 3 }) {
+export default function ProblemRunner({ topic, difficulty, firm }: { topic?: string; difficulty?: 1 | 2 | 3; firm?: string }) {
   const [nonce, setNonce] = useState<number | null>(null);
   useEffect(() => { setNonce(Math.floor(Math.random() * 2 ** 31)); }, []);
   if (nonce === null) return null;
-  return <ProblemPicker key={`${topic}-${difficulty}`} topic={topic} difficulty={difficulty} nonce={nonce} />;
+  return <ProblemPicker key={`${topic}-${difficulty}-${firm}`} topic={topic} difficulty={difficulty} firm={firm} nonce={nonce} />;
 }
 
-function ProblemPicker({ topic, difficulty, nonce }: { topic?: string; difficulty?: 1 | 2 | 3; nonce: number }) {
+function ProblemPicker({ topic, difficulty, firm, nonce }: { topic?: string; difficulty?: 1 | 2 | 3; firm?: string; nonce: number }) {
   const [i, setI] = useState(0);
   const [override, setOverride] = useState<ProblemTemplate | null>(null);
-  const pool = useMemo(() => problemsFor(topic, difficulty), [topic, difficulty]);
+  const pool = useMemo(() => problemsFor(topic, difficulty, firm), [topic, difficulty, firm]);
   if (pool.length === 0) return <p className="microlabel" style={{ marginTop: 30 }}>No problems here yet — more ship every few days.</p>;
   const template = override ?? pool[(nonce + i) % pool.length];
-  const harder = problemsFor(topic, undefined).filter((t) => t.difficulty === template.difficulty + 1);
+  const harder = problemsFor(topic, undefined, firm).filter((t) => t.difficulty === template.difficulty + 1);
   return (
     <ProblemSession
       key={`${template.id}-${i}`}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PROBLEMS } from "@/content/problems";
+import { FIRMS, PROBLEMS } from "@/content/problems";
 
 // Counts are derived, not written down: the "coming next" line here advertised the
 // probability bank for weeks after it shipped, and a hand-typed 191 goes stale the same way.
@@ -12,7 +12,7 @@ const sims = [
 ];
 
 const drills = [
-  { href: "/drills/probability", label: "Problem bank", sub: `${PROBLEMS.length} problems · ${TOPICS} topics · worked solutions` },
+  { href: "/drills/probability", label: "Problem bank", sub: `${PROBLEMS.length} problems · ${TOPICS} topics · ${FIRMS.length} firm tracks` },
   { href: "/drills/arithmetic", label: "Arithmetic drill", sub: "Endless, difficulty-curved" },
   { href: "/drills/sequences", label: "Sequences drill", sub: "16 pattern families, weighted by level" },
   { href: "/drills/missing-operand", label: "Missing operand", sub: "Four-way choice · the unknown moves around the equation" },
@@ -52,7 +52,7 @@ export default function Home() {
 
       <p className="mono" style={{ marginTop: 26, fontSize: 12, color: "var(--muted)" }}>
         Missed problems come back on a spaced schedule in <Link href="/review">Review</Link> ·
-        {" "}Coming next: firm tracks · market-making game
+        {" "}Coming next: market-making game
       </p>
     </div>
   );

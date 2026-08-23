@@ -2,12 +2,13 @@
 import { useMemo, useState } from "react";
 import DrillNav from "@/components/DrillNav";
 import ProblemRunner from "@/components/ProblemRunner";
-import { PROBLEMS, TOPIC_LABELS } from "@/content/problems";
+import { FIRMS, PROBLEMS, TOPIC_LABELS } from "@/content/problems";
 
 export default function Page() {
   const topics = useMemo(() => [...new Set(PROBLEMS.map((t) => t.topic))], []);
   const [topic, setTopic] = useState<string | undefined>(undefined);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3 | undefined>(undefined);
+  const [firm, setFirm] = useState<string | undefined>(undefined);
   const chip = (active: boolean) => ({
     background: "none", border: "none", marginRight: 14, paddingBottom: 1,
     color: active ? "var(--teal)" : "var(--faint)", fontWeight: active ? 700 : 400,
@@ -16,7 +17,7 @@ export default function Page() {
   return (
     <div className="container" style={{ padding: "48px 24px", maxWidth: 760 }}>
       <DrillNav current="problem bank" />
-      <div className="mono" style={{ display: "flex", justifyContent: "space-between", fontSize: 12, flexWrap: "wrap", marginBottom: 26 }}>
+      <div className="mono" style={{ display: "flex", justifyContent: "space-between", fontSize: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <span>
           <button type="button" style={chip(topic === undefined)} onClick={() => setTopic(undefined)}>all</button>
           {topics.map((t) => (
@@ -30,7 +31,15 @@ export default function Page() {
           ))}
         </span>
       </div>
-      <ProblemRunner topic={topic} difficulty={difficulty} />
+      {/* Firm tracks: the same `firms` tags the walkthrough prints as "seen at", used as a filter. */}
+      <div className="mono" style={{ fontSize: 12, marginBottom: 26 }}>
+        <span style={{ color: "var(--faint)", marginRight: 14 }}>seen at</span>
+        <button type="button" style={chip(firm === undefined)} onClick={() => setFirm(undefined)}>any firm</button>
+        {FIRMS.map((f) => (
+          <button key={f} type="button" style={chip(firm === f)} onClick={() => setFirm(f)}>{f}</button>
+        ))}
+      </div>
+      <ProblemRunner topic={topic} difficulty={difficulty} firm={firm} />
     </div>
   );
 }

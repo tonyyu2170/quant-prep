@@ -1,5 +1,30 @@
 # Handoff — integrating the QuantProf findings
 
+## FIRM TRACKS — shipped 2026-08-23 (morning)
+
+The landing page had advertised "firm tracks · market-making game" as coming next — the same
+line that advertised the probability bank for weeks after it shipped. Half of it is now real.
+
+**No new data.** Every one of the 210 templates already carries `firms: [{firm, weight}]`, and
+the walkthrough already printed those slugs as "seen at". A track is that tag used as a filter:
+`problemsFor(topic, difficulty, firm)`, a `FIRMS` list derived from the tags (most-covered
+first, so a new slug appears in the UI the moment a template names it), and a third chip row on
+the bank page. 14 firms, jane-street 67 down to millennium 16; every template is tagged, so no
+track is empty. The `weight` field is still read by nothing — it was unused before this and the
+picker starts at a random offset, so sorting by it would not change what you see.
+
+**The check.** `app/drills/probability/page.test.tsx` pins `Math.random` so the picker is
+deterministic, then walks every firm chip and asserts the problem on screen is in that firm's
+pool — once unfiltered, once intersected with L3. Both were watched fail: dropping the `firm`
+prop the page passes makes them report `imc track showed bayes/base-rate-test`.
+
+**Not done, deliberately:** no URL state (`?firm=`), because topic and difficulty are local
+state too and a link-shareable track is a different feature. Gates: 456 tests / 29 files green,
+`tsc --noEmit` clean, `next build` clean, and the page was opened in a browser — the firm row
+wraps to two lines at 760px and reads fine.
+
+---
+
 ## SESSION OF 2026-08-23 (overnight) — READ THIS FIRST
 
 `main` is at the `fix(nav)` commit; everything below in this section is landed, pushed and
