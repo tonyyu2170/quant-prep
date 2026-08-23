@@ -42,11 +42,15 @@ before it, nobody had watched this gate fail.
   `/leaderboard` builds and passes e2e against local state, but the page cannot
   work in production until the migration runs against the Supabase project. This
   is the only thing blocking a shipped feature.
-- **The difficulty mix.** `COVERAGE.md` measured 36/40/23 against QuantProf's
-  16/53/31. B6 and B7 both skewed to L2/L3 and moved it, neither fixed it: the
-  weight is ~60 existing L1 templates. Closing it means re-tuning their param
-  ranges and difficulty tags, which is an edit to existing files rather than new
-  authoring, and it should be scoped before anyone starts.
+- **The difficulty mix — now scoped; read `COVERAGE.md` before acting.** The
+  scope killed the plan this bullet used to propose. A mass re-tag of the L1
+  tier is *not* available: per topic the `expectedPaceS` ladders are clean, so
+  the L1 tier is genuinely easy and promoting it would move the ratio without
+  making anything harder. Exactly six templates are mis-tagged, `ruin`'s L1/L2
+  boundary turns out to be arbitrary (identical pace bands), and the overweight
+  traces to the rigid ~12/12/6 authoring template rather than to bad tags. The
+  recommendation is to stop treating 16% as a target, land the six re-tags, and
+  let the mix move through ordinary B8+ authoring. Awaiting a ruling.
 - Four-term sequence display, still blocked on the answer checker accepting any
   rule consistent with the shown terms.
 - Combinatorial-game brainteasers, still blocked on a non-numeric answer type.
@@ -66,10 +70,12 @@ cleared registry, draw-space, printed-precision and prose-claims while being
 wrong by a factor of two at 24 flips against 4. The content gates check internal
 consistency; only an independent derivation checks truth.
 
-**Also still open from before this work:** branch `phase-d-review-queue` holds
-3 unmerged commits (tip `b69fbb1`) in `.worktrees/phase-d-review-queue` —
-chunk D review queue, sequences intake, chunk C leaderboard. That is unrelated
-to this batch and its file set is disjoint. Land it separately.
+**Resolved, and this paragraph used to say otherwise:** `phase-d-review-queue`
+(tip `b69fbb1` — chunk D review queue, sequences intake, chunk C leaderboard) is
+**fully merged** into `main` as `44e6006`, which the top of this file already
+says. `git merge-base --is-ancestor b69fbb1 main` confirms it and
+`git log main..phase-d-review-queue` is empty. The branch and its
+`.worktrees/phase-d-review-queue` checkout have been removed.
 
 `verify:emit` initially reported **7828 issues** across 21 of the 24 new
 templates, and finding that is the reason it was worth running: it enforces a

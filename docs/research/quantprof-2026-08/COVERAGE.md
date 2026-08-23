@@ -105,3 +105,126 @@ checked by reintroducing `susquehanna` and watching it fail.
 `citadel` and `citadel-securities` should **not** be merged: Citadel LLC and
 Citadel Securities are different entities, though QuantProf tags both as
 "Citadel".
+
+---
+
+# Scoping the difficulty mix — 2026-08-22 (post-B7, bank 188)
+
+No content files were touched to produce this. It is the "scope it before anyone
+starts" that the handoff asked for, and its main result is that **the obvious
+plan was wrong**.
+
+## The numbers, with the denominator stated
+
+The `36/40/23` row above is not comparable to a fresh count: it was taken over
+the post-B6 probability set, while the `our 150` in the header table is the
+*pre*-B6 bank total. Recomputed at `337e966`, counting a template as probability
+when its `topic` starts `probability/` (so `probability/counting` is in, and the
+8 `brainteasers/logic` are out):
+
+| | L1 | L2 | L3 | total |
+|---|---|---|---|---|
+| probability only | 62 (34%) | 76 (42%) | 42 (23%) | 180 |
+| whole bank | 62 (33%) | 79 (42%) | 47 (25%) | 188 |
+| theirs, bottom/middle/top third | 16% | 53% | 31% | 694 |
+
+B7 moved the probability mix 36/40/23 → 34/42/23. As with B6: real movement, not
+a fix.
+
+## The mis-tag theory, tested and mostly dead
+
+The cheap read of the gap is that the L1 tier is full of mis-tagged problems, so
+a relabel would fix the mix for free. `expectedPaceS` is the field to test that
+against — it is the author's own time estimate, written per template and never
+compared across templates until now.
+
+Globally it looked damning: L1 spans 25–90s, L2 spans 40–130s, and 26 of the 62
+L1 templates are paced at or above the L2 *minimum*. Bayes alone contributed 11.
+
+That reading is topic-confounded and wrong. Per topic the ladders are clean:
+
+| topic | L1 pace | L2 pace | L3 pace |
+|---|---|---|---|
+| bayes | 45–60 | 90–100 | 130–140 |
+| geometric | 25–45 | 40–70 | 70–130 |
+| counting | 35–75 | 45–100 | 70–120 |
+| distributions | 40–65 | 40–110 | 65–120 |
+| ev-variance | 30–90 | 45–120 | 90–120 |
+| **ruin** | **40–80** | **40–85** | 65–85 |
+
+Bayes' L1 tier is paced at 45–60s not because it is mis-tagged but because Bayes
+is a slower topic at every tier — its own L2 starts at 90. All 11 "candidates"
+there are correctly tagged. **The L1 tier is, with six exceptions, genuinely
+easy.** Promoting it would improve the measured mix without making one problem
+harder, which is the failure mode `[[verification-gate-lessons]]` is about.
+
+## The six that are genuinely mis-tagged
+
+L1 templates paced above their *own topic's* L2 average:
+
+| template | pace | own-topic L2 avg | verdict |
+|---|---|---|---|
+| `ev-variance/covariance-sum-difference` | 90 | 69.7 | mis-tagged → L2. Needs `Cov(X+Y, X−Y) = Var X − Var Y`; it is paced at ev-variance's *L3 minimum*. |
+| `ruin/unfair-expected-duration` | 80 | 56.9 | mis-tagged → L2. Asymmetric-ruin duration, the hardest closed form in the family. |
+| `counting/steps-to-height` | 75 | 72.3 | mis-tagged → L2. Endpoint-constrained walk count. |
+| `ruin/unfair-reach-goal` | 75 | 56.9 | mis-tagged → L2. Carries the odds-ratio exponential. |
+| `distributions/hypergeom-exact-draw` | 65 | 61.2 | mis-tagged → L2, marginal. |
+| `ruin/fair-expected-duration` | 60 | 56.9 | mis-tagged → L2, marginal. |
+
+Promoting all six moves probability-only from 34/42/23 to 31/45/23. That is
+honest and it is nearly nothing.
+
+## Separate finding: the `ruin` ladder is not real
+
+`ruin` L1 averages 56.2s and L2 averages 56.9s, over identical 40–85 ranges.
+Three of the six mis-tags above are ruin, and that is the same fact seen from
+one side: the L1/L2 boundary in that topic was never derived from anything.
+Worth fixing on its own merits, independent of the mix question — it is 16
+templates and the split between them is currently arbitrary.
+
+## So what actually causes the overweight
+
+Not mis-tagging. The six pre-B6 topics were each authored to a fixed
+~12/12/6 shape — the note above already says this ladder "was laid down by
+template, not by measuring anything" — and six topics × ~11 L1 is the 62. The
+easy tier is exactly as large as the authoring template made it, and every
+problem in it is correctly tagged.
+
+That leaves three real options, and only the third is free of a cost:
+
+1. **Retire surplus L1 templates.** Deleting ~30 correctly-tagged working
+   problems to improve a ratio. Cheapest diff, worst trade.
+2. **Author L2/L3 mass.** With L1 fixed at 62, reaching 20% bottom-tier needs a
+   bank of ~310, i.e. ~120 more L2/L3 templates. Honest, and it is B8–B12.
+3. **Re-scope the metric.** Their 976 rows are a browsable catalogue where a user
+   picks a problem; ours is a randomized drill pool. `/drills/probability`
+   defaults to `difficulty: undefined`, so the default pool *is* all 188 and a
+   third of served problems are warm-ups — which is a defensible thing for a
+   drill to do, and is not what a 16%-bottom catalogue is measuring.
+
+**Recommendation: 3, then the six re-tags, then 2 as ordinary batch authoring.**
+Do not chase 16%. COVERAGE.md already says the 1–10 and 1–3 scales have no
+canonical mapping and the rows should be read "as a range rather than a target";
+treating 16% as a number to hit is false precision on top of that caveat. The
+defect worth naming is the arbitrary ruin ladder and the six mis-tags, both of
+which are real and both of which are small.
+
+## Constraints anyone editing tags must know
+
+- **`registry.test.ts` will go red, by design.** Four batches carry *equality*
+  pins — bayes 12/12/6, counting 11/11/5, distributions 10/12/6,
+  ev-variance 13/15/6 — and geometric (8/8/5) and ruin (8/8/4) carry `<=`
+  budgets. They exist to catch a misassignment *during authoring*, so a
+  deliberate re-tag must update them to the new intended shape and keep them as
+  equality pins. Loosening them to `<=` would delete the guard.
+- **`expectedPaceS` is authored, not measured.** Everything above tests the tag
+  against the same author's own estimate — a consistency check, not ground
+  truth. Real per-template solve times from `attempts` would settle it properly
+  and are not reachable from here.
+- **What consumes `difficulty`:** the topic × L1/L2/L3 chips at
+  `app/drills/probability/page.tsx:29`, the review-queue label at
+  `app/review/page.tsx:14`, and the "harder" link at
+  `components/ProblemRunner.tsx:23`. Presets do not — `presets.ts` ladders only
+  the arithmetic/missing-operand/sequences generators. An empty pool renders a
+  placeholder (`ProblemRunner.tsx:21`), and markov/symmetry/brainteasers already
+  ship with zero L1, so a topic losing its L1 tier is precedented, not a break.
