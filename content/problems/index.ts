@@ -54,6 +54,8 @@ import { surjectionsNoEmptyBin } from "./counting/surjections-no-empty-bin";
 import { latticePathsForbiddenNode } from "./counting/lattice-paths-forbidden-node";
 import { pigeonholeExtremal } from "./counting/pigeonhole-extremal";
 import { twoPairVsFullHouse } from "./counting/two-pair-vs-full-house";
+import { evenTailRuns } from "./counting/even-tail-runs";
+import { stepsToHeight } from "./counting/steps-to-height";
 import { twoOutcomeBet } from "./ev-variance/two-outcome-bet";
 import { diePayoffTable } from "./ev-variance/die-payoff-table";
 import { raffleFairPrice } from "./ev-variance/raffle-fair-price";
@@ -167,6 +169,8 @@ import { standingTableLegs } from "./symmetry/standing-table-legs";
 import { beatEveryRival } from "./symmetry/beat-every-rival";
 import { friendsTogetherRoundTable } from "./symmetry/friends-together-round-table";
 import { relativeOrderOfPicks } from "./symmetry/relative-order-of-picks";
+import { decisiveFaceWait } from "./symmetry/decisive-face-wait";
+import { antsCircleDirections } from "./symmetry/ants-circle-directions";
 
 import { clockHandsAngle } from "./brainteasers/clock-hands-angle";
 import { lightSwitchesLeftOn } from "./brainteasers/light-switches-left-on";
@@ -233,6 +237,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   latticePathsForbiddenNode,
   pigeonholeExtremal,
   twoPairVsFullHouse,
+  evenTailRuns,
+  stepsToHeight,
   twoOutcomeBet,
   diePayoffTable,
   raffleFairPrice,
@@ -344,6 +350,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   beatEveryRival,
   friendsTogetherRoundTable,
   relativeOrderOfPicks,
+  decisiveFaceWait,
+  antsCircleDirections,
   clockHandsAngle,
   lightSwitchesLeftOn,
   trailingZerosFactorial,

@@ -885,6 +885,54 @@ def two_pair_vs_full_house_brute(p):
     return favourable / total
 
 
+
+def even_tail_runs_exact(p):
+    n = int(p["n"])
+    prev, curr = 1, 1  # f(0), f(1)
+    for _ in range(2, n + 1):
+        prev, curr = curr, prev + curr
+    return {"nMinus1": n - 1, "nMinus2": n - 2, "fN1": prev, "fN2": curr - prev, "count": curr}
+
+
+def even_tail_runs_brute(p):
+    """Enumerate all 2^n head/tail strings and keep the ones whose every maximal tail-run has
+    even length. No recurrence, no Fibonacci — the point of the template is that the count IS
+    Fibonacci, so the counterpart must not assume it."""
+    n = int(p["n"])
+    good = 0
+    for bits in itertools.product("HT", repeat=n):
+        i, ok = 0, True
+        while i < n:
+            if bits[i] == "T":
+                j = i
+                while j < n and bits[j] == "T":
+                    j += 1
+                if (j - i) % 2:
+                    ok = False
+                    break
+                i = j
+            else:
+                i += 1
+        good += ok
+    return float(good)
+
+
+def steps_to_height_exact(p):
+    steps, height = int(p["steps"]), int(p["height"])
+    ups = (steps + height) // 2
+    downs = (steps - height) // 2
+    count = 1
+    for i in range(downs):
+        count = count * (steps - i) // (i + 1)
+    return {"ups": ups, "downs": downs, "twiceUps": steps + height, "count": count}
+
+
+def steps_to_height_brute(p):
+    """Walk every one of the 2^L up/down sequences and count the ones landing on the target,
+    rather than solving for the step split and calling a binomial."""
+    steps, height = int(p["steps"]), int(p["height"])
+    return float(sum(1 for w in itertools.product((1, -1), repeat=steps) if sum(w) == height))
+
 SOLVERS = {
     "counting/committee-selection": {
         "exact": committee_selection_exact,
@@ -985,5 +1033,13 @@ SOLVERS = {
     "counting/two-pair-vs-full-house": {
         "exact": two_pair_vs_full_house_exact,
         "brute": two_pair_vs_full_house_brute,
+    },
+    "counting/even-tail-runs": {
+        "exact": even_tail_runs_exact,
+        "brute": even_tail_runs_brute,
+    },
+    "counting/steps-to-height": {
+        "exact": steps_to_height_exact,
+        "brute": steps_to_height_brute,
     },
 }

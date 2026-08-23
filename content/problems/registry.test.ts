@@ -49,13 +49,13 @@ describe("problem registry invariants", () => {
     const symmetry = problemsFor("probability/symmetry").length;
     const brainteasers = problemsFor("brainteasers/logic").length;
     expect(bayes).toBe(30);
-    expect(counting).toBe(25);
+    expect(counting).toBe(27);
     expect(ev).toBe(30);
     expect(distributions).toBe(25);
     expect(ruin).toBe(20);
     expect(geometric).toBe(20);
     expect(markov).toBe(8);
-    expect(symmetry).toBe(8);
+    expect(symmetry).toBe(10);
     expect(brainteasers).toBe(8);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
@@ -92,11 +92,11 @@ describe("problem registry invariants", () => {
       expect(t.accepted.tolerance.abs).toBeUndefined();
     }
   });
-  it("counting batch hits the 10/10/5 difficulty distribution", () => {
+  it("counting batch hits the 11/11/5 difficulty distribution", () => {
     const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
-    expect(counting.length).toBe(25);
-    expect(counting.filter((t) => t.difficulty === 1).length).toBe(10);
-    expect(counting.filter((t) => t.difficulty === 2).length).toBe(10);
+    expect(counting.length).toBe(27);
+    expect(counting.filter((t) => t.difficulty === 1).length).toBe(11);
+    expect(counting.filter((t) => t.difficulty === 2).length).toBe(11);
     expect(counting.filter((t) => t.difficulty === 3).length).toBe(5);
   });
   it("ev-variance stays inside its 12/12/6 difficulty budget", () => {
@@ -143,7 +143,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(15);
+    expect(exact.length).toBe(17);
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));
@@ -153,9 +153,9 @@ describe("problem registry invariants", () => {
       }
     }
   });
-  it("counting batch splits 15 exact counts / 10 probabilities", () => {
+  it("counting batch splits 17 exact counts / 10 probabilities", () => {
     const counting = PROBLEMS.filter((t) => t.id.startsWith("counting/"));
-    expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(15);
+    expect(counting.filter((t) => t.accepted.tolerance.abs === 0).length).toBe(17);
     expect(counting.filter((t) => t.accepted.tolerance.rel === 0.005).length).toBe(10);
   });
   it("ev-variance batch hits the 12/12/6 difficulty distribution", () => {

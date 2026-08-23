@@ -236,6 +236,68 @@ def standing_table_legs_sim(p, rng, trials=20_000_000, chunk=400_000):
     return tables * est, tables * se
 
 
+
+def decisive_face_wait_exact(p):
+    sides, cost = int(p["sides"]), int(p["cost"])
+    p_special = 2 / sides
+    e_rolls = sides / 2
+    return {
+        "pSpecial": p_special,
+        "eMisses": (sides - 2) / 2,
+        "eRolls": e_rolls,
+        "spend": cost * e_rolls,
+    }
+
+
+def decisive_face_wait_sim(p, rng, trials=20_000_000, chunk=2_000_000):
+    """Play the wheel out and keep only the runs the question conditions on — those that ended
+    on the high sector. Simulating the conditioning rather than assuming it is the whole point:
+    the template's claim is that conditioning on WHICH sector ended the run says nothing about
+    WHEN it ended, and an estimator that quietly drops the condition cannot test that."""
+    sides, cost = int(p["sides"]), int(p["cost"])
+    kept_total = 0.0
+    kept_sq = 0.0
+    kept_n = 0
+    done = 0
+    while done < trials:
+        m = min(chunk, trials - done)
+        spins = rng.geometric(2 / sides, size=m)          # spins up to and including the decisive one
+        high_ended = rng.integers(0, 2, size=m) == 1      # which of the two marked sectors it was
+        spend = (spins[high_ended] * cost).astype(np.float64)
+        kept_total += spend.sum()
+        kept_sq += (spend * spend).sum()
+        kept_n += spend.size
+        done += m
+    mean = kept_total / kept_n
+    var = max(kept_sq / kept_n - mean * mean, 0.0)
+    return mean, (var / kept_n) ** 0.5
+
+
+def ants_circle_directions_exact(p):
+    ants, bounty, replays = int(p["ants"]), int(p["bounty"]), int(p["replays"])
+    denom = 2 ** (ants - 1)
+    return {
+        "denom": denom,
+        "assignments": 2 * denom,
+        "prob": 1 / denom,
+        "perReplay": bounty / denom,
+        "payout": bounty * replays,
+        "ev": (bounty * replays) / denom,
+    }
+
+
+def ants_circle_directions_brute(p):
+    """Enumerate all 2^n direction assignments and test each one for a collision directly: on a
+    closed loop a pair meets exactly when the two ants march opposite ways, so an assignment is
+    clean only if no opposed pair exists. Counting the clean assignments this way never uses the
+    1/2^(n-1) closed form the template prints."""
+    ants, bounty, replays = int(p["ants"]), int(p["bounty"]), int(p["replays"])
+    clean = 0
+    for dirs in itertools.product((0, 1), repeat=ants):
+        if not any(a != b for a, b in itertools.combinations(dirs, 2)):
+            clean += 1
+    return float(bounty * replays * Fraction(clean, 2 ** ants))
+
 SOLVERS = {
     "symmetry/all-wins-before-loss": {
         "exact": all_wins_before_loss_exact,
@@ -268,5 +330,13 @@ SOLVERS = {
     "symmetry/standing-table-legs": {
         "exact": standing_table_legs_exact,
         "simulate": standing_table_legs_sim,
+    },
+    "symmetry/decisive-face-wait": {
+        "exact": decisive_face_wait_exact,
+        "simulate": decisive_face_wait_sim,
+    },
+    "symmetry/ants-circle-directions": {
+        "exact": ants_circle_directions_exact,
+        "brute": ants_circle_directions_brute,
     },
 }

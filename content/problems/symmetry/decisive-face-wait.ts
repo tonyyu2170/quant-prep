@@ -12,7 +12,9 @@ export const decisiveFaceWait: ProblemTemplate = {
   firms: [{ firm: "sig", weight: 0.45 }, { firm: "jane-street", weight: 0.4 }, { firm: "citadel-securities", weight: 0.25 }],
   source: { kind: "free-resource", inspiration: "expected waiting time for a die's first 6 given it precedes the first 5, by two-face symmetry" },
   params: {
-    sides: { range: { min: 8, max: 31, step: 1 } },
+    // 32 sides x 5 costs = 160 tuples. 120 would clear maxRepeat but yields only ~68 distinct
+    // texts per 100 draws, under draw-space.test.ts's floor of 70.
+    sides: { range: { min: 8, max: 39, step: 1 } },
     cost: { choices: [2, 3, 5, 7, 11] },
   },
   derived: (p) => {

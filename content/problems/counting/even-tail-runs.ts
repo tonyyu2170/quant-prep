@@ -15,14 +15,17 @@ export const evenTailRuns: ProblemTemplate = {
     n: { range: { min: 6, max: 15, step: 1 } },
   },
   derived: (p) => {
-    let fN2 = 1; // f(0)
-    let fN1 = 1; // f(1)
+    // The loop ends with `curr` = f(n) and `prev` = f(n-1), so the two SUMMANDS the solution
+    // prints are prev and count-prev. Reading them straight off the loop variables prints
+    // f(n) and f(n-1) under the labels f(n-1) and f(n-2), which is off by one position.
+    let prev = 1; // f(0)
+    let curr = 1; // f(1)
     for (let len = 2; len <= p.n; len++) {
-      const next = fN1 + fN2;
-      fN2 = fN1;
-      fN1 = next;
+      const next = prev + curr;
+      prev = curr;
+      curr = next;
     }
-    return { nMinus1: p.n - 1, nMinus2: p.n - 2, fN1, fN2, count: p.n === 0 ? 1 : fN1 };
+    return { nMinus1: p.n - 1, nMinus2: p.n - 2, fN1: prev, fN2: curr - prev, count: curr };
   },
   statement: (p) =>
     `You record every sequence of ${fmtNum(p.n)} fair coin flips. Some sequences have stray single tails — you only want the disciplined ones: sequences where tails appear exclusively in runs whose length is even (a run of two, four, or more tails in a row, never an odd run). How many sequences of ${fmtNum(p.n)} flips qualify?`,

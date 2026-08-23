@@ -20,7 +20,10 @@ export const stepsToHeight: ProblemTemplate = {
     const downs = (p.steps - p.height) / 2;
     let count = 1;
     for (let i = 0; i < downs; i++) count = (count * (p.steps - i)) / (i + 1);
-    return { ups, downs, count: Math.round(count) };
+    // twiceUps is printed in the solution, so it has to be a derived value: the emitter traces
+    // every number in the prose back to a param, a derived key, or a declared constant, and an
+    // expression computed inline at the interpolation site traces to nothing.
+    return { ups, downs, twiceUps: p.steps + p.height, count: Math.round(count) };
   },
   statement: (p) =>
     `A robot starts on the ground and takes ${fmtNum(p.steps)} unit steps, each chosen independently: one step up or one step down, never sideways. After all ${fmtNum(p.steps)} steps it stands exactly ${fmtNum(p.height)} units above the ground. How many distinct up/down step sequences put it there?`,
@@ -28,7 +31,7 @@ export const stepsToHeight: ProblemTemplate = {
   accepted: { tolerance: { abs: 0 } },
   solution: (p, d) => [
     { title: "Name the two step types", body: `Suppose the robot takes $u$ steps up and $d$ steps down. The totals must satisfy $u+d=${fmtNum(p.steps)}$ (all steps are taken) and $u-d=${fmtNum(p.height)}$ (net height gained).` },
-    { title: "Solve the pair", body: `Adding the equations gives $2u=${fmtNum(p.steps + p.height)}$, so $u=${fmtNum(d.ups)}$ and $d=${fmtNum(d.downs)}$.` },
+    { title: "Solve the pair", body: `Adding the equations gives $2u=${fmtNum(d.twiceUps)}$, so $u=${fmtNum(d.ups)}$ and $d=${fmtNum(d.downs)}$.` },
     { title: "Choose the up-steps", body: `A sequence is fixed by choosing which of the ${fmtNum(p.steps)} slots hold the up-steps, so the count is $\\binom{${fmtNum(p.steps)}}{${fmtNum(d.ups)}}=${fmtNum(d.count)}$.` },
     { title: "Sanity check", body: `The count of all walks is dominated by the balanced middle, and a net height of ${fmtNum(p.height)} sits near that middle here, so ${fmtNum(d.count)} is large but stays below $2^{${fmtNum(p.steps)}}$, the count of every possible sequence.` },
   ],
