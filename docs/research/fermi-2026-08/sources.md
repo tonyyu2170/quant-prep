@@ -284,3 +284,36 @@ still fails on roughly 40% of all rows if a rate is off by 2x.
 **Do not widen this to make a failure go away.** Re-run the tool, fix the chain, or record
 honestly that the two sources disagree and by how much.
 
+
+---
+
+## Part 6: playing it, 2026-08-24 (plan Task 10 step 4)
+
+Eight questions played end to end in a browser against `next dev`. Everything in the plan's
+checklist behaved: adding factors, refusal of a zero bound without consuming the question,
+in-place settlement, the canonical reveal, and the calibration bar reading
+*"8 of 50 answers — hit rate hidden until it can mean something."* Two truths were spot-checked
+against the source tables and matched exactly — New Mexico 886,527,000 gallons (MF-21 886,527
+thousand) and New Jersey 79,459,800,000 vehicle-miles (VM-2 79,459.8 million).
+
+**Spec §11, free-form chain entry — the open question, now observed.** It works, but the reveal
+is a *worked example*, not a diff, and cannot be anything else. Entering
+`population x vehicles per person x gallons per vehicle-year` returns a canonical chain of
+`population x vehicles per person x miles per vehicle-year x 1/(miles per gallon)` — four factors
+against three, and the shared ones are not aligned on screen. A player cannot read off which of
+their factors was wrong; they can only compare the combined interval. The heading already says
+"One way to decompose it", which is the honest framing, so nothing is broken — but any future
+attempt to score or diff individual factors against the canonical chain would need commensurable
+chains, and free-form entry cannot give that. Leave it as a worked example.
+
+**The single-factor path degrades correctly.** One factor gives naive width = combined width
+(2.0 and 2.0) rather than a spurious quadrature gain. The lesson paragraph still reads sensibly.
+
+**Content variety is the real weakness, and it shows immediately.** The seeded session drew
+gasoline for questions 1, 2 and 3 consecutively — three near-identical prompts differing only in
+the state. This is the nesting recorded in §4.4 arriving in practice rather than in theory. The
+mathematics, the gates and the runner are all template-agnostic, so the fix is content: one
+template from a genuinely different domain, not a third slice of FHWA.
+
+**Cosmetic, not a defect.** A two-line question statement shifts the form down; nothing overlaps
+or clips.
