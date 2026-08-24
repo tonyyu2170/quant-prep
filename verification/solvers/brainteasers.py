@@ -654,6 +654,91 @@ def bird_between_trains_brute(p):
     return round(exact * 1e9) / 1e9
 
 
+
+def spider_and_fly_box_exact(p):
+    a, b, c = int(p["a"]), int(p["b"]), int(p["c"])
+    sq_ab = (a + b) ** 2 + c * c
+    sq_ac = (a + c) ** 2 + b * b
+    sq_bc = (b + c) ** 2 + a * a
+    best = min(sq_ab, sq_ac, sq_bc)
+    return {
+        "sqAB": sq_ab, "sqAC": sq_ac, "sqBC": sq_bc, "best": best,
+        "sumAB": a + b, "sumAC": a + c, "sumBC": b + c,
+        "overTheTop": a + b + c,
+        "answer": round(math.sqrt(best), 9),
+    }
+
+
+def spider_and_fly_box_brute(p):
+    """Minimise the walk numerically over WHERE the spider crosses the edge, for each of the
+    three face-pairs. This never uses the reflection identity the closed form is built on —
+    it just measures two straight legs and searches for the best crossing point."""
+    a, b, c = int(p["a"]), int(p["b"]), int(p["c"])
+
+    def ternary(f, lo, hi):
+        for _ in range(300):
+            m1, m2 = lo + (hi - lo) / 3, hi - (hi - lo) / 3
+            if f(m1) < f(m2):
+                hi = m2
+            else:
+                lo = m1
+        return f((lo + hi) / 2)
+
+    r1 = ternary(lambda x: math.sqrt(x * x + b * b) + math.sqrt((a - x) ** 2 + c * c), 0, a)
+    r2 = ternary(lambda y: math.sqrt(y * y + a * a) + math.sqrt((b - y) ** 2 + c * c), 0, b)
+    r3 = ternary(lambda z: math.sqrt(z * z + a * a) + math.sqrt((c - z) ** 2 + b * b), 0, c)
+    return min(r1, r2, r3)
+
+
+def alternating_block_sum_exact(p):
+    s, d, n = int(p["s"]), int(p["d"]), int(p["n"])
+    pairs = (n - 1) // 2
+    last = s + (n - 1) * d
+    return {
+        "pairs": pairs, "last": last,
+        "t2": s + d, "t3": s + 2 * d, "t4": s + 3 * d,
+        "pairTotal": -d * pairs,
+        "naive": -d * ((n + 1) // 2),
+        "answer": -d * pairs + last,
+    }
+
+
+def alternating_block_sum_brute(p):
+    """Add the terms one at a time with their signs. No pairing, no leftover bookkeeping."""
+    s, d, n = int(p["s"]), int(p["d"]), int(p["n"])
+    return sum((1 if i % 2 == 0 else -1) * (s + i * d) for i in range(n))
+
+
+MODULAR_POWER_MODS = [7, 9, 11, 13, 17, 19, 21, 23]
+
+
+def _multiplicative_order(a, m):
+    k, v = 1, a % m
+    while v != 1:
+        v = (v * a) % m
+        k += 1
+    return k
+
+
+def modular_power_remainder_exact(p):
+    a, e, m = int(p["a"]), int(p["e"]), MODULAR_POWER_MODS[int(p["mi"])]
+    k = _multiplicative_order(a, m)
+    r = e % k
+    return {
+        "m": m, "k": k, "r": r,
+        "quotient": (e - r) // k,
+        "firstPower": a % m,
+        "secondPower": pow(a, 2, m),
+        "answer": pow(a, r, m),
+    }
+
+
+def modular_power_remainder_brute(p):
+    """Build the full integer a**e and divide. Python's big integers make this exact, and it
+    shares nothing with the cycle argument — no order is computed and no exponent reduced."""
+    a, e, m = int(p["a"]), int(p["e"]), MODULAR_POWER_MODS[int(p["mi"])]
+    return (a ** e) % m
+
 SOLVERS = {
     "brainteasers/ants-pole-collisions": {
         "exact": ants_pole_collisions_exact,
@@ -718,6 +803,18 @@ SOLVERS = {
     "brainteasers/nim-three-pile-move": {
         "exact": nim_three_pile_move_exact,
         "brute": nim_three_pile_move_brute,
+    },
+    "brainteasers/spider-and-fly-box": {
+        "exact": spider_and_fly_box_exact,
+        "brute": spider_and_fly_box_brute,
+    },
+    "brainteasers/alternating-block-sum": {
+        "exact": alternating_block_sum_exact,
+        "brute": alternating_block_sum_brute,
+    },
+    "brainteasers/modular-power-remainder": {
+        "exact": modular_power_remainder_exact,
+        "brute": modular_power_remainder_brute,
     },
     "brainteasers/painted-block-one-face": {
         "exact": painted_block_one_face_exact,

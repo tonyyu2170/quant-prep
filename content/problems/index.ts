@@ -223,6 +223,9 @@ import { paintedBlockOneFace } from "./brainteasers/painted-block-one-face";
 import { divisorCountFactorisation } from "./brainteasers/divisor-count-factorisation";
 import { averageSpeedRoundTrip } from "./brainteasers/average-speed-round-trip";
 import { birdBetweenTrains } from "./brainteasers/bird-between-trains";
+import { spiderAndFlyBox } from "./brainteasers/spider-and-fly-box";
+import { alternatingBlockSum } from "./brainteasers/alternating-block-sum";
+import { modularPowerRemainder } from "./brainteasers/modular-power-remainder";
 
 export const PROBLEMS: ProblemTemplate[] = [
   baseRateTest,
@@ -436,6 +439,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   divisorCountFactorisation,
   averageSpeedRoundTrip,
   birdBetweenTrains,
+  spiderAndFlyBox,
+  alternatingBlockSum,
+  modularPowerRemainder,
   paymentStreamPresentValue,
   putHedgeFromParity,
   coveredCallMaxProfit,

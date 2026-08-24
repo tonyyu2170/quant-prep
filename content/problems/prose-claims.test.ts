@@ -2335,6 +2335,69 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => P(d.firstLeg) < P(d.answer) && same(d.firstLeg, r9((p.vb * p.d) / (p.vb + p.v2))),
       breaks: (_p, d) => ({ ...d, firstLeg: d.answer * 2 }) },
   ],
+  "brainteasers/spider-and-fly-box": [
+    { says: "Solve: the shortest surface path recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(Math.sqrt(Math.min((p.a + p.b) ** 2 + p.c ** 2, (p.a + p.c) ** 2 + p.b ** 2, (p.b + p.c) ** 2 + p.a ** 2)))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The winning fold is genuinely the smallest of the three, not assumed to be one of them",
+      holds: (_p, d) => d.best === Math.min(d.sqAB, d.sqAC, d.sqBC) && [d.sqAB, d.sqAC, d.sqBC].includes(d.best),
+      breaks: (_p, d) => ({ ...d, best: d.best - 1 }) },
+    { says: "Sanity: the surface path is shorter than walking the three edges in turn",
+      holds: (p, d) => P(d.answer) < P(p.a + p.b + p.c) && d.overTheTop === p.a + p.b + p.c,
+      breaks: (p, d) => ({ ...d, answer: p.a + p.b + p.c + 1 }) },
+    { says: "Sanity: it is longer than the single longest edge, since two directions still have to be covered",
+      holds: (p, d) => P(d.answer) > P(p.c),
+      breaks: (_p, d) => ({ ...d, answer: 0.5 }) },
+    { says: "The straight line through the air is a strict lower bound the spider cannot reach",
+      holds: (p, d) => P(d.answer) > P(r9(Math.sqrt(p.a ** 2 + p.b ** 2 + p.c ** 2))),
+      breaks: (p, d) => ({ ...d, answer: r9(Math.sqrt(p.a ** 2 + p.b ** 2 + p.c ** 2)) }) },
+  ],
+  "brainteasers/alternating-block-sum": [
+    { says: "Solve: the alternating total recomputed term by term matches the printed answer",
+      holds: (p, d) => {
+        let t = 0;
+        for (let i = 0; i < p.n; i++) t += (i % 2 === 0 ? 1 : -1) * (p.s + i * p.d);
+        return same(d.answer, t);
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The pair count is half the terms after the stranded one is set aside, and each pair is worth minus the step",
+      holds: (p, d) => d.pairs === (p.n - 1) / 2 && same(d.pairTotal, -p.d * d.pairs),
+      breaks: (_p, d) => ({ ...d, pairs: d.pairs + 1 }) },
+    { says: "The stranded term is the largest in the run, and it is the last one",
+      holds: (p, d) => d.last === p.s + (p.n - 1) * p.d && P(d.last) >= P(p.s),
+      breaks: (_p, d) => ({ ...d, last: d.last - 1 }) },
+    { says: "Sanity: the total sits within one pair-block of the stranded term, since everything before it nearly cancels",
+      holds: (p, d) => P(Math.abs(d.answer - d.last)) <= P(p.d * d.pairs),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 3 + 1 }) },
+    { says: "The trap total — pairing every term and stranding none — differs from the true answer",
+      holds: (_p, d) => !same(d.naive, d.answer),
+      breaks: (_p, d) => ({ ...d, naive: d.answer }) },
+  ],
+  "brainteasers/modular-power-remainder": [
+    { says: "Solve: the remainder recomputed by exact repeated multiplication matches the printed answer",
+      holds: (p, d) => {
+        let v = 1;
+        for (let i = 0; i < p.e; i++) v = (v * p.a) % d.m;
+        return d.answer === v;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The stated period really does return the powers to one, and no shorter count does",
+      holds: (p, d) => {
+        let v = 1;
+        for (let i = 0; i < d.k; i++) { v = (v * p.a) % d.m; if (v === 1 && i + 1 < d.k) return false; }
+        return v === 1;
+      },
+      breaks: (_p, d) => ({ ...d, k: d.k + 1 }) },
+    { says: "The division of the exponent by the period reconciles, and the leftover is a genuine partial cycle",
+      holds: (p, d) => p.e === d.quotient * d.k + d.r && d.r > 0 && d.r < d.k,
+      breaks: (_p, d) => ({ ...d, r: 0 }) },
+    { says: "Sanity: the remainder is never zero and always below the modulus, as a coprime base forces",
+      holds: (_p, d) => d.answer > 0 && d.answer < d.m,
+      breaks: (_p, d) => ({ ...d, answer: 0 }) },
+    { says: "The trap — reducing the exponent by the modulus instead of the period — is a different reduction",
+      holds: (p, d) => d.k !== d.m,
+      breaks: (_p, d) => ({ ...d, k: d.m }) },
+  ],
   "brainteasers/chocolate-bar-breaks": [
     { says: "Solve: the winner recomputed fresh from params matches the printed choice",
       holds: (p, d) => d.answer === ((p.rows * p.cols - p.pieces) % 2 === 1 ? 1 : 2),
