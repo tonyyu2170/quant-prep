@@ -38,7 +38,10 @@ import numpy as np
 
 
 def _round9(x):
-    return round(x * 1e9) / 1e9
+    # JS Math.round is floor(x + 0.5) — half-UP. Python's round() is half-to-EVEN, so the two
+    # disagree on exact ties: 0.7626953125 rounds to ...313 in the templates and ...312 here.
+    # Only ties are affected, which is why this went unnoticed until a draw produced one.
+    return math.floor(x * 1e9 + 0.5) / 1e9
 
 
 def portfolio_variance_two_asset_exact(p):
@@ -751,4 +754,494 @@ SOLVERS.update({
         "exact": z_score_from_mean_and_sd_exact,
         "brute": z_score_from_mean_and_sd_brute,
     },
+})
+
+
+# --- B13 Tasks 2 and 3: estimators, sampling, testing, order statistics -------------------
+#
+# Same rule as the easy tier: each brute() reaches the answer by a route the template does not
+# teach. Where the template quotes a closed form the brute integrates, enumerates, or solves
+# numerically; where the template sums a series the brute uses the equivalent special function.
+
+import itertools
+from math import comb as _comb, erfc
+
+from scipy import integrate, optimize
+from scipy.stats import beta as _beta, norm as _norm
+
+
+def _crit_two_sided(alpha_pct):
+    return 1.645 if alpha_pct == 10 else 1.96 if alpha_pct == 5 else 2.576
+
+
+def _z_from_conf(conf):
+    """Two-sided multiplier keyed by the CONFIDENCE level (90/95/99), not by alpha (10/5/1).
+    Same three numbers, different key — passing one where the other is expected silently returns
+    the 99 percent multiplier for every level."""
+    return 1.645 if conf == 90 else 1.96 if conf == 95 else 2.576
+
+
+def _crit_one_sided(alpha_pct):
+    return 1.282 if alpha_pct == 10 else 1.645 if alpha_pct == 5 else 2.326
+
+
+def p_value_from_a_z_statistic_exact(p):
+    tail = _round9(1 - _norm.cdf(p["zAbs"]))
+    return {
+        "tail": tail,
+        "crit": _crit_two_sided(p["alphaPct"]),
+        "alphaFrac": _round9(p["alphaPct"] / 100),
+        "oneSided": tail,
+        "answer": _round9(2 * tail),
+    }
+
+
+def p_value_from_a_z_statistic_brute(p):
+    """erfc is a different special function from the normal CDF, and the two-sided p-value is
+    exactly erfc(z/sqrt(2)) with no doubling written down. Cross-checked against a direct
+    numerical integration of the density over both tails."""
+    z = float(p["zAbs"])
+    got = float(erfc(z / math.sqrt(2)))
+    dens = lambda x: math.exp(-x * x / 2) / math.sqrt(2 * math.pi)
+    quad, _ = integrate.quad(dens, z, 40)
+    assert abs(2 * quad - got) < 1e-11, "quadrature disagrees with erfc"
+    return got
+
+
+def bias_of_the_plug_in_variance_exact(p):
+    factor = _round9((p["n"] - 1) / p["n"])
+    return {
+        "nLessOne": float(p["n"] - 1),
+        "factor": factor,
+        "shortfall": _round9(p["sigma2"] / p["n"]),
+        "answer": _round9(factor * p["sigma2"]),
+    }
+
+
+def bias_of_the_plug_in_variance_brute(p):
+    """Expand E[sum (x_i - xbar)^2] through second moments rather than quoting (n-1)/n. With a
+    deliberately NON-zero mean, E[sum x_i^2] = n(sigma^2 + mu^2) and E[n xbar^2] = sigma^2 + n mu^2,
+    so the difference is (n-1) sigma^2 and the estimator divides it by n. The shrink factor never
+    appears. Cross-checked against a drawn simulation."""
+    n, sigma2 = int(p["n"]), float(p["sigma2"])
+    mu = 7.5  # non-zero on purpose: a centred check would hide a dropped mean term
+    e_sum_sq = n * (sigma2 + mu * mu)
+    e_n_xbar_sq = sigma2 + n * mu * mu
+    got = (e_sum_sq - e_n_xbar_sq) / n
+    rng = np.random.default_rng(3)
+    draws = rng.normal(mu, math.sqrt(sigma2), size=(40000, n))
+    est = float(np.mean(np.var(draws, axis=1, ddof=0)))
+    assert abs(est - got) < 0.05 * got, "a drawn simulation disagrees with the moment expansion"
+    return got
+
+
+def mse_decomposition_exact(p):
+    return {
+        "biasSquared": float(p["bias"] * p["bias"]),
+        "absBias": float(abs(p["bias"])),
+        "naive": float(p["variance"]),
+        "answer": float(p["bias"] * p["bias"] + p["variance"]),
+    }
+
+
+def mse_decomposition_brute(p):
+    """Build a two-point estimator distribution that HAS the quoted bias and variance, then
+    average the squared distance from the truth directly. The bias-squared-plus-variance
+    identity the template teaches is never used."""
+    bias, var = float(p["bias"]), float(p["variance"])
+    truth = 0.0
+    centre = truth + bias
+    s = math.sqrt(var)
+    values = np.array([centre - s, centre + s])
+    probs = np.array([0.5, 0.5])
+    assert abs(float(probs @ values) - centre) < 1e-9, "constructed estimator has the wrong bias"
+    assert abs(float(probs @ (values - centre) ** 2) - var) < 1e-9, "constructed estimator has the wrong variance"
+    return float(probs @ (values - truth) ** 2)
+
+
+def variance_of_a_difference_in_means_exact(p):
+    term_a = _round9(p["varA"] / p["nA"])
+    term_b = _round9(p["varB"] / p["nB"])
+    return {
+        "termA": term_a,
+        "termB": term_b,
+        "answer": _round9(term_a + term_b),
+        "sd": _round9((term_a + term_b) ** 0.5),
+        "wrongPooled": _round9((p["varA"] + p["varB"]) / (p["nA"] + p["nB"])),
+    }
+
+
+def variance_of_a_difference_in_means_brute(p):
+    """Stack every observation from both venues into one vector, write the difference of means as
+    a single weight vector over it, and take the quadratic form against the block-diagonal
+    covariance. Nothing is ever added term by term."""
+    na, nb = int(p["nA"]), int(p["nB"])
+    cov = np.diag([float(p["varA"])] * na + [float(p["varB"])] * nb)
+    w = np.concatenate([np.full(na, 1.0 / na), np.full(nb, -1.0 / nb)])
+    got = float(np.sum(w * cov.dot(w)))
+    assert abs(float(np.sum(w)) ) < 1e-12, "the contrast should sum to zero"
+    return got
+
+
+def efficiency_of_two_unbiased_estimators_exact(p):
+    answer = _round9(p["varB"] / p["varA"])
+    return {
+        "answer": answer,
+        "matchingN": _round9(p["nA"] * answer),
+        "extraN": _round9(p["nA"] * answer - p["nA"]),
+        "sdRatio": _round9(answer ** 0.5),
+    }
+
+
+def efficiency_of_two_unbiased_estimators_brute(p):
+    """Solve for the sample size at which B's variance equals A's, then read the factor off as a
+    ratio of sample sizes. A root-find rather than a division — the ratio is never formed."""
+    var_a, var_b, na = float(p["varA"]), float(p["varB"]), float(p["nA"])
+    f = lambda n: var_a / na - var_b / n
+    n_star = optimize.brentq(f, na * 1e-6, na * 1e6, xtol=1e-14, rtol=1e-15)
+    return n_star / na
+
+
+def sample_variance_of_a_linear_combination_exact(p):
+    sum_sq = p["w1"] ** 2 + p["w2"] ** 2 + p["w3"] ** 2
+    sum_cross = p["w1"] * p["w2"] + p["w1"] * p["w3"] + p["w2"] * p["w3"]
+    var_term = p["v"] * sum_sq
+    cov_term = 2 * p["c"] * sum_cross
+    return {
+        "sumSq": float(sum_sq),
+        "sumCross": float(sum_cross),
+        "varTerm": float(var_term),
+        "covTerm": float(cov_term),
+        "answer": float(var_term + cov_term),
+    }
+
+
+def sample_variance_of_a_linear_combination_brute(p):
+    """Assemble the 3x3 covariance matrix and take w' Sigma w in one matrix operation. The
+    template splits the diagonal from the off-diagonal by hand; this never separates them, and a
+    cross term counted once instead of twice would show up immediately."""
+    v, c = float(p["v"]), float(p["c"])
+    sigma = np.array([[v, c, c], [c, v, c], [c, c, v]])
+    w = np.array([float(p["w1"]), float(p["w2"]), float(p["w3"])])
+    eig = np.linalg.eigvalsh(sigma)
+    assert eig.min() > -1e-9, "the quoted covariance matrix is not positive semi-definite"
+    got = float(np.sum(w * sigma.dot(w)))
+    rng = np.random.default_rng(19)
+    coef = np.linalg.cholesky(sigma + np.eye(3) * 1e-12).T.dot(w)
+    draws = rng.standard_normal((200000, 3)).dot(coef)
+    assert abs(float(np.var(draws)) - got) < 0.05 * abs(got), "a drawn book disagrees with the quadratic form"
+    return got
+
+
+def clt_probability_for_a_sample_mean_exact(p):
+    root = _round9(math.sqrt(p["n"]))
+    z = _round9((p["gap"] * root) / p["sigma"])
+    return {
+        "root": root,
+        "se": _round9(p["sigma"] / root),
+        "z": z,
+        "threshold": float(p["mu"] + p["gap"]),
+        "answer": _round9(1 - _norm.cdf(z)),
+    }
+
+
+def clt_probability_for_a_sample_mean_brute(p):
+    """Integrate the sample mean's own normal density above the threshold, in the ORIGINAL units,
+    rather than standardising and reading a table. The z-score never appears."""
+    mu, sigma, n, gap = float(p["mu"]), float(p["sigma"]), int(p["n"]), float(p["gap"])
+    se = sigma / math.sqrt(n)
+    dens = lambda x: math.exp(-((x - mu) / se) ** 2 / 2) / (se * math.sqrt(2 * math.pi))
+    got, _ = integrate.quad(dens, mu + gap, mu + gap + 40 * se)
+    return got
+
+
+def finite_population_correction_exact(p):
+    remaining = p["bigN"] - p["n"]
+    denom = p["bigN"] - 1
+    return {
+        "remaining": float(remaining),
+        "denom": float(denom),
+        "fpc": _round9(remaining / denom),
+        "srsVar": _round9(p["sigma2"] / p["n"]),
+        "answer": _round9((p["sigma2"] / p["n"]) * (remaining / denom)),
+    }
+
+
+def finite_population_correction_brute(p):
+    """Route through the PAIRWISE COVARIANCE of two without-replacement draws, which is
+    -sigma^2/(N-1). Then Var(sum) = n sigma^2 + n(n-1)Cov and the mean divides by n^2. The
+    (N-n)/(N-1) factor is never written. A small exhaustive enumeration validates the covariance
+    itself rather than trusting it."""
+    n, big_n, sigma2 = int(p["n"]), int(p["bigN"]), float(p["sigma2"])
+    cov = -sigma2 / (big_n - 1)
+    var_sum = n * sigma2 + n * (n - 1) * cov
+    got = var_sum / (n * n)
+    # Exhaustive check of the covariance identity on a tiny population with the same structure.
+    pop = np.array([1.0, 4.0, 9.0, 16.0, 25.0])
+    m, s2 = pop.mean(), pop.var()
+    pairs = [(a, b) for a, b in itertools.permutations(range(len(pop)), 2)]
+    emp = sum((pop[a] - m) * (pop[b] - m) for a, b in pairs) / len(pairs)
+    assert abs(emp - (-s2 / (len(pop) - 1))) < 1e-9, "the without-replacement covariance identity fails"
+    return got
+
+
+def weighted_least_squares_single_mean_exact(p):
+    w1, w2, w3 = _round9(1 / p["v1"]), _round9(1 / p["v2"]), _round9(1 / p["v3"])
+    numer = _round9(p["x1"] * w1 + p["x2"] * w2 + p["x3"] * w3)
+    denom = _round9(w1 + w2 + w3)
+    return {
+        "w1": w1,
+        "w2": w2,
+        "w3": w3,
+        "numer": numer,
+        "denom": denom,
+        "plainMean": _round9((p["x1"] + p["x2"] + p["x3"]) / 3),
+        "combinedVar": _round9(1 / denom),
+        "answer": _round9(numer / denom),
+    }
+
+
+def weighted_least_squares_single_mean_brute(p):
+    """MINIMISE the weighted sum of squares numerically. The template quotes the closed-form
+    weights; this never forms a weight at all, it just finds the value that fits best."""
+    xs = np.array([float(p["x1"]), float(p["x2"]), float(p["x3"])])
+    vs = np.array([float(p["v1"]), float(p["v2"]), float(p["v3"])])
+    # Root-find the STATIONARITY condition rather than minimising directly: Brent's minimiser
+    # converges to about 1e-8 on a quadratic, and verify.py compares at 1e-9. The derivative of
+    # the weighted sum of squares is -2 sum (x_i - t)/v_i, and its root is found to machine
+    # precision. Still a numerical solve — no closed-form weight is ever formed.
+    obj = lambda t: float(np.sum((xs - t) ** 2 / vs))
+    deriv = lambda t: float(np.sum((xs - t) / vs))
+    lo, hi = xs.min() - 50.0, xs.max() + 50.0
+    root = float(optimize.brentq(deriv, lo, hi, xtol=1e-14, rtol=8.9e-16))
+    assert obj(root) < obj(root + 1e-3) and obj(root) < obj(root - 1e-3), "the stationary point is not a minimum"
+    return root
+
+
+def two_sided_z_test_statistic_exact(p):
+    root = _round9(math.sqrt(p["n"]))
+    return {
+        "root": root,
+        "se": _round9(p["sigma"] / root),
+        "observed": float(p["mu0"] + p["gap"]),
+        "gap": float(p["gap"]),
+        "answer": _round9((p["gap"] * root) / p["sigma"]),
+    }
+
+
+def two_sided_z_test_statistic_brute(p):
+    """Build a sample that actually HAS the observed mean and the quoted spread, then let numpy
+    measure both back off it and form the statistic from what it measured."""
+    n, sigma = int(p["n"]), float(p["sigma"])
+    observed = float(p["mu0"] + p["gap"])
+    base = np.array([observed - sigma, observed + sigma])
+    mean, sd = float(np.mean(base)), float(np.std(base))
+    assert abs(mean - observed) < 1e-9 and abs(sd - sigma) < 1e-9, "constructed sample has the wrong moments"
+    return (mean - float(p["mu0"])) / (sd / math.sqrt(n))
+
+
+def confidence_interval_half_width_exact(p):
+    z = _z_from_conf(p["conf"])
+    root = _round9(math.sqrt(p["n"]))
+    answer = _round9((z * p["sigma"]) / root)
+    return {
+        "z": z,
+        "root": root,
+        "se": _round9(p["sigma"] / root),
+        "lower": _round9(p["xbar"] - answer),
+        "upper": _round9(p["xbar"] + answer),
+        "answer": answer,
+    }
+
+
+def confidence_interval_half_width_brute(p):
+    """Solve for the half-width whose interval carries the quoted coverage, by root-finding on the
+    normal CDF. The multiplier is never multiplied by anything — it is recovered."""
+    sigma, n, conf = float(p["sigma"]), int(p["n"]), float(p["conf"])
+    se = sigma / math.sqrt(n)
+    z = _z_from_conf(int(conf))
+    target = float(_norm.cdf(z) - _norm.cdf(-z))
+    f = lambda h: (_norm.cdf(h / se) - _norm.cdf(-h / se)) - target
+    return float(optimize.brentq(f, 1e-9, 100 * se, xtol=1e-14, rtol=1e-15))
+
+
+def type_two_error_and_power_exact(p):
+    root = _round9(math.sqrt(p["n"]))
+    crit = _crit_one_sided(p["alphaPct"])
+    delta = _round9((p["gap"] * root) / p["sigma"])
+    shift = _round9(delta - crit)
+    return {
+        "root": root,
+        "crit": crit,
+        "delta": delta,
+        "shift": shift,
+        "beta": _round9(_norm.cdf(-shift)),
+        "answer": _round9(_norm.cdf(shift)),
+    }
+
+
+def type_two_error_and_power_brute(p):
+    """Integrate the statistic's density UNDER THE ALTERNATIVE over the rejection region, in the
+    original units. No shifted CDF is evaluated, so a power computed against the wrong centre
+    would not survive."""
+    sigma, n, gap = float(p["sigma"]), int(p["n"]), float(p["gap"])
+    crit = _crit_one_sided(int(p["alphaPct"]))
+    se = sigma / math.sqrt(n)
+    reject_above = crit * se           # the rejection threshold, in original units
+    centre = gap                       # the truth, in original units
+    dens = lambda x: math.exp(-((x - centre) / se) ** 2 / 2) / (se * math.sqrt(2 * math.pi))
+    got, _ = integrate.quad(dens, reject_above, centre + 40 * se)
+    return got
+
+
+def sample_size_for_a_proportion_exact(p):
+    z = _z_from_conf(p["conf"])
+    prop = _round9(p["pPct"] / 100)
+    margin = _round9(p["marginPct"] / 100)
+    raw = _round9((z * z * prop * (1 - prop)) / (margin * margin))
+    return {
+        "z": z,
+        "prop": prop,
+        "margin": margin,
+        "variance": _round9(prop * (1 - prop)),
+        "raw": raw,
+        "answer": float(math.ceil(raw)),
+    }
+
+
+def sample_size_for_a_proportion_brute(p):
+    """SCAN upward for the smallest count whose margin clears the target, and assert the count
+    below it fails. The squared closed form never appears, so an off-by-one from a bare ceiling
+    would be caught here."""
+    z = _z_from_conf(p["conf"])
+    prop = p["pPct"] / 100
+    margin = p["marginPct"] / 100
+    n = 1
+    while z * math.sqrt(prop * (1 - prop) / n) > margin * (1 + 1e-12):
+        n += 1
+    assert z * math.sqrt(prop * (1 - prop) / (n - 1)) > margin * (1 + 1e-12), "a smaller count would also have done"
+    return float(n)
+
+
+def expected_maximum_of_uniforms_exact(p):
+    n_plus = p["n"] + 1
+    return {
+        "nPlusOne": float(n_plus),
+        "fraction": _round9(p["n"] / n_plus),
+        "gapBelowTop": _round9(p["top"] / n_plus),
+        "answer": _round9((p["top"] * p["n"]) / n_plus),
+    }
+
+
+def expected_maximum_of_uniforms_brute(p):
+    """Integrate the SURVIVAL function: E[max] = int_0^L (1 - (x/L)^n) dx. The n/(n+1) closed form
+    the template teaches never appears, and a wrong exponent would change the integral."""
+    n, top = int(p["n"]), float(p["top"])
+    surv = lambda x: 1 - (x / top) ** n
+    got, _ = integrate.quad(surv, 0, top)
+    rng = np.random.default_rng(23)
+    est = float(rng.uniform(0, top, size=(60000, n)).max(axis=1).mean())
+    assert abs(est - got) < 0.02 * got, "a drawn sample disagrees with the survival integral"
+    return got
+
+
+def expected_range_of_uniforms_exact(p):
+    n_plus = p["n"] + 1
+    return {
+        "nPlusOne": float(n_plus),
+        "nLessOne": float(p["n"] - 1),
+        "gap": _round9(p["top"] / n_plus),
+        "expectedMax": _round9((p["top"] * p["n"]) / n_plus),
+        "expectedMin": _round9(p["top"] / n_plus),
+        "answer": _round9((p["top"] * (p["n"] - 1)) / n_plus),
+    }
+
+
+def expected_range_of_uniforms_brute(p):
+    """Integrate both ends separately — the maximum's survival function and the minimum's — and
+    subtract. Neither the (n-1)/(n+1) form nor the equal-gaps picture is used."""
+    n, top = int(p["n"]), float(p["top"])
+    e_max, _ = integrate.quad(lambda x: 1 - (x / top) ** n, 0, top)
+    e_min, _ = integrate.quad(lambda x: (1 - x / top) ** n, 0, top)
+    got = e_max - e_min
+    rng = np.random.default_rng(29)
+    draws = rng.uniform(0, top, size=(60000, n))
+    est = float((draws.max(axis=1) - draws.min(axis=1)).mean())
+    assert abs(est - got) < 0.02 * got, "a drawn sample disagrees with the two integrals"
+    return got
+
+
+def probability_a_given_order_statistic_exceeds_exact(p):
+    q = _round9(p["qPct"] / 100)
+    n, k = int(p["n"]), int(p["k"])
+    tail = sum(_comb(n, j) * q ** j * (1 - q) ** (n - j) for j in range(k, n + 1))
+    return {
+        "q": q,
+        "below": _round9(1 - q),
+        "threshold": _round9(p["top"] * (1 - q)),
+        "atLeastOne": _round9(1 - (1 - q) ** n),
+        "answer": _round9(tail),
+    }
+
+
+def probability_a_given_order_statistic_exceeds_brute(p):
+    """The regularised incomplete Beta function. P(at least k of n exceed) is exactly the Beta
+    CDF complement with parameters k and n-k+1 — a continuous special function rather than a sum
+    of binomial terms, so a mis-set summation limit cannot be mirrored."""
+    n, k, q = int(p["n"]), int(p["k"]), p["qPct"] / 100
+    got = float(_beta.cdf(q, k, n - k + 1))
+    # An exhaustive enumeration over which readings are slow, for a third independent route.
+    total = 0.0
+    for bits in itertools.product([0, 1], repeat=n):
+        if sum(bits) >= k:
+            total += q ** sum(bits) * (1 - q) ** (n - sum(bits))
+    assert abs(total - got) < 1e-9, "enumeration disagrees with the Beta route"
+    return got
+
+
+def median_of_an_odd_sample_from_two_groups_exact(p):
+    total = p["nA"] + p["nB"]
+    return {
+        "total": float(total),
+        "middleRank": float((total + 1) / 2),
+        "fromB": _round9(p["nB"] / total),
+        "answer": _round9(p["nA"] / total),
+    }
+
+
+def median_of_an_odd_sample_from_two_groups_brute(p):
+    """ENUMERATE every way group A's readings could occupy ranks, and count the arrangements
+    whose middle rank belongs to A. The nA/n symmetry argument the template makes is never used —
+    this counts arrangements."""
+    na, nb = int(p["nA"]), int(p["nB"])
+    total = na + nb
+    middle = (total - 1) // 2      # zero-based index of the median rank
+    hits = 0
+    seen = 0
+    for positions in itertools.combinations(range(total), na):
+        seen += 1
+        if middle in positions:
+            hits += 1
+    assert seen == _comb(total, na), "enumeration missed arrangements"
+    return hits / seen
+
+
+SOLVERS.update({
+    "statistics/p-value-from-a-z-statistic": {"exact": p_value_from_a_z_statistic_exact, "brute": p_value_from_a_z_statistic_brute},
+    "statistics/bias-of-the-plug-in-variance": {"exact": bias_of_the_plug_in_variance_exact, "brute": bias_of_the_plug_in_variance_brute},
+    "statistics/mse-decomposition": {"exact": mse_decomposition_exact, "brute": mse_decomposition_brute},
+    "statistics/variance-of-a-difference-in-means": {"exact": variance_of_a_difference_in_means_exact, "brute": variance_of_a_difference_in_means_brute},
+    "statistics/efficiency-of-two-unbiased-estimators": {"exact": efficiency_of_two_unbiased_estimators_exact, "brute": efficiency_of_two_unbiased_estimators_brute},
+    "statistics/sample-variance-of-a-linear-combination": {"exact": sample_variance_of_a_linear_combination_exact, "brute": sample_variance_of_a_linear_combination_brute},
+    "statistics/clt-probability-for-a-sample-mean": {"exact": clt_probability_for_a_sample_mean_exact, "brute": clt_probability_for_a_sample_mean_brute},
+    "statistics/finite-population-correction": {"exact": finite_population_correction_exact, "brute": finite_population_correction_brute},
+    "statistics/weighted-least-squares-single-mean": {"exact": weighted_least_squares_single_mean_exact, "brute": weighted_least_squares_single_mean_brute},
+    "statistics/two-sided-z-test-statistic": {"exact": two_sided_z_test_statistic_exact, "brute": two_sided_z_test_statistic_brute},
+    "statistics/confidence-interval-half-width": {"exact": confidence_interval_half_width_exact, "brute": confidence_interval_half_width_brute},
+    "statistics/type-two-error-and-power": {"exact": type_two_error_and_power_exact, "brute": type_two_error_and_power_brute},
+    "statistics/sample-size-for-a-proportion": {"exact": sample_size_for_a_proportion_exact, "brute": sample_size_for_a_proportion_brute},
+    "statistics/expected-maximum-of-uniforms": {"exact": expected_maximum_of_uniforms_exact, "brute": expected_maximum_of_uniforms_brute},
+    "statistics/expected-range-of-uniforms": {"exact": expected_range_of_uniforms_exact, "brute": expected_range_of_uniforms_brute},
+    "statistics/probability-a-given-order-statistic-exceeds": {"exact": probability_a_given_order_statistic_exceeds_exact, "brute": probability_a_given_order_statistic_exceeds_brute},
+    "statistics/median-of-an-odd-sample-from-two-groups": {"exact": median_of_an_odd_sample_from_two_groups_exact, "brute": median_of_an_odd_sample_from_two_groups_brute},
 })
