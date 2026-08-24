@@ -1,7 +1,8 @@
 # Market-making game — design
 
 **Date:** 2026-08-24
-**Status:** approved in brainstorming, not yet planned
+**Status:** SHIPPED 2026-08-24. Two sections below were changed by contact with the
+running game and are marked AMENDED; the rest describes what was built.
 **Closes:** the `Coming next: market-making game` line in `app/page.tsx:55`, which has advertised this since before the probability bank shipped.
 
 ---
@@ -69,14 +70,29 @@ unit   = 10 ^ round( log10( spread / 100 ) )
 so the spread lands within a factor of ~3 of 100 units for every template. p5–p95 rather than
 min–max so one extreme draw cannot set the scale for the whole template.
 
-Measured over the current bank, 219 of 224 templates are quotable and fall into three classes:
+**CORRECTED 2026-08-24 against the implementation.** An earlier draft of this table predicted
+three tidy classes (116 probability / 67 integer / 36 money) from a by-hand reading of answer
+types. Deriving the unit for all 219 templates gives **nine** classes, not three — the rule
+keys off each template's measured spread, not off what kind of quantity it is, so two
+probability templates can land on different units:
 
-| count | class | unit |
+| count | unit | |
 |---|---|---|
-| 116 | probability in 0–1 | 0.01 — quote in percentage points |
-| 67 | integer count | 1 — quote as-is |
-| 36 | money / EV | power of ten from the spread rule |
-| 5 | multiple-choice | excluded, nothing to quote on |
+| 82 | 0.01 | |
+| 52 | 1 | |
+| 29 | 0.1 | |
+| 23 | 0.001 | |
+| 19 | 10 | |
+| 10 | 100 | |
+| 2 | 10000000 | |
+| 1 | 0.0001 | |
+| 1 | 100000 | |
+| 5 | — | multiple-choice, excluded: nothing to quote on |
+
+Measured spreads land in 31.8–315.0 units, median 75.1 — inside the factor-of-~3.2 band that
+rounding `log10` can guarantee. `content/problems/market.test.ts` asserts the band rather than
+describing it. **This spread of unit classes is what broke the §6 unit label**: with nine
+scales in play, most of them have no readable name.
 
 Two properties matter:
 
@@ -92,21 +108,49 @@ drift out of scale.
 
 ## 5. `CREDIT_CAP` — the one tuning constant
 
-**It will be measured, not invented.** Before implementation fixes a value, compute the
-distribution of answer spreads across the eligible templates and choose the cap from it, then
-record the derivation in a comment beside the constant.
+**Measured, not invented — and now tuned.** The initial value came from the answer-spread
+distribution: the median inter-quartile spread across the 219 eligible templates is 35.8 units,
+so a cap of 40 makes a market as wide as the typical uncertainty worth nothing.
 
-Flagged explicitly as the number to revisit after the game has been played. It is the only
-free parameter in the design and the only place a bad choice makes the game unfun rather than
-incorrect.
+**AMENDED 2026-08-24, after the game ran.** The spread derivation fixes the *scale* but says
+nothing about whether the resulting game has an interesting decision in it. `tools/market-tune.ts`
+answers that, and it is the rig to re-run if this constant ever moves. Modelling a player whose
+centre lands at truth + Normal(0, sigma) units, choosing half-width h:
+
+- **Width choice matters at every skill level** — there is an interior optimum throughout, with
+  h* rising from 2.25 units (sigma 1) to 15.75 (sigma 30). Neither extreme is ever best:
+  zero width is always negative EV, and the widest still-earning market tops out at 0.00.
+- **The cap sets the break-even skill bar.** At 20, break-even is sigma ~10 — estimating inside
+  ~13% of a template's spread. At 80, a sigma=30 player still earns +11.31, so the pressure is
+  gone. At 40, break-even is sigma ~20, about 27% of the typical 75-unit p5-p95 spread.
+
+So 40 is load-bearing rather than arbitrary, and the two degeneracy arguments in §3 are now
+measured rather than asserted.
+
+**One coupling this exposed.** The optimal pick-off rate is 33% at cap 40 for a mid-skill
+player, which is exactly what §6's session-end diagnosis tells the player to aim for. That
+number moves with both the cap and the player's skill. **Changing `CREDIT_CAP` means
+re-deriving the one-third advice, not carrying it over.**
+
+What still cannot be measured is whether the game is *fun*, and whether a strong player can beat
+the 25s clock by solving exactly (§10, Risk 2). Both need a human session.
 
 ## 6. Round and session
 
 - **12 rounds, 25 seconds each** (~5 minutes). The bank's `expectedPaceS` runs 55–110s, so 25s
   makes exact computation infeasible and forces estimation. That pressure *is* the mechanic:
   without it, the dominant strategy is to solve exactly and quote zero width.
-- Statement shown, solution withheld. Bid and ask inputs, labelled with the unit ("in
-  percentage points") so the player always knows what they are quoting in.
+- Statement shown, solution withheld. **AMENDED 2026-08-24 — the unit label was removed, and
+  the player quotes in the quantity's own scale.** As specced, the inputs were labelled with the
+  quote unit ("in percentage points"). That reads correctly on the 82 templates at unit 0.01 and
+  the 52 at unit 1, and badly on the other 85 of 219: a question reading "a fair price for one
+  ticket, **in dollars**" (truth $4.08) was labelled "in units of 0.1", so the player had to type
+  40.8, and typing the natural 4.08 quoted a tenth of the truth and was picked off for it. A
+  label that contradicts the question is worse than no label. The player now types what the
+  statement asks for — 0.75 for a probability, 4.08 for a price, 1001 for a count — which is also
+  what `ProblemRunner` grades against everywhere else in the app. `unit` never reaches the input;
+  it remains purely the scoring normaliser of §4, which is what still lets one `CREDIT_CAP` mean
+  the same thing across templates. Width and centre error are reported in points.
 - **Submitting early advances immediately** — the 25s is a ceiling, not a wait. The unused
   time is not banked or rewarded; speed buys nothing directly, only the option to think longer
   on a later round.
@@ -168,9 +212,10 @@ fail with the timeout penalty removed. A checker nobody has watched fail is not 
 
 ## 10. Risks
 
-- **`CREDIT_CAP` is unfalsifiable before play.** No test can say the game is fun. Mitigation:
-  derive the initial value from measured spreads, and treat the first play session as the
-  experiment.
+- **~~`CREDIT_CAP` is unfalsifiable before play.~~ PARTLY RETIRED 2026-08-24.** The half that
+  was measurable has been measured — `tools/market-tune.ts` shows width choice has an interior
+  optimum at every skill level and that 40 sets a sensible break-even bar (§5). No test can still
+  say whether the game is *fun*; that half stands, and needs a human session.
 - **A fast solver beats the clock.** 25s is tuned against `expectedPaceS`, but a strong player
   may still compute exactly on L1 draws and collect maximum credit. If that turns out to
   dominate, the fix is the rejected alternative — settle on a realized draw instead of the

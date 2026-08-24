@@ -22,7 +22,24 @@ export interface MarketResult {
 // (strictly worse than quoting wide, which is the point — a market maker who will not quote is
 // worse than one who quotes badly).
 //
-// It is the only free parameter in the game. Revisit after real play.
+// TUNED, 2026-08-24, with tools/market-tune.ts — re-run it if you change this. Modelling a
+// player whose centre lands at truth + Normal(0, sigma) units and who picks a half-width h:
+//
+//   cap  break-even skill   a sigma=10 player earns   a sigma=30 player earns
+//    20      sigma ~ 10              +0.29                    -15.04
+//    40      sigma ~ 20             +12.01                     -7.99
+//    80      beyond sigma 30        +42.92                    +11.31
+//
+// 20 demands estimating inside ~13% of a template's spread to break even; 80 pays almost
+// everyone and removes the pressure entirely. 40 puts break-even near sigma 20 — about 27% of
+// the typical 75-unit p5-p95 spread. Both degenerate strategies lose at every skill level:
+// zero width is always negative, and the widest earning market (h = cap/2) tops out at 0.00.
+//
+// COUPLED TO THE DIAGNOSIS BELOW: 33% is the optimal pick-off rate at cap 40 for a mid-skill
+// player, which is why summarizeMarket tells the player to aim for about a third and treats
+// rate > 1/3 as too tight. At cap 20 that optimum is 32% for a sigma=5 player and at cap 80 it
+// is 33% for sigma=20 — the number moves with the cap AND the skill. Change CREDIT_CAP and the
+// one-third advice has to be re-derived, not carried over.
 export const CREDIT_CAP = 40;
 
 /** Inverted quotes are refused at the input rather than scored. Zero width is legal. */
