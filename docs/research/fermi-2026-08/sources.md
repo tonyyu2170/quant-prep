@@ -250,3 +250,37 @@ both times. A third template should come from a different domain, not a third sl
 
 Task 0 **complete**. Two templates, 50 rows each, every rate and every reference figure retrieved
 from a named federal table on 2026-08-24, with the chain-vs-truth gap measured on all 100 items.
+
+---
+
+## Part 5: the tolerance, and where it came from
+
+Measured by `npx tsx tools/fermi-crosscheck.ts` against the shipped content — 100 comparisons
+(2 templates x 50 rows), not the 2 the plan asked for. Reproduces §3.5 exactly.
+
+```
+fermi/gasoline       n=50  median -0.0388  min -0.2005 (Alabama)  max +0.1781 (New York)  worst 0.2005
+fermi/vehicle-miles  n=50  median -0.0225  min -0.2306 (Wyoming)  max +0.2050 (New York)  worst 0.2306
+both: 50/50 within 0.25
+```
+
+`1.5 x 0.2306 = 0.3458`, rounded to one decimal -> **`CROSS_CHECK_TOLERANCE_LOG10 = 0.30`**.
+
+The tolerance was chosen against the catch it has to make, not against what makes the gate pass.
+A rate wrong by a factor of two shifts *every* row by exactly 0.301, and the gate trips if even
+one row exceeds tolerance:
+
+| tolerance | headroom | rows failing on a 2x rate error |
+|---|---|---|
+| 0.25 | 1.08x | gasoline 28/50, vehicle-miles 32/50 |
+| **0.30** | **1.30x** | **gasoline 20/50, vehicle-miles 19/50** |
+| 0.35 | 1.52x | gasoline 9/50, vehicle-miles 11/50 |
+| 0.40 | 1.73x | gasoline 3/50, vehicle-miles 6/50 |
+
+0.25 leaves only 8% headroom — a routine data refresh would turn CI red. 0.40 is where the catch
+starts to thin out to a handful of rows. 0.30 keeps a 1.3x margin over the worst observed gap and
+still fails on roughly 40% of all rows if a rate is off by 2x.
+
+**Do not widen this to make a failure go away.** Re-run the tool, fix the chain, or record
+honestly that the two sources disagree and by how much.
+
