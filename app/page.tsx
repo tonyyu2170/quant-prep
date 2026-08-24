@@ -10,6 +10,7 @@ const sims = [
   { href: "/test/optiver-mc-80in8", label: "Optiver 80-in-8", sub: "Their real format · blanked operand · 4 options" },
   { href: "/test/sequences-sprint", label: "Sequences sprint", sub: "20 patterns · 8 minutes · rule shown on every miss" },
   { href: "/game/market-maker", label: "Market-making game", sub: "Quote a two-way market · 12 rounds · 25s each" },
+  { href: "/game/estimator", label: "Estimation & calibration", sub: "Decompose the unknown · 90% intervals · 8 questions" },
 ];
 
 const drills = [
