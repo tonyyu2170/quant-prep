@@ -76,7 +76,10 @@ collisions. **Zero are within-family underdetermination**, which was the stated 
 ### The ruling this implies — **TAKEN 2026-08-24, SHIPPED**
 
 Implemented, with one change from the recommendation below: `interleaved` is kept and shown at
-**five** terms rather than dropped from the draw. Term count already varied by family, and
+**five** terms rather than dropped from the draw. Note what does and does not back that: the
+sweep ran at N=4 only, so nothing here measured five-term interleaved. The evidence that those
+prompts pin their own answer is the shipped-prompt gate added alongside this change, which
+fits every other family plus the four solver rules against them over 400 draws x 3 tiers. Term count already varied by family, and
 losing a pattern family to a display change was the worse trade. It is still excluded from the
 FIT space, which is the part that was structural.
 
@@ -89,6 +92,11 @@ One caveat on the numbers below, recorded because it bounds what was measured: S
 the generator's bounds at the **widest difficulty per axis**, so the population is a union across
 tiers and is unweighted, while shipping draws weighted by `SEQ_WEIGHTS` per tier. The 0.2%/2.4%
 are therefore not the shipped rate. The redraw loop does not depend on them being exact.
+
+**The shipped rate, measured through the loop itself over 28,800 draws:** 2.26% needed a redraw
+and zero exhausted the limit — the sweep's figure reproduced by a second implementation, which is
+the check that the ported fitter did not drift from the research one. Worst family
+`ratio-linear-offset` 19.3%, then `fiblike` 10.2%; ten of sixteen never redraw.
 
 The original recommendation, for the record — four-term display looks shippable behind two
 changes: drop `interleaved` from the four-term

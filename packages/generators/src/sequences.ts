@@ -60,7 +60,14 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
   // `interleaved` is the one family that genuinely cannot show four. Its two streams hold two
   // points each, a line through two points always exists, so at four terms the prompt is
   // justified by more rules than its own. That is structural, not a window artefact, so it
-  // shows five. Term count already varied by family before this change.
+  // shows five. Term count already varied by family before this change. NOTE the sweep only ever
+  // ran at four terms — that five-term interleaved prompts pin their own answer is established
+  // by the shipped-prompt gate in the test file, not by the research.
+  //
+  // What difficulty lost: term count used to carry part of the ladder (L1 showed 5, L2/L3 showed
+  // 6). It no longer does — every tier shows four — so `SEQ_WEIGHTS` family mix is now the ONLY
+  // difficulty signal, which is what its own comment already claimed it was. L1 is harder than it
+  // was by exactly one shown term.
   const n = family === "interleaved" ? 5 : 4;
   // Per (family, difficulty) the number of rng draws is fixed — changing a family's draw count breaks seed replay.
   switch (family) {
@@ -182,10 +189,16 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
 }
 
 // Fewer shown terms means more prompts that more than one rule explains. The sweep measured
-// 2.4% of draws ambiguous under a generous fit space, and all of them BETWEEN families rather
-// than within one — the class a redraw fixes. Twelve attempts puts the odds of shipping an
-// ambiguous prompt below one in 10^19 at that rate; if a family were ever systematically
-// ambiguous the loop would exhaust silently, which is what the gate in the test file is for.
+// 2.4% of draws ambiguous under a generous fit space, all of them BETWEEN families rather than
+// within one — the class a redraw fixes.
+//
+// MEASURED through this loop over 28,800 draws (2026-08-24): 2.26% needed a redraw, which is
+// the sweep's number reproduced by a different implementation, and ZERO exhausted the limit.
+// Worst family is `ratio-linear-offset` at 19.3% (mean 0.24 redraws), then `fiblike` at 10.2%;
+// ten of sixteen families never redraw at all. The limit exists because a systematically
+// ambiguous family would otherwise retry into a wall and ship its last draw silently — the gate
+// in the test file is what would catch that, and the exhaustion count is what proves it is not
+// happening now. Re-measure if a family is added or a window widens.
 const REDRAW_LIMIT = 12;
 
 export function sequenceItemOfFamily(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): Item {
