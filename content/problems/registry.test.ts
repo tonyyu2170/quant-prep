@@ -18,7 +18,7 @@ describe("problem registry invariants", () => {
     // one to come here and say so. That is the same discipline the per-topic counts above use
     // (toBe, not a floor). A loose floor detects nothing, which is what the last one did.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
-    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(263);
+    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(268);
   });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
@@ -109,7 +109,7 @@ describe("problem registry invariants", () => {
     expect(finance).toBe(10);
     expect(stochastic).toBe(10);
     expect(linearAlgebra).toBe(6);
-    expect(numberTheory).toBe(3);
+    expect(numberTheory).toBe(8);
     expect(solidGeometry).toBe(0);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance + stochastic + linearAlgebra + numberTheory + solidGeometry).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
@@ -204,7 +204,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(34);   // 17 counting exact counts, 5 choice templates, 7 exact brainteaser answers, 2 statistics sample sizes, 3 number-theory counts
+    expect(exact.length).toBe(39);   // 17 counting exact counts, 5 choice templates, 7 exact brainteaser answers, 2 statistics sample sizes, 8 number-theory exact integers
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));

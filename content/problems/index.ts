@@ -258,6 +258,11 @@ import { equicorrelationFitThenInverse } from "./linear-algebra/equicorrelation-
 import { multiplesInARange } from "./number-theory/multiples-in-a-range";
 import { coprimeCountTwoPrimes } from "./number-theory/coprime-count-two-primes";
 import { gcdLcmProduct } from "./number-theory/gcd-lcm-product";
+import { frobeniusLargestUnpayable } from "./number-theory/frobenius-largest-unpayable";
+import { crtTwoCongruences } from "./number-theory/crt-two-congruences";
+import { diophantineCountSolutions } from "./number-theory/diophantine-count-solutions";
+import { linearCongruenceSolve } from "./number-theory/linear-congruence-solve";
+import { frobeniusFitThenCount } from "./number-theory/frobenius-fit-then-count";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -540,6 +545,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   multiplesInARange,
   coprimeCountTwoPrimes,
   gcdLcmProduct,
+  frobeniusLargestUnpayable,
+  crtTwoCongruences,
+  diophantineCountSolutions,
+  linearCongruenceSolve,
+  frobeniusFitThenCount,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
