@@ -2804,6 +2804,256 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => d.gap !== 0 || d.total % 2 === 0,
       breaks: (_p, d) => ({ ...d, gap: 0, total: d.total % 2 === 0 ? d.total + 1 : d.total }) },
   ],
+  // ---- pure-math/stochastic (B14) ----
+  "stochastic/expected-square-of-a-walk": [
+    { says: "Solve: the expected square recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.start * p.start + p.steps * p.tick * p.tick)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The answer must exceed the starting square — a fair walk cannot pull the mid back on average",
+      holds: (_p, d) => P(d.answer) > P(d.startSquared),
+      breaks: (_p, d) => ({ ...d, answer: d.startSquared / 2 }) },
+    { says: "Independent minutes add their variances, each contributing the tick squared",
+      holds: (p, d) => same(d.variance, r9(p.steps * p.tick * p.tick)) && same(d.startSquared, r9(p.start * p.start)),
+      breaks: (_p, d) => ({ ...d, variance: d.variance * 2 }) },
+  ],
+  "stochastic/martingale-missing-payoff": [
+    { says: "Solve: the missing payout recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.mid * 100 - p.pct1 * p.win) / (100 - p.pct1 - p.pct2))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Put it back: the weighted branches really do return a hundred times the mark",
+      holds: (p, d) => same(r9(p.pct1 * p.win + d.pct3 * d.answer), r9(p.mid * 100)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 10 }) },
+    { says: "The three probabilities exhaust the outcomes, and the third branch carries real weight",
+      holds: (p, d) => d.pct3 === 100 - p.pct1 - p.pct2 && d.pct3 > 0 && d.pooled === p.mid * 100,
+      breaks: (_p, d) => ({ ...d, pct3: 0 }) },
+  ],
+  "stochastic/risk-neutral-up-probability": [
+    { says: "Solve: the weight recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.down / (p.up + p.down))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The weight lands strictly between nothing and everything",
+      holds: (_p, d) => P(d.answer) > 0 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1.4 }) },
+    { says: "Under that weight the average of the two outcomes really is today's price",
+      holds: (p, d) => Math.abs(d.answer * d.upPrice + (1 - d.answer) * d.downPrice - p.spot) < 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer / 2 }) },
+    { says: "The up outcome is above today and the down outcome below it",
+      holds: (p, d) => P(d.upPrice) > p.spot && P(d.downPrice) < p.spot && d.span === p.up + p.down,
+      breaks: (p, d) => ({ ...d, upPrice: p.spot - 1 }) },
+  ],
+  "stochastic/reflection-principle-touch-level": [
+    { says: "Solve: the touch probability is the touching paths over all paths",
+      holds: (_p, d) => same(d.answer, r9(d.touchingPaths / d.totalPaths)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Touching beats finishing high, because every path that finished high touched on the way",
+      holds: (_p, d) => P(d.answer) > P(d.endsAtOrAbove),
+      breaks: (_p, d) => ({ ...d, answer: d.endsAtOrAbove / 2 }) },
+    { says: "The reflected group is never empty, so the inequality above is strict rather than an equality",
+      holds: (_p, d) => d.strictlyAbove > 0 && d.touchingPaths === d.atOrAbove + d.strictlyAbove,
+      breaks: (_p, d) => ({ ...d, strictlyAbove: 0 }) },
+    { says: "Every path of the walk is counted: two choices at each of the steps",
+      holds: (p, d) => d.totalPaths === Math.pow(2, p.steps) && d.gapAbove === d.gap + 1,
+      breaks: (_p, d) => ({ ...d, totalPaths: d.totalPaths * 2 }) },
+  ],
+  "stochastic/exponential-martingale-value": [
+    { says: "Solve: the quantity recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(Math.pow((100 - p.winPct) / p.winPct, p.target - p.start))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The multiplier is below one exactly when the up move is the likelier one",
+      holds: (p, d) => (p.winPct > 50) === (P(d.ratio) < 1),
+      breaks: (_p, d) => ({ ...d, ratio: 1 / d.ratio }) },
+    { says: "Climbing drives the quantity the opposite way to the drift, which is what keeps it fair",
+      holds: (_p, d) => (P(d.ratio) < 1) === (P(d.answer) < 1),
+      breaks: (_p, d) => ({ ...d, answer: 1 / d.answer }) },
+    { says: "The step probabilities are complementary, and the displacement is the climb",
+      holds: (p, d) => d.lossPct === 100 - p.winPct && d.gap === p.target - p.start && d.gap >= 2,
+      breaks: (_p, d) => ({ ...d, lossPct: d.lossPct + 5 }) },
+  ],
+  "stochastic/gbm-expected-price": [
+    { says: "Solve: the expected price recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.spot * Math.exp((r9(p.growPct + r9((p.volPct * p.volPct) / 200)) * p.years) / 100))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The expected price sits strictly above the median — this is the whole point of the template",
+      holds: (_p, d) => P(d.answer) > P(d.median),
+      breaks: (_p, d) => ({ ...d, answer: d.median }) },
+    { says: "The gap between the two rates is exactly half the variance, and nothing else",
+      holds: (p, d) => same(d.halfVarPct, r9((p.volPct * p.volPct) / 200)) && same(r9(d.meanRatePct - p.growPct), d.halfVarPct),
+      breaks: (_p, d) => ({ ...d, meanRatePct: d.meanRatePct - d.halfVarPct }) },
+    { says: "Both totals are the per-year rates run out over the horizon",
+      holds: (p, d) => same(d.meanGrowthPct, r9(d.meanRatePct * p.years)) && same(d.medianGrowthPct, r9(p.growPct * p.years)),
+      breaks: (_p, d) => ({ ...d, meanGrowthPct: d.medianGrowthPct }) },
+  ],
+  "stochastic/brownian-covariance-correlation": [
+    { says: "Solve: the correlation comes from the two times alone, with no volatility in it",
+      holds: (p, d) => same(d.answer, r9(Math.sqrt(p.early / p.late))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The root pushes the answer above the plain variance ratio",
+      holds: (_p, d) => P(d.answer) > P(d.ratio),
+      breaks: (_p, d) => ({ ...d, answer: d.ratio / 2 }) },
+    { says: "A correlation, so strictly inside zero and one — the two dates share some risk but not all of it",
+      holds: (_p, d) => P(d.answer) > 0 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1 }) },
+    { says: "The shared stretch is the earlier date, so the ratio is the earlier time over the later",
+      holds: (p, d) => same(d.ratio, r9(p.early / p.late)) && p.early < p.late,
+      breaks: (p, d) => ({ ...d, ratio: r9(p.late / p.early) }) },
+  ],
+  "stochastic/compound-sum-variance": [
+    { says: "Solve: the variance recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.rate * p.rate * r9(r9(r9((p.lots + 1) / 2) * r9((p.units * p.units - 1) / 12)) + r9(r9((p.lots * p.lots - 1) / 12) * r9(r9((p.units + 1) / 2) * r9((p.units + 1) / 2)))))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "A varying count adds spread a fixed delivery would not carry, so the total exceeds the within-crate piece",
+      holds: (_p, d) => P(d.combined) > P(d.spreadWithin) && d.spreadAcross > 0,
+      breaks: (_p, d) => ({ ...d, combined: d.spreadWithin }) },
+    { says: "The uniform moments are the textbook ones, and both come out whole",
+      holds: (p, d) => same(d.meanLots, r9((p.lots + 1) / 2)) && same(d.varLots, r9((p.lots * p.lots - 1) / 12))
+        && same(d.meanUnits, r9((p.units + 1) / 2)) && same(d.varUnits, r9((p.units * p.units - 1) / 12)),
+      breaks: (_p, d) => ({ ...d, varLots: d.varLots * 2 }) },
+    { says: "Money scales the variance by the SQUARE of the rate, not by the rate",
+      holds: (p, d) => same(d.answer, r9(p.rate * p.rate * d.combined)),
+      breaks: (p, d) => ({ ...d, answer: r9(p.rate * d.combined) }) },
+  ],
+  "stochastic/gbm-probability-above-strike": [
+    { says: "Solve: the tail recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(1 - normalCdf(r9((r9(100 * Math.log(p.strike / p.spot)) - r9(r9(p.growPct - r9((p.volPct * p.volPct) / 200)) * p.years)) / r9(p.volPct * Math.sqrt(p.years)))))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The log drifts half a variance BELOW the quoted growth of the average price",
+      holds: (p, d) => same(r9(p.growPct - d.logDriftPct), d.halfVarPct) && P(d.logDriftPct) < p.growPct,
+      breaks: (p, d) => ({ ...d, logDriftPct: p.growPct }) },
+    { says: "A strike above today's price is a positive hurdle in logs, and the answer stays a probability",
+      holds: (_p, d) => P(d.hurdlePct) > 0 && P(d.answer) > 0 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, hurdlePct: -1 }) },
+    { says: "Raising the strike can only lower the probability of clearing it",
+      holds: (p, d) => 1 - normalCdf((100 * Math.log((p.strike + 5) / p.spot) - d.driftOverHorizonPct) / d.sdPct) < d.answer,
+      breaks: (_p, d) => ({ ...d, answer: 0 }) },
+    { says: "Spread grows with the square root of the horizon, not with the horizon",
+      holds: (p, d) => same(d.sdPct, r9(p.volPct * Math.sqrt(p.years))) && same(d.rootYears, r9(Math.sqrt(p.years))),
+      // Doubling, not volPct*years: at years=1 the two coincide and the falsifier would
+      // silently falsify nothing — which is the exact defect this gate's `breaks` exists for.
+      breaks: (_p, d) => ({ ...d, sdPct: d.sdPct * 2 }) },
+  ],
+  "stochastic/gbm-fit-then-below-mean": [
+    { says: "Solve: the tail recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(normalCdf(Math.log(p.markPct / 100) / Math.sqrt(2 * Math.log(p.meanPct / 100))))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The published mean sits above the published median, as a lognormal's must",
+      holds: (p, d) => P(d.mean) > p.median,
+      breaks: (p, d) => ({ ...d, mean: p.median - 1 }) },
+    { says: "Finishing below the MEAN is the likelier outcome — beating the average is not an even bet",
+      holds: (_p, d) => normalCdf(d.totalSd / 2) > 0.5,
+      breaks: (_p, d) => ({ ...d, totalSd: -d.totalSd }) },
+    { says: "A mark below the median carries less than even odds, and one above it more",
+      holds: (p, d) => (p.markPct < 100) === (P(d.answer) < 0.5),
+      breaks: (_p, d) => ({ ...d, answer: 1 - d.answer }) },
+    { says: "Both published prices are the median scaled by their quoted percentages",
+      holds: (p, d) => same(d.mean, r9((p.median * p.meanPct) / 100)) && same(d.mark, r9((p.median * p.markPct) / 100)),
+      breaks: (_p, d) => ({ ...d, mark: d.mean }) },
+  ],
+  // ---- pure-math/linear-algebra (B14) ----
+  "linear-algebra/two-by-two-eigenvalues": [
+    { says: "Solve: the larger eigenvalue recomputed from the trace and determinant matches the printed answer",
+      holds: (_p, d) => same(d.answer, r9((d.trace + Math.sqrt(d.disc)) / 2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The pair multiplies back to the determinant and adds back to the trace",
+      holds: (_p, d) => same(r9(d.answer * d.smaller), d.det) && same(r9(d.answer + d.smaller), d.trace),
+      breaks: (_p, d) => ({ ...d, smaller: d.smaller + 1 }) },
+    { says: "The root of the discriminant is the GAP between the eigenvalues, and it comes out whole",
+      holds: (_p, d) => same(r9(Math.sqrt(d.disc)), d.gap) && Number.isInteger(d.gap) && d.gap > 0,
+      breaks: (_p, d) => ({ ...d, gap: d.gap + 0.5 }) },
+    { says: "The answer really is the larger of the two",
+      holds: (_p, d) => P(d.answer) > P(d.smaller),
+      breaks: (_p, d) => ({ ...d, answer: d.smaller - 1 }) },
+  ],
+  "linear-algebra/trace-of-a-matrix-power": [
+    { says: "Solve: the power sum recomputed fresh from params matches the printed answer",
+      holds: (p, d) => {
+        const t2 = p.trace * p.trace - 2 * p.det;
+        const t3 = p.trace * t2 - p.det * p.trace;
+        return same(d.answer, r9(p.power === 2 ? t2 : p.power === 3 ? t3 : p.trace * t3 - p.det * t2));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The trace of the square is NOT the square of the trace — it falls short by twice the determinant",
+      holds: (p, d) => same(d.squareTrace, r9(p.trace * p.trace - 2 * p.det)) && P(d.squareTrace) < p.trace * p.trace,
+      breaks: (p, d) => ({ ...d, squareTrace: r9(p.trace * p.trace) }) },
+    { says: "Each power sum follows from the two before it, driven by the trace and the determinant",
+      holds: (p, d) => same(d.cubeTrace, r9(p.trace * d.squareTrace - p.det * p.trace)),
+      breaks: (_p, d) => ({ ...d, cubeTrace: d.cubeTrace * 2 }) },
+    { says: "Powers act on the EIGENVALUES: the answer is their two powers added, by a route the recursion never takes",
+      // The first version of this claim asserted the eigenvalues are real, reading only `p` —
+      // so no mutation of `d` could falsify it and the gate rejected it outright. That is the
+      // tautological-conjunct defect the header warns about, caught rather than shipped.
+      holds: (p, d) => {
+        const root = Math.sqrt(p.trace * p.trace - 4 * p.det);
+        const hi = (p.trace + root) / 2;
+        const lo = (p.trace - root) / 2;
+        return same(d.answer, r9(Math.pow(hi, p.power) + Math.pow(lo, p.power)));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+  ],
+  "linear-algebra/constant-plus-diagonal-determinant": [
+    { says: "Solve: the determinant recomputed fresh from params matches the printed answer",
+      // No r9 here: these determinants run past 1e6, and r9 multiplies by 1e9 before
+      // rounding, which leaves MAX_SAFE_INTEGER and corrupts the very value being checked.
+      holds: (p, d) => same(d.answer, Math.pow(p.a, p.n - 1) * (p.a + p.b * p.n)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Every eigenvalue is positive here, so the determinant is too and the matrix is positive definite",
+      holds: (p, d) => P(d.answer) > 0 && P(d.shifted) > 0 && p.a > 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+    { says: "One eigenvalue is shifted by the whole rank-one block; the rest carry the diagonal alone",
+      holds: (p, d) => d.shifted === p.a + p.b * p.n && d.offDiagCount === p.n - 1 && same(d.tail, Math.pow(p.a, p.n - 1)),
+      breaks: (p, d) => ({ ...d, shifted: p.a }) },
+    { says: "The special eigenvalue is the strictly larger one, since the off-diagonal is positive",
+      holds: (p, d) => P(d.shifted) > p.a && d.diagEntry === p.a + p.b,
+      breaks: (p, d) => ({ ...d, shifted: p.a - 1 }) },
+  ],
+  "linear-algebra/determinant-scaling-and-power": [
+    { says: "Solve: the determinant recomputed fresh from params matches the printed answer",
+      // No r9: this determinant reaches 1e12 and r9 would round it past MAX_SAFE_INTEGER.
+      holds: (p, d) => same(d.answer, Math.pow(Math.pow(p.scale, p.n) * p.det, p.power)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The scale sits INSIDE the power, so the answer beats powering the determinant alone",
+      holds: (_p, d) => P(d.answer) > P(d.detPowerAlone),
+      breaks: (_p, d) => ({ ...d, answer: d.detPowerAlone }) },
+    { says: "Scaling every entry is felt once per dimension, not once",
+      holds: (p, d) => same(d.scaleFactor, Math.pow(p.scale, p.n)) && P(d.scaleFactor) > p.scale,
+      breaks: (p, d) => ({ ...d, scaleFactor: p.scale }) },
+    { says: "The scaled determinant is the original lifted by that factor",
+      holds: (p, d) => same(d.scaledDet, d.scaleFactor * p.det),
+      breaks: (p, d) => ({ ...d, scaledDet: p.det }) },
+  ],
+  "linear-algebra/inverse-of-a-constant-plus-diagonal": [
+    { says: "Solve: the inverse's diagonal entry recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.a + p.b * p.n - p.b) / (p.a * (p.a + p.b * p.n)))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "A row of the original times a column of the inverse gives one — the definition, checked",
+      // Slack is 1e-6, not 1e-9: both inverse entries are stored rounded at the ninth
+      // decimal, and this multiplies them by a diagonal and by n-1 off-diagonals, so the
+      // rounding compounds well past 1e-9 on the larger draws.
+      holds: (p, d) => Math.abs(d.diagEntry * d.answer + (p.n - 1) * p.b * d.offDiagEntry - 1) < 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 2 }) },
+    { says: "The inverse's off-diagonal is NEGATIVE where the original's was positive",
+      holds: (p, d) => d.offDiagEntry < 0 && p.b > 0,
+      breaks: (_p, d) => ({ ...d, offDiagEntry: -d.offDiagEntry }) },
+    { says: "The two eigenvalues are the diagonal alone and the diagonal plus the whole block",
+      holds: (p, d) => d.shifted === p.a + p.b * p.n && d.diagEntry === p.a + p.b,
+      breaks: (p, d) => ({ ...d, shifted: p.a }) },
+  ],
+  "linear-algebra/equicorrelation-fit-then-inverse": [
+    { says: "Solve: the requested inverse entry recomputed fresh from params matches the printed answer",
+      holds: (p, d) => {
+        const shifted = p.a + p.b * p.n;
+        return same(d.answer, r9(p.wanted === 1 ? (shifted - p.b) / (p.a * shifted) : -p.b / (p.a * shifted)));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The recovered off-diagonal sits below the diagonal by exactly the disclosed gap",
+      holds: (p, d) => same(r9(d.diagEntry - d.recovered), p.a) && d.recovered > 0,
+      breaks: (_p, d) => ({ ...d, recovered: d.diagEntry }) },
+    { says: "The determinant really is the ordinary eigenvalue's power times the special one",
+      holds: (p, d) => same(d.det, d.tail * d.shifted) && same(d.tail, Math.pow(p.a, p.n - 1)) && d.tailCount === p.n - 1,
+      breaks: (_p, d) => ({ ...d, det: d.tail }) },
+    { says: "A row of the rebuilt matrix times a column of the inverse gives one",
+      holds: (p, d) => Math.abs(d.diagEntry * d.invDiag + (p.n - 1) * d.recovered * d.invOff - 1) < 1e-6,
+      breaks: (_p, d) => ({ ...d, invDiag: d.invDiag * 2 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -2871,7 +3121,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing", "pure-math/stochastic", "pure-math/linear-algebra"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
