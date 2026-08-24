@@ -11,8 +11,12 @@ describe("problem registry invariants", () => {
     // MARKET_TEMPLATES is derived so it cannot drift out of sync — but the COUNT can fall,
     // and a sudden drop is how we would learn that a batch shipped as choice templates by
     // accident. The floor tracks the REAL count rather than an old one: 219 was pinned at a
-    // bank of 224 and was 25 too loose by the time the bank reached 249. 249 is the true
-    // count at a bank of 254, all five B14 templates so far being number answers.
+    // bank of 224 and was 25 too loose by the time the bank reached 249.
+    //
+    // 249 is EXACTLY the count at a bank of 254 with 5 choice templates, and the exactness is
+    // deliberate: at zero slack this fires on the next choice template, forcing whoever adds
+    // one to come here and say so. That is the same discipline the per-topic counts above use
+    // (toBe, not a floor). A loose floor detects nothing, which is what the last one did.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
     expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(249);
   });
