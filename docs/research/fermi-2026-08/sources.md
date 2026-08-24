@@ -172,7 +172,81 @@ error in the rate.
 
 ---
 
+## Part 4: what ships, and what was rejected
+
+### 4.1 Rejected, with the measurement that rejected it
+
+| Candidate | Verdict | Why |
+|---|---|---|
+| `piano-tuners` | dropped | *pianos per person* has no retrievable primary (Part 1). |
+| `barbers` | dropped | both rates uncitable (Part 1). |
+| residential electricity | **dropped after measurement** | see below. |
+| public water supply | dropped | The fresh (2020) USGS estimates are model output distributed through ScienceBase DOIs and the National Water Availability Data Companion, not a state table. The last Circular with a clean state table is **2015 — 11 years old, which fails `MAX_DATA_AGE_YEARS = 10` outright.** USGS's own machine-learning paper reports per-capita public-supply withdrawal spanning **30 to 650 GPCD**, so the dispersion would very likely have failed the chain test as electricity did. |
+
+**Why electricity was dropped even though its data is excellent.** Once `truth` is the published
+figure (§4.2), the cross-check gate asserts *the authored chain reproduces the real answer*. The
+electricity chain misses by **+0.373 log10 for Hawaii and +0.301 for California** — the reveal
+would be showing a decomposition 2.4x away from the number the player was scored against. The
+cause is structural, not a bad rate: residential electricity is dominated by climate-driven
+heating and cooling load, which is not a factor in the chain and cannot be added without turning
+a Fermi estimate into a weather model. Using per-state rates instead would make the gate circular.
+So the chain is not a valid decomposition of that quantity, and the measurement is the evidence.
+
+### 4.2 Two structural decisions
+
+**Rows are states, not cities.** Federal fuel and electricity data is published per state, not
+per metropolitan area. The Census CBSA file (§3.1) was downloaded and is **unused** — noted so a
+future session does not assume it is wired in.
+
+**`truth` is the independently published figure, not the chain product.** The plan computes
+`truth` from the chain and notes that this "would make the cross-check circular if it stopped
+there". With a published reference for *every* row, that compromise is unnecessary: each item's
+`truth` is its own MF-21 or VM-2 figure, and the chain becomes the reveal — one way to have got
+there. The player is therefore scored against reality, and the gate that compares chain to truth
+is genuine evidence rather than a restatement.
+
+Consequences: `truth.vintage` is **2024** (the FHWA data year), not the Census population vintage;
+and `truth.source` names the specific FHWA table per row.
+
+### 4.3 Row set: the 50 states
+
+- **District of Columbia excluded** — §3.6, commuter fuel-purchase artefact (+0.42 log10).
+- **Puerto Rico excluded** — present in VM-2 but not in MF-21, so it has no reference for both
+  templates.
+- **Tennessee** is written `Tennessee (2)` in VM-2 with footnote *"The State modified their
+  process for estimating summary VMT data."* Name normalisation strips the marker. Recorded
+  because the un-normalised join silently produced a **49-row table that still called itself 50**
+  — the failure is quiet by nature.
+- Populations are rounded to two significant figures per the plan's rule. Cost is at most
+  **0.020 log10**, measured, against a tolerance of 0.30.
+
+### 4.4 The two templates that ship
+
+| | `fermi/gasoline` | `fermi/vehicle-miles` |
+|---|---|---|
+| Question | gallons of gasoline burned on the roads of *state*, per year | vehicle-miles driven in *state*, per year |
+| Chain | pop x vehicles/person x miles/vehicle-yr / mpg | pop x vehicles/person x miles/vehicle-yr |
+| Rates | VM-1 light duty: 0.7973 veh/person, 10,786.6516 mi/veh, 23.4307 mpg | VM-1 all vehicles: 0.8751 veh/person, 11,071.4124 mi/veh |
+| Reference (`truth`) | MF-21 highway gasoline, per state | VM-2 total annual vehicle-miles, per state |
+| Reference measured by | state fuel-tax receipts | HPMS traffic counts |
+
+**Measured chain-vs-truth gaps over the 50 shipped rows, with the shipped rounded populations:**
+
+```
+gasoline       n=50  median -0.0388  min -0.2005 (Alabama)  max +0.1781 (New York)  max|gap| 0.2005
+vehicle-miles  n=50  median -0.0225  min -0.2306 (Wyoming)  max +0.2050 (New York)  max|gap| 0.2306
+both templates: 50/50 within 0.25 log10
+```
+
+**Honest note on variety.** The two chains are **nested** — gasoline is the vehicle-miles chain
+divided by fuel economy. They are not independent content. They ship together because each has
+its own separately-measured published reference and they prove the table x template pattern, but
+a genuinely different domain was attempted twice (electricity, water) and rejected on evidence
+both times. A third template should come from a different domain, not a third slice of FHWA.
+
+---
+
 ## Status
 
-Retrieval is **complete** for two chains, both federal, both with per-row independently published
-reference figures.
+Task 0 **complete**. Two templates, 50 rows each, every rate and every reference figure retrieved
+from a named federal table on 2026-08-24, with the chain-vs-truth gap measured on all 100 items.
