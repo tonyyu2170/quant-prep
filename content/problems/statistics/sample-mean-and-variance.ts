@@ -8,11 +8,11 @@ import { fmtNum } from "../util";
 // reading would fall below one ticket, and it needs the actual readings to do that, so both
 // helpers are licensed — the table is reached through `valuesOf`.
 const PATTERNS: readonly (readonly number[])[] = [
-  [-4, -1, 0, 2, 3],      // n=5, SS=30, /4 = 7.5
-  [-3, -2, 1, 1, 3],      // n=5, SS=24, /4 = 6
-  [-5, -2, 0, 3, 4],      // n=5, SS=54, /4 = 13.5
-  [-5, -2, -1, 1, 3, 4],  // n=6, SS=56, /5 = 11.2
-  [-4, -3, 0, 1, 2, 4],   // n=6, SS=46, /5 = 9.2
+  [-4, -1, 0, 2, 3],    // SS=30, /4 = 7.5
+  [-3, -2, 1, 1, 3],    // SS=24, /4 = 6
+  [-5, -2, 0, 3, 4],    // SS=54, /4 = 13.5
+  [-2, -2, -1, 2, 3],   // SS=22, /4 = 5.5
+  [-6, -1, 0, 3, 4],    // SS=62, /4 = 15.5
 ];
 const valuesOf = (p: { base: number; spread: number; pat: number }) =>
   PATTERNS[p.pat].map((k) => p.base + p.spread * k);
@@ -37,8 +37,12 @@ export const sampleMeanAndVariance: ProblemTemplate = {
     const total = values.reduce((a, b) => a + b, 0);
     const mean = round(total / n);
     const ss = round(values.reduce((a, v) => a + (v - mean) * (v - mean), 0));
-    return {
+    // Every reading and every deviation is printed, so each has to be a derived value in its
+    // own right: verification/emit.ts rejects any number in the text that it cannot trace back
+    // to a param, a derived value or a declared constant.
+    const out: Record<string, number> = {
       n,
+      nLessOne: n - 1,
       total,
       mean,
       ss,
@@ -46,6 +50,8 @@ export const sampleMeanAndVariance: ProblemTemplate = {
       popVar: round(ss / n),
       answer: round(ss / (n - 1)),
     };
+    values.forEach((v, i) => { out[`v${i + 1}`] = v; out[`dev${i + 1}`] = round(v - mean); });
+    return out;
   },
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
@@ -61,7 +67,7 @@ export const sampleMeanAndVariance: ProblemTemplate = {
       { title: "What the sample variance asks for", body: `The sample variance is the average squared distance from the centre, but averaged over $n-1$ rather than $n$: $s^2=\\dfrac{(x_1-\\bar{x})^2+\\cdots+(x_n-\\bar{x})^2}{n-1}$. So the mean has to be found first, because every deviation is measured from it.` },
       { title: "The mean", body: `The ${fmtNum(d.n)} readings total ${fmtNum(d.total)}, so the sample mean is $${fmtNum(d.total)}/${fmtNum(d.n)}=${fmtNum(d.mean)}$ tickets a day.` },
       { title: "Square the deviations and add them", body: `Measured from ${fmtNum(d.mean)}, the deviations are ${devs.map((x) => fmtNum(x)).join(", ")}. Squaring each and adding gives $${devs.map((x) => `(${fmtNum(x)})^2`).join("+")}=${fmtNum(d.ss)}$. The signs disappear in the squaring, which is exactly why the deviations summing to zero costs nothing here.` },
-      { title: "Divide by one less than the count", body: `Dividing that total by ${fmtNum(d.n)} - 1 gives $${fmtNum(d.ss)}/${fmtNum(d.n - 1)}=${fmtNum(d.answer)}$.` },
+      { title: "Divide by one less than the count", body: `Dividing that total by ${fmtNum(d.n)} - 1 gives $${fmtNum(d.ss)}/${fmtNum(d.nLessOne)}=${fmtNum(d.answer)}$.` },
       { title: "Answer", body: `The sample variance is ${fmtNum(d.answer)} tickets squared.` },
       { title: "Sanity check", body: `Dividing by ${fmtNum(d.n)} instead would have given $${fmtNum(d.ss)}/${fmtNum(d.n)}=${fmtNum(d.popVar)}$, which is smaller. That gap is the Bessel correction, and it is always in that direction: the same sum of squares over a smaller denominator can only be larger.` },
     ];
@@ -70,5 +76,5 @@ export const sampleMeanAndVariance: ProblemTemplate = {
   commonTrap: "Dividing the sum of squared deviations by the number of readings, which is the population formula and understates the spread of a sample. The other slip is forgetting to square before adding, which makes the deviations cancel to zero and reports no spread at all.",
   expectedPaceS: 70,
   verify: { method: "brute-force" },
-  constants: [1],
+  constants: [1, 2],
 };

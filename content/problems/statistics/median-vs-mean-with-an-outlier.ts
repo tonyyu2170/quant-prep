@@ -21,12 +21,18 @@ export const medianVsMeanWithAnOutlier: ProblemTemplate = {
     const total = 5 * p.base + 8 * p.step + p.out;
     const mean = round(total / 5);
     const median = p.base + 3 * p.step;
+    // The five quotes are printed twice over — as given and sorted — so each is a derived value
+    // in its own right; verification/emit.ts traces every number in the text back to one.
     return {
       n: 5,
       total,
       mean,
       median,
       biggest: p.base + p.out,
+      q1: p.base,
+      q2: p.base + p.step,
+      q3: p.base + 3 * p.step,
+      q4: p.base + 4 * p.step,
       answer: round(mean - median),
     };
   },
@@ -51,5 +57,5 @@ export const medianVsMeanWithAnOutlier: ProblemTemplate = {
   commonTrap: "Reading the median off the quotes in the order they were given rather than sorting them first, which returns whichever number happens to sit third. The other slip is treating a mean above the median as a mistake rather than as the signature of a right-skewed sample.",
   expectedPaceS: 70,
   verify: { method: "brute-force" },
-  constants: [],
+  constants: [1],
 };

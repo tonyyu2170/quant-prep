@@ -41,7 +41,12 @@ export const covarianceFromATable: ProblemTemplate = {
     const meanX = round(sumX / n);
     const meanY = round(sumY / n);
     const cross = round(xs.reduce((a, x, i) => a + (x - meanX) * (ys[i] - meanY), 0));
-    return { n, sumX, sumY, meanX, meanY, cross, popCov: round(cross / n), answer: round(cross / (n - 1)) };
+    // Each printed reading and each printed deviation must be traceable on its own — see the
+    // audit in verification/emit.ts, which rejects any number in the text it cannot account for.
+    const out: Record<string, number> = { n, nLessOne: n - 1, sumX, sumY, meanX, meanY, cross, popCov: round(cross / n), answer: round(cross / (n - 1)) };
+    xs.forEach((x, i) => { out[`x${i + 1}`] = x; out[`dx${i + 1}`] = round(x - meanX); });
+    ys.forEach((y, i) => { out[`y${i + 1}`] = y; out[`dy${i + 1}`] = round(y - meanY); });
+    return out;
   },
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
@@ -58,7 +63,7 @@ export const covarianceFromATable: ProblemTemplate = {
       { title: "Covariance measures whether the two move together", body: `The sample covariance multiplies each pair's two deviations and averages the products over $n-1$: $\\text{Cov}(x,y)=\\dfrac{(x_1-\\bar{x})(y_1-\\bar{y})+\\cdots+(x_n-\\bar{x})(y_n-\\bar{y})}{n-1}$. A session above average on both, or below average on both, contributes a positive product; one above on one and below on the other contributes a negative.` },
       { title: "Both column means", body: `The widened quotes total ${fmtNum(d.sumX)}, so their mean is $${fmtNum(d.sumX)}/${fmtNum(d.n)}=${fmtNum(d.meanX)}$. The lost tickets total ${fmtNum(d.sumY)}, so their mean is $${fmtNum(d.sumY)}/${fmtNum(d.n)}=${fmtNum(d.meanY)}$.` },
       { title: "Multiply the paired deviations and add", body: `Session by session that is $${terms}=${fmtNum(d.cross)}$.` },
-      { title: "Divide by one less than the count", body: `The sample covariance is $${fmtNum(d.cross)}/${fmtNum(d.n - 1)}=${fmtNum(d.answer)}$.` },
+      { title: "Divide by one less than the count", body: `The sample covariance is $${fmtNum(d.cross)}/${fmtNum(d.nLessOne)}=${fmtNum(d.answer)}$.` },
       { title: "Answer", body: `The sample covariance is ${fmtNum(d.answer)}.` },
       { title: "Sanity check", body: `The sign is what carries the meaning here, and it comes straight from the total ${fmtNum(d.cross)} rather than from the division, which can only rescale it. Adding a constant to either column would shift its mean by the same amount, leave every deviation alone, and change nothing.` },
     ];

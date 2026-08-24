@@ -40,5 +40,5 @@ export const varianceOfAScaledSum: ProblemTemplate = {
   commonTrap: "Multiplying the single-lot variance by the position size rather than by its square, which understates the risk of a large book badly. The second slip is adding the fixed charge into the variance, as though a cost known in advance carried any uncertainty.",
   expectedPaceS: 55,
   verify: { method: "brute-force" },
-  constants: [],
+  constants: [2],
 };

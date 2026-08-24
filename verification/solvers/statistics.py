@@ -444,3 +444,311 @@ SOLVERS = {
         "brute": sharpe_time_scaling_brute,
     },
 }
+
+
+# --- B13 Task 1: the easy tier -------------------------------------------------------------
+#
+# The brute route for each of these runs the DEFINITION on constructed data rather than
+# re-evaluating the closed form the template teaches. numpy's own mean/var/cov/corrcoef/median
+# do the work wherever one exists, which is what keeps the second route from mirroring the
+# first — the failure duplicated_sample_slope_variance hit, where the brute inverted the same
+# doubled design matrix and so agreed with the same misreading.
+#
+# The two pattern tables below are the problems' INPUT DATA, not their solution route, so
+# duplicating them here shares no assumption about how the answer is reached.
+
+_SMV_PATTERNS = [
+    [-4, -1, 0, 2, 3],
+    [-3, -2, 1, 1, 3],
+    [-5, -2, 0, 3, 4],
+    [-2, -2, -1, 2, 3],
+    [-6, -1, 0, 3, 4],
+]
+_COV_PX = [
+    [-4, -1, 0, 2, 3], [-3, -2, 1, 1, 3], [-5, -2, 0, 3, 4], [-2, -2, -1, 2, 3], [-6, -1, 0, 3, 4],
+]
+_COV_PY = [
+    [-3, -1, 0, 1, 3], [-4, -2, 1, 2, 3], [-2, -1, 0, 1, 2], [-5, -1, 0, 2, 4], [-3, -3, 1, 2, 3],
+]
+
+
+def _smv_values(p):
+    return [p["base"] + p["spread"] * k for k in _SMV_PATTERNS[int(p["pat"])]]
+
+
+def sample_mean_and_variance_exact(p):
+    values = _smv_values(p)
+    n = len(values)
+    total = sum(values)
+    mean = _round9(total / n)
+    ss = _round9(sum((v - mean) ** 2 for v in values))
+    out = {
+        "n": float(n),
+        "nLessOne": float(n - 1),
+        "total": float(total),
+        "mean": mean,
+        "ss": ss,
+        "largestDev": float(max(abs(v - mean) for v in values)),
+        "popVar": _round9(ss / n),
+        "answer": _round9(ss / (n - 1)),
+    }
+    for i, v in enumerate(values, start=1):
+        out[f"v{i}"] = float(v)
+        out[f"dev{i}"] = _round9(v - mean)
+    return out
+
+
+def sample_mean_and_variance_brute(p):
+    """numpy's own Bessel-corrected variance over the literal readings. The template's route is
+    mean, then squared deviations, then divide; this hands the whole sample to np.var(ddof=1)
+    and never writes a deviation down."""
+    values = np.array(_smv_values(p), dtype=float)
+    got = float(np.var(values, ddof=1))
+    # The computational form is a third route again, and must agree with both.
+    n = len(values)
+    comp = (float(np.sum(values ** 2)) - float(np.sum(values)) ** 2 / n) / (n - 1)
+    assert abs(comp - got) < 1e-9, "the computational form disagrees with numpy"
+    assert got > float(np.var(values, ddof=0)), "the n-1 divisor must give the larger figure"
+    return got
+
+
+def variance_of_a_scaled_sum_exact(p):
+    answer = float(p["mult"] * p["mult"] * p["varX"])
+    return {
+        "multSquared": float(p["mult"] * p["mult"]),
+        "sdX": _round9(p["varX"] ** 0.5),
+        "sd": _round9(answer ** 0.5),
+        "naive": float(p["mult"] * p["varX"]),
+        "answer": answer,
+    }
+
+
+def variance_of_a_scaled_sum_brute(p):
+    """Build a distribution that HAS the quoted one-lot variance, push it through the affine map
+    and read the variance off the transformed pmf as E[Y^2] - E[Y]^2. The a^2 Var(X) rule the
+    template teaches never appears, so a wrong exponent on the multiplier would show up here."""
+    s = p["varX"] ** 0.5
+    xs = np.array([-s, s])
+    probs = np.array([0.5, 0.5])
+    assert abs(float(probs @ (xs ** 2)) - float(probs @ xs) ** 2 - p["varX"]) < 1e-9, "constructed X has the wrong variance"
+    ys = p["mult"] * xs - p["fee"]
+    got = float(probs @ (ys ** 2)) - float(probs @ ys) ** 2
+    # A drawn sample of the same affine transform lands on it too, to a few decimals.
+    rng = np.random.default_rng(7)
+    draw = p["mult"] * rng.choice(xs, size=400000) - p["fee"]
+    assert abs(float(np.var(draw)) - got) < 0.02 * got, "a drawn sample disagrees with the pmf"
+    return got
+
+
+def _cov_columns(p):
+    xs = [p["xbase"] + k for k in _COV_PX[int(p["px"])]]
+    ys = [p["ybase"] + p["yscale"] * k for k in _COV_PY[int(p["py"])]]
+    return xs, ys
+
+
+def covariance_from_a_table_exact(p):
+    xs, ys = _cov_columns(p)
+    n = len(xs)
+    sum_x, sum_y = sum(xs), sum(ys)
+    mean_x, mean_y = _round9(sum_x / n), _round9(sum_y / n)
+    cross = _round9(sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys)))
+    out = {
+        "n": float(n),
+        "nLessOne": float(n - 1),
+        "sumX": float(sum_x),
+        "sumY": float(sum_y),
+        "meanX": mean_x,
+        "meanY": mean_y,
+        "cross": cross,
+        "popCov": _round9(cross / n),
+        "answer": _round9(cross / (n - 1)),
+    }
+    for i, (x, y) in enumerate(zip(xs, ys), start=1):
+        out[f"x{i}"] = float(x)
+        out[f"dx{i}"] = _round9(x - mean_x)
+        out[f"y{i}"] = float(y)
+        out[f"dy{i}"] = _round9(y - mean_y)
+    return out
+
+
+def covariance_from_a_table_brute(p):
+    """numpy's own covariance matrix over the two literal columns. The template pairs deviations
+    by hand and divides; this reads the off-diagonal entry of np.cov and never forms a
+    deviation."""
+    xs, ys = _cov_columns(p)
+    got = float(np.cov(np.array(xs, dtype=float), np.array(ys, dtype=float), ddof=1)[0, 1])
+    # Covariance is invariant to shifting either column, which the template asserts in prose.
+    shifted = float(np.cov(np.array(xs, dtype=float) + 1000.0, np.array(ys, dtype=float) - 7.0, ddof=1)[0, 1])
+    assert abs(shifted - got) < 1e-9, "covariance moved under a shift of the columns"
+    return got
+
+
+def correlation_from_covariance_exact(p):
+    sd_x = _round9(p["varX"] ** 0.5)
+    sd_y = _round9(p["varY"] ** 0.5)
+    return {
+        "sdX": sd_x,
+        "sdY": sd_y,
+        "sdProduct": _round9(sd_x * sd_y),
+        "answer": _round9(p["cov"] / (sd_x * sd_y)),
+    }
+
+
+def correlation_from_covariance_brute(p):
+    """Construct a four-point data set whose two columns REALISE the quoted variances and
+    covariance, then run np.corrcoef on it. The answer is measured off real data rather than
+    computed by dividing, so a wrong normaliser cannot survive."""
+    e1 = np.array([1.0, 1.0, -1.0, -1.0]) / 2.0
+    e2 = np.array([1.0, -1.0, 1.0, -1.0]) / 2.0
+    a = p["varX"] ** 0.5
+    b = p["cov"] / a
+    c = (p["varY"] - b * b) ** 0.5
+    x, y = a * e1, b * e1 + c * e2
+    # The construction must actually have the quoted moments, or it is measuring something else.
+    scale = len(x) - 1
+    assert abs(float(x @ x) * 1.0 - p["varX"]) < 1e-9 * max(1.0, p["varX"]), "constructed x has the wrong spread"
+    assert abs(float(x @ y) * 1.0 - p["cov"]) < 1e-9 * max(1.0, abs(p["cov"])), "constructed pair has the wrong covariance"
+    assert abs(float(y @ y) * 1.0 - p["varY"]) < 1e-9 * max(1.0, p["varY"]), "constructed y has the wrong spread"
+    assert scale == 3
+    return float(np.corrcoef(x, y)[0, 1])
+
+
+def standard_error_of_the_mean_exact(p):
+    root = _round9(math.sqrt(p["n"]))
+    return {
+        "root": root,
+        "quadN": float(4 * p["n"]),
+        "quadRoot": _round9(2 * root),
+        "quadSe": _round9(p["sd"] / (2 * root)),
+        "answer": _round9(p["sd"] / root),
+    }
+
+
+def standard_error_of_the_mean_brute(p):
+    """The sample mean is the equally weighted portfolio of n independent readings, so its
+    variance is the quadratic form w' Sigma w against the diagonal covariance matrix. The
+    sigma/sqrt(n) rule never appears — the square root enters only at the very end, taking the
+    root of a variance rather than of a count."""
+    n = int(p["n"])
+    sigma = float(p["sd"])
+    cov = np.eye(n) * sigma ** 2
+    w = np.ones(n) / n
+    got = float(math.sqrt(np.sum(w * cov.dot(w))))
+    rng = np.random.default_rng(11)
+    means = rng.normal(0.0, sigma, size=(30000, n)).mean(axis=1)
+    assert abs(float(np.std(means)) - got) < 0.05 * got, "drawn sample means disagree with the quadratic form"
+    return got
+
+
+def pooled_mean_of_two_groups_exact(p):
+    total = p["nA"] + p["nB"]
+    sum_a = p["nA"] * p["mA"]
+    sum_b = p["nB"] * p["mB"]
+    return {
+        "total": float(total),
+        "sumA": float(sum_a),
+        "sumB": float(sum_b),
+        "grand": float(sum_a + sum_b),
+        "naive": _round9((p["mA"] + p["mB"]) / 2),
+        "answer": _round9((sum_a + sum_b) / total),
+    }
+
+
+def pooled_mean_of_two_groups_brute(p):
+    """Lay the trades out one by one and take numpy's mean of the lot. No weight is ever
+    written down, so a weighting by the wrong quantity has nothing to hide behind."""
+    trades = np.concatenate([np.full(int(p["nA"]), float(p["mA"])), np.full(int(p["nB"]), float(p["mB"]))])
+    got = float(np.mean(trades))
+    lo, hi = min(p["mA"], p["mB"]), max(p["mA"], p["mB"])
+    assert lo < got < hi, "a pooled mean must sit strictly between the two group means"
+    return got
+
+
+def median_vs_mean_with_an_outlier_exact(p):
+    total = 5 * p["base"] + 8 * p["step"] + p["out"]
+    mean = _round9(total / 5)
+    median = p["base"] + 3 * p["step"]
+    return {
+        "n": 5.0,
+        "total": float(total),
+        "mean": mean,
+        "median": float(median),
+        "biggest": float(p["base"] + p["out"]),
+        "q1": float(p["base"]),
+        "q2": float(p["base"] + p["step"]),
+        "q3": float(p["base"] + 3 * p["step"]),
+        "q4": float(p["base"] + 4 * p["step"]),
+        "answer": _round9(mean - median),
+    }
+
+
+def median_vs_mean_with_an_outlier_brute(p):
+    """Hand the five quotes to numpy and subtract its median from its mean. np.median does its
+    own sorting, so a template that picked the wrong order statistic would disagree here."""
+    quotes = np.array([
+        p["base"] + 3 * p["step"], p["base"], p["base"] + p["out"],
+        p["base"] + 4 * p["step"], p["base"] + p["step"],
+    ], dtype=float)
+    got = float(np.mean(quotes) - np.median(quotes))
+    # Pushing the outlier further moves the mean and leaves the median alone; that asymmetry is
+    # the whole claim of the problem, so assert it rather than trust it.
+    pushed = quotes.copy()
+    pushed[2] += 500.0
+    assert abs(float(np.median(pushed)) - float(np.median(quotes))) < 1e-9, "the median moved with the outlier"
+    assert float(np.mean(pushed)) > float(np.mean(quotes)), "the mean failed to follow the outlier"
+    return got
+
+
+def z_score_from_mean_and_sd_exact(p):
+    return {
+        "obs": float(p["mu"] + p["dev"]),
+        "gap": float(p["dev"]),
+        "twoSigmaBand": _round9(2 * p["sigma"]),
+        "answer": _round9(p["dev"] / p["sigma"]),
+    }
+
+
+def z_score_from_mean_and_sd_brute(p):
+    """Build a two-point population that HAS the quoted mean and standard deviation, then let
+    numpy measure both back off it and standardise against what it measured. The quoted mu and
+    sigma are never divided by directly."""
+    pop = np.array([p["mu"] - p["sigma"], p["mu"] + p["sigma"]], dtype=float)
+    mean, sd = float(np.mean(pop)), float(np.std(pop))
+    assert abs(mean - p["mu"]) < 1e-9 and abs(sd - p["sigma"]) < 1e-9, "constructed population has the wrong moments"
+    return (float(p["mu"] + p["dev"]) - mean) / sd
+
+
+SOLVERS.update({
+    "statistics/sample-mean-and-variance": {
+        "exact": sample_mean_and_variance_exact,
+        "brute": sample_mean_and_variance_brute,
+    },
+    "statistics/variance-of-a-scaled-sum": {
+        "exact": variance_of_a_scaled_sum_exact,
+        "brute": variance_of_a_scaled_sum_brute,
+    },
+    "statistics/covariance-from-a-table": {
+        "exact": covariance_from_a_table_exact,
+        "brute": covariance_from_a_table_brute,
+    },
+    "statistics/correlation-from-covariance": {
+        "exact": correlation_from_covariance_exact,
+        "brute": correlation_from_covariance_brute,
+    },
+    "statistics/standard-error-of-the-mean": {
+        "exact": standard_error_of_the_mean_exact,
+        "brute": standard_error_of_the_mean_brute,
+    },
+    "statistics/pooled-mean-of-two-groups": {
+        "exact": pooled_mean_of_two_groups_exact,
+        "brute": pooled_mean_of_two_groups_brute,
+    },
+    "statistics/median-vs-mean-with-an-outlier": {
+        "exact": median_vs_mean_with_an_outlier_exact,
+        "brute": median_vs_mean_with_an_outlier_brute,
+    },
+    "statistics/z-score-from-mean-and-sd": {
+        "exact": z_score_from_mean_and_sd_exact,
+        "brute": z_score_from_mean_and_sd_brute,
+    },
+})
