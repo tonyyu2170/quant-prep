@@ -23,6 +23,7 @@ playwright-report/
 
 # verification (generated artifact + local venv)
 verification/instances.json
+verification/fermi-instances.json
 verification/.venv/
 __pycache__/
 .firecrawl/

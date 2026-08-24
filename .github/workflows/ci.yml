@@ -17,4 +17,6 @@ jobs:
           cache: pip
           cache-dependency-path: verification/requirements.txt
       - run: pip install -r verification/requirements.txt
+      - run: npm run verify:fermi-emit
+      - run: python3 verification/verify_fermi.py
       - run: python3 verification/verify.py
