@@ -1,5 +1,77 @@
 # Handoff — integrating the QuantProf findings
 
+## FOUR-TERM SWEEP — the revert's justification does not survive measurement (2026-08-24)
+
+**The measurement the handoff has asked for across three sessions is done.**
+`four-term-sweep.ts`, beside `catalogue.py`. One instrument, two fit spaces, two populations.
+Run it with `npx tsx docs/research/quantprof-2026-08/four-term-sweep.ts`; `--stragglers` and
+`--show` print the individual prompts behind the numbers.
+
+**The headline: `3, -1, -5, -17` is UNIQUE under our own parameter windows.** That prompt is
+the whole stated basis of the 2026-08-22 revert and of
+`[[quantprep-four-term-sequences]]` — "fits every multiplier from -6 to 12, nineteen
+different next terms". Enumerated against the real `ratio-linear-offset` range
+(start 2..6, p 1..3, c -4..5, s = ±1) it admits **exactly one** tuple, p=1 c=-4 s=+1,
+next term -69. The nineteen came from letting the multiplier run unbounded, which is not
+our generator and never was — pick a wider p window and the count rises with it (I get 25
+over -12..12), which is the tell that the quantity being counted was the window, not the
+ambiguity.
+
+The degeneracy is real but conditional, and worth writing down because it is the actual
+mechanism: for both three-parameter families, eliminating c and s leaves eq3 linear in the
+multiplier with coefficient `t2 + t0 - 2*t1`. That is zero exactly when the first three
+terms are in arithmetic progression — and only then does every multiplier fit. `3, -1, -5`
+is such a run. Our windows clip it to one solution anyway.
+
+### The numbers
+
+| population x fit space | prompts | ambiguous |
+|---|---|---|
+| ours x SPACE A — our own windows | 7,638 | **14 (0.2%)** |
+| ours x SPACE B — generalized windows | 7,638 | **453 (5.9%)** |
+| QuantProf's 652 x SPACE B, same instrument | 543 reproducible | **18 (3.3%)** |
+
+SPACE A is a self-consistency check: does our rule set pin a unique fifth term. SPACE B is
+the one that decides shipping, because a candidate does not know our windows — same family
+FORMS, generous integer windows (multipliers -12..12, offsets -60..60), stated in the script.
+
+**Ours at 5.9% against theirs at 3.3% under the identical instrument.** Same order of
+magnitude. Four-term display is not a standard we uniquely fail; it is a standard QuantProf
+does not fully meet either, on a bank that ships four terms commercially. 80.4% of their
+prompts are outside our windows entirely (their geometric ratios reach x5 and x7 against our
+r in 2..4), which is the "their ranges are narrower" hypothesis answered — they are not
+narrower, they are *different*, and under a common instrument the two banks land close.
+
+### One structural exclusion, and it is not a judgement call
+
+**`interleaved` cannot ship at four terms.** Each of its two streams holds two points, a
+straight line through two points always exists, so it matches EVERY four-term prompt and
+predicts `2*t2 - t0` regardless. That is precisely the defect the existing solver-ambiguity
+gate already names for cubics — "four points always admit one exactly, so a degree-3 fitter
+matches everything and proves nothing". Left in the fit space it alone drove SPACE B to 100%
+ambiguity on thirteen of sixteen families, and left in the population it was 97,920 of the
+105,558 reachable tuples. It is excluded from both, and the exclusion is the finding, not a
+convenience.
+
+### What the 14 stragglers are
+
+All fourteen printed under `--stragglers`. Every one is a **between-family** clash, the class
+`[[quantprep-four-term-sequences]]` already says a rejection loop fixes:
+`4, 6, 10, 16` (quadratic 24 against fiblike 26 — the case already pinned in the existing
+gate's test), `3, 5, 8, 13`, and twelve `ratio-linear-offset` against `mult-plus-linear`
+collisions. **Zero are within-family underdetermination**, which was the stated blocker.
+
+### The ruling this implies — NOT taken, it needs a call
+
+Four-term display looks shippable behind two changes: drop `interleaved` from the four-term
+draw, and add a generation-time rejection loop that redraws when the SPACE B fitter returns
+more than one next term. 5.9% rejection is cheap. **Not implemented** — the tripwire in
+`packages/generators/test/sequences.test.ts` still asserts the block, and reversing a landed
+ruling is a decision rather than a fix. The measurement is what was asked for; the reversal is
+the next call to make.
+
+---
+
 ## B12 — TEN TEMPLATES, FINANCE AND STATISTICS DOUBLED (2026-08-23)
 
 Bank **215 -> 220** across two commits, `bf1a0ab` (finance) and `98a0a6b` (statistics). Both
