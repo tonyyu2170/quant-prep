@@ -28,19 +28,31 @@ is such a run. Our windows clip it to one solution anyway.
 | population x fit space | prompts | ambiguous |
 |---|---|---|
 | ours x SPACE A — our own windows | 7,638 | **14 (0.2%)** |
-| ours x SPACE B — generalized windows | 7,638 | **453 (5.9%)** |
-| QuantProf's 652 x SPACE B, same instrument | 543 reproducible | **18 (3.3%)** |
+| ours x SPACE B — generalized | 7,638 | 453 (5.9%) |
+| ours x **SPACE C — generalized, multiplier keeps its sign** | 7,638 | **187 (2.4%)** |
+| QuantProf's 652 x SPACE B, same instrument | 543 reproducible | 18 (3.3%) |
+| QuantProf's 652 x **SPACE C**, same instrument | 471 reproducible | **4 (0.8%)** |
 
-SPACE A is a self-consistency check: does our rule set pin a unique fifth term. SPACE B is
-the one that decides shipping, because a candidate does not know our windows — same family
-FORMS, generous integer windows (multipliers -12..12, offsets -60..60), stated in the script.
+SPACE A is a self-consistency check: does our own rule set pin a unique fifth term. The
+generalized spaces are the ones that decide shipping, because a candidate does not know our
+windows — same family FORMS, generous integer windows (offsets -60..60), stated in the script.
 
-**Ours at 5.9% against theirs at 3.3% under the identical instrument.** Same order of
-magnitude. Four-term display is not a standard we uniquely fail; it is a standard QuantProf
-does not fully meet either, on a bank that ships four terms commercially. 80.4% of their
-prompts are outside our windows entirely (their geometric ratios reach x5 and x7 against our
-r in 2..4), which is the "their ranges are narrower" hypothesis answered — they are not
-narrower, they are *different*, and under a common instrument the two banks land close.
+**Read the C row, not the B row, and the difference between them is the methodological
+point.** B lets the multiplier run negative, which fits `1, 2, 4, 8` as
+`ratio-linear-offset` at p=-2 — a multiplier stepping -2, -1, 0, 1 — and `1, 3, 9, 27` at
+p=-3. A rule whose multiplier passes through zero is not a rule anyone states; it is the same
+unconstrained-fitter defect `interleaved` is excluded for, in smaller doses. C keeps every
+other window generous and only requires the multiplier to hold the sign our generator uses.
+It **halves both numbers**, which is the measure of how much B was counting fits nobody would
+defend. B is left in the script and the table as the conservative upper bound.
+
+**Ours at 2.4% against theirs at 0.8% under the identical instrument.** Same order of
+magnitude, and both small. Four-term display is not a standard we uniquely fail; it is one
+QuantProf does not fully meet either, on a bank that ships four terms commercially. Their
+prompts also fall largely outside our windows — 80.4% under SPACE A, since their geometric
+ratios reach x5 and x7 against our r in 2..4 — which answers the "their ranges are narrower"
+hypothesis *no*: they are not narrower, they are different, and under a common instrument the
+two banks land close together.
 
 ### One structural exclusion, and it is not a judgement call
 
@@ -65,7 +77,7 @@ collisions. **Zero are within-family underdetermination**, which was the stated 
 
 Four-term display looks shippable behind two changes: drop `interleaved` from the four-term
 draw, and add a generation-time rejection loop that redraws when the SPACE B fitter returns
-more than one next term. 5.9% rejection is cheap. **Not implemented** — the tripwire in
+more than one next term. 2.4% rejection is cheap. **Not implemented** — the tripwire in
 `packages/generators/test/sequences.test.ts` still asserts the block, and reversing a landed
 ruling is a decision rather than a fix. The measurement is what was asked for; the reversal is
 the next call to make.

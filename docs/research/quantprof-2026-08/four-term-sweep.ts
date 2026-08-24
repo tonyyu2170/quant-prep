@@ -62,6 +62,18 @@ const B: Record<SeqFamily, W> = {
   "cubes-offset": { k: rng2(1, 20), c: [] }, "power-offset": { b: rng2(2, 10), e: rng2(1, 8), c: [] },
 };
 
+// SPACE C: SPACE B with the one restriction B is missing. B lets `ratio-linear-offset` fit
+// 1,2,4,8 at p=-2 — a multiplier running -2, -1, 0, 1 — and 1,3,9,27 at p=-3. A rule whose
+// multiplier passes through zero is not a rule a candidate states; it is the same
+// unconstrained-fitter defect `interleaved` was excluded for, in smaller doses. C keeps every
+// other window generous and only requires the multiplier to hold the sign our generator uses.
+const C: Record<SeqFamily, W> = {
+  ...B,
+  "ratio-linear-offset": { ...B["ratio-linear-offset"], p: rng2(1, 12) },
+  "mult-plus-linear": { ...B["mult-plus-linear"], m: rng2(2, 12) },
+  "recur-linear": { a: rng2(2, 12) },
+};
+
 const inW = (w: W, key: string, v: number) => !w[key] || w[key].length === 0 || w[key].includes(v);
 
 // --- forward build, n explicit ----------------------------------------------------------
@@ -227,7 +239,7 @@ for (const f of SEQ_FAMILIES) { if (UNCONSTRAINED_AT_4.has(f)) continue;
 } }
 console.log(`POP ours: ${ours.size} distinct 4-term prompts reachable in SPACE A (interleaved excluded)\n`);
 
-for (const [label, space] of [["SPACE A (our windows)", A], ["SPACE B (generalized)", B]] as const) {
+for (const [label, space] of [["SPACE A (our windows)", A], ["SPACE B (generalized)", B], ["SPACE C (generalized, multiplier keeps its sign)", C]] as const) {
   const byFam = new Map<SeqFamily, Row>();
   const all = blank();
   for (const [key, { fams }] of ours) {
@@ -251,7 +263,7 @@ const theirs = readFileSync(new URL("seq.jsonl", import.meta.url), "utf8").trim(
 const seen = new Set<string>();
 const uniq = theirs.filter((r) => { const k = r.t.join(","); if (seen.has(k)) return false; seen.add(k); return true; });
 
-for (const [label, space] of [["SPACE A (our windows)", A], ["SPACE B (generalized)", B]] as const) {
+for (const [label, space] of [["SPACE A (our windows)", A], ["SPACE B (generalized)", B], ["SPACE C (generalized, multiplier keeps its sign)", C]] as const) {
   const byTier = new Map<string, Row>();
   const all = blank();
   for (const { tier, t } of uniq) {
