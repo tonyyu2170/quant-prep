@@ -44,9 +44,14 @@ Fermi items do not replay.
 The player states `[lo, hi]` per factor, meaning "90% sure the truth is in here". Treat that as
 the 90% range of a lognormal:
 
+**Everything is in log10, one base throughout.** An earlier draft of this spec fitted in natural
+log and scored in log10, which is the kind of mismatch that produces a plausible-looking answer
+that is wrong by a factor of ln(10) = 2.303. If `X` is lognormal then `log10(X)` is normal, so the
+normal quantile is unchanged and nothing is lost by picking the base the scoring needs:
+
 ```
-mu_i    = (ln lo_i + ln hi_i) / 2
-sigma_i = (ln hi_i - ln lo_i) / (2 * 1.6449)        1.6449 = z(0.95)
+mu_i    = (log10 lo_i + log10 hi_i) / 2
+sigma_i = (log10 hi_i - log10 lo_i) / (2 * 1.6449)     1.6449 = z(0.95)
 ```
 
 **The product of independent lognormals is exactly lognormal**, so the combined interval is
@@ -55,7 +60,7 @@ closed-form — no simulation, no sampling noise, and a Python counterpart that 
 ```
 mu    = sum(mu_i)
 sigma = sqrt(sum(sigma_i^2))
-interval = [exp(mu - 1.6449*sigma), exp(mu + 1.6449*sigma)]
+interval = [10 ** (mu - 1.6449*sigma), 10 ** (mu + 1.6449*sigma)]
 ```
 
 **Why this is the centrepiece rather than an implementation detail.** Multiplying the endpoints
@@ -107,8 +112,11 @@ value, in log units, so the reveal names *which* factor carried the error. Being
 on "pianos per household" is a different lesson from an arithmetic slip.
 
 **Calibration is a cross-session statistic.** Hit rate over 12 questions is 9 +/- 1 — noise. The
-headline number stays hidden until ~50 answers have accumulated, and says so rather than
-reporting a number that cannot mean anything yet.
+headline number stays hidden until **`CALIBRATION_MIN_ANSWERS = 50`** have accumulated, and says
+so rather than reporting a number that cannot mean anything yet. 50 is chosen so the standard
+error on a 90% hit rate is about 4 points (`sqrt(.9*.1/50)`), which is small enough that a
+genuinely overconfident player (70%) separates from a calibrated one. Like `CREDIT_CAP`, it is a
+tuning constant and should carry its derivation beside it.
 
 ## 5. Content — cited tables x templates, not static items
 
@@ -153,9 +161,12 @@ This is therefore a **second content type with its own registry and its own gate
 the first one. Three gates replace what `verify.py` does here:
 
 1. **The two-route cross-check.** Each canonical chain's factors must multiply to the
-   separately-cited total within tolerance. The total is cited independently of its factors, so
-   two sources agreeing is real evidence — the same shape as `verify.py`'s two-route rule, and the
-   gate that fails if a cited number is wrong or a chain is mis-specified.
+   separately-cited total **within 0.2 log10 units** (a factor of ~1.6). The total is cited
+   independently of its factors, so two sources agreeing is real evidence — the same shape as
+   `verify.py`'s two-route rule, and the gate that fails if a cited number is wrong or a chain is
+   mis-specified. 0.2 is provisional and **must be measured before it is fixed**, exactly as
+   `CREDIT_CAP` was: author the first two chains, look at the actual agreement, then set it. A
+   tolerance loose enough that nothing ever fails it is not a gate.
 2. **Citation integrity.** Every cited value carries a source and a retrieval date; no table older
    than 24 months (§6).
 3. **The mathematics has a Python counterpart.** The lognormal fit, the quadrature combination and
