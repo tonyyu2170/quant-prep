@@ -125,15 +125,33 @@ describe("summarizeCalibration", () => {
     expect(summarizeCalibration(many).headlineReady).toBe(true);
   });
 
+  // These three deliberately depart from the plan, which asserted "overconfident" off FIVE
+  // results. That is the very claim CALIBRATION_MIN_ANSWERS exists to suppress: 1 hit in 5 has a
+  // 95% interval spanning most of the unit line. The verdict is now gated on headlineReady, so
+  // these build a history past the floor, and the third test pins the silence below it.
+  const many = (r: typeof hit, n: number) => Array.from({ length: n }, () => r);
+
   it("names overconfidence when the hit rate falls well short of the stated 90%", () => {
-    const s = summarizeCalibration([miss, miss, miss, miss, hit]);
+    const s = summarizeCalibration([...many(miss, 40), ...many(hit, 10)]);
+    expect(s.answered).toBe(CALIBRATION_MIN_ANSWERS);
     expect(s.diagnosis).toContain("overconfident");
   });
 
   it("names underconfidence when nothing is missed but the intervals are enormous", () => {
     const vast = { score: 9, hit: true, logWidth: 9, logCentreError: 0.2 };
-    const s = summarizeCalibration([vast, vast, vast, vast]);
+    const s = summarizeCalibration(many(vast, CALIBRATION_MIN_ANSWERS));
     expect(s.diagnosis).toContain("underconfident");
+  });
+
+  it("passes NO verdict below the floor — not even a reassuring one", () => {
+    // The bug this pins: the curve withheld the hit rate while the prose below it announced
+    // "well calibrated — your 90% is behaving like 90%" off eight answers.
+    const s = summarizeCalibration([...many(miss, 4), ...many(hit, 4)]);
+    expect(s.headlineReady).toBe(false);
+    expect(s.diagnosis).not.toContain("calibrated");
+    expect(s.diagnosis).not.toContain("overconfident");
+    expect(s.diagnosis).not.toContain("underconfident");
+    expect(s.diagnosis).toContain(`${CALIBRATION_MIN_ANSWERS - 8} more answers`);
   });
 
   it("summarises an empty history without dividing by zero", () => {

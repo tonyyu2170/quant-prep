@@ -109,16 +109,28 @@ const median = (xs: readonly number[]) => {
  * Two failure modes with OPPOSITE fixes, which a bare score distinguishes neither of. The
  * thresholds: 90% is what the player claimed, so a hit rate well under it is overconfidence; and
  * a player who never misses while spanning many decades is buying that record with width.
+ *
+ * EVERY VERDICT IS GATED ON `headlineReady`, including the reassuring one. All three rest on
+ * `hitRate`, and below CALIBRATION_MIN_ANSWERS that rate is noise — the same reason the curve
+ * withholds the number. An earlier version gated only the number, so the page said
+ * "hit rate hidden until it can mean something" and then, one line below, "well calibrated —
+ * your 90% is behaving like 90%" off eight answers. Worse in the other direction: 5 hits in 8
+ * would have read "you are overconfident: you claimed 90% and were right 63% of the time", a
+ * specific accusation whose 95% interval spans roughly 0.25 to 0.90. Emitting in prose the
+ * claim the constant exists to suppress is the bug, not the wording.
  */
 export function summarizeCalibration(results: readonly CalibrationResult[]): CalibrationSummary {
   const answered = results.length;
   const hits = results.filter((r) => r.hit).length;
   const hitRate = answered === 0 ? 0 : hits / answered;
   const medianLogWidth = median(results.map((r) => r.logWidth));
+  const headlineReady = answered >= CALIBRATION_MIN_ANSWERS;
 
   let diagnosis = "Well calibrated — your 90% is behaving like 90%. Tighten only if you stop missing entirely.";
   if (answered === 0) {
     diagnosis = "No questions answered yet.";
+  } else if (!headlineReady) {
+    diagnosis = `${CALIBRATION_MIN_ANSWERS - answered} more answers before a hit rate means anything. Your intervals so far span ${medianLogWidth.toFixed(1)} orders of magnitude.`;
   } else if (hitRate < 0.75) {
     diagnosis = `You are overconfident: you claimed 90% and were right ${(hitRate * 100).toFixed(0)}% of the time. Your intervals average ${medianLogWidth.toFixed(1)} orders of magnitude — widen them until you are missing about one question in ten.`;
   } else if (hitRate > 0.97 && medianLogWidth > 3) {
@@ -132,7 +144,7 @@ export function summarizeCalibration(results: readonly CalibrationResult[]): Cal
     medianScore: median(results.map((r) => r.score)),
     medianLogWidth,
     medianLogCentreError: median(results.map((r) => r.logCentreError)),
-    headlineReady: answered >= CALIBRATION_MIN_ANSWERS,
+    headlineReady,
     diagnosis,
   };
 }
