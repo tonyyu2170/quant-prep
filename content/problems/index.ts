@@ -244,6 +244,13 @@ import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff"
 import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
 import { twoByTwoEigenvalues } from "./linear-algebra/two-by-two-eigenvalues";
 import { traceOfAMatrixPower } from "./linear-algebra/trace-of-a-matrix-power";
+import { reflectionPrincipleTouchLevel } from "./stochastic/reflection-principle-touch-level";
+import { exponentialMartingaleValue } from "./stochastic/exponential-martingale-value";
+import { gbmExpectedPrice } from "./stochastic/gbm-expected-price";
+import { brownianCovarianceCorrelation } from "./stochastic/brownian-covariance-correlation";
+import { compoundSumVariance } from "./stochastic/compound-sum-variance";
+import { gbmProbabilityAboveStrike } from "./stochastic/gbm-probability-above-strike";
+import { gbmFitThenBelowMean } from "./stochastic/gbm-fit-then-below-mean";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -512,6 +519,13 @@ export const PROBLEMS: ProblemTemplate[] = [
   riskNeutralUpProbability,
   twoByTwoEigenvalues,
   traceOfAMatrixPower,
+  reflectionPrincipleTouchLevel,
+  exponentialMartingaleValue,
+  gbmExpectedPrice,
+  brownianCovarianceCorrelation,
+  compoundSumVariance,
+  gbmProbabilityAboveStrike,
+  gbmFitThenBelowMean,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));

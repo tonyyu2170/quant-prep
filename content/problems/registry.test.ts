@@ -18,7 +18,7 @@ describe("problem registry invariants", () => {
     // one to come here and say so. That is the same discipline the per-topic counts above use
     // (toBe, not a floor). A loose floor detects nothing, which is what the last one did.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
-    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(249);
+    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(256);
   });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
@@ -105,7 +105,7 @@ describe("problem registry invariants", () => {
     expect(estimation).toBe(15);
     expect(inference).toBe(3);
     expect(finance).toBe(10);
-    expect(stochastic).toBe(3);
+    expect(stochastic).toBe(10);
     expect(linearAlgebra).toBe(2);
     expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance + stochastic + linearAlgebra).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
