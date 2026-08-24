@@ -2369,9 +2369,11 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "Sanity: the total sits within one pair-block of the stranded term, since everything before it nearly cancels",
       holds: (p, d) => P(Math.abs(d.answer - d.last)) <= P(p.d * d.pairs),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 3 + 1 }) },
-    { says: "The trap total — pairing every term and stranding none — differs from the true answer",
-      holds: (_p, d) => !same(d.naive, d.answer),
-      breaks: (_p, d) => ({ ...d, naive: d.answer }) },
+    { says: "The trap total falls short by exactly the stranded term plus one step — what forgetting it costs",
+      // Asserting merely that the two DIFFER cannot fail on any legal draw, since n is always
+      // odd and the stranded term is positive. Pinning the size of the gap is a real claim.
+      holds: (p, d) => same(d.answer - d.naive, d.last + p.d),
+      breaks: (_p, d) => ({ ...d, naive: d.naive - 1 }) },
   ],
   "brainteasers/modular-power-remainder": [
     { says: "Solve: the remainder recomputed by exact repeated multiplication matches the printed answer",

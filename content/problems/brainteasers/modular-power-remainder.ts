@@ -63,6 +63,12 @@ export const modularPowerRemainder: ProblemTemplate = {
   ],
   keyInsight: "Powers modulo a fixed number are eventually periodic, and when the base is coprime to the modulus the periodicity reaches all the way back to the first power. That turns an astronomically large exponent into its remainder on division by the cycle length — the only part of the exponent that survives.",
   commonTrap: "Reducing the exponent modulo the modulus itself rather than modulo the cycle length. The two are different numbers and only coincide by accident; the modulus bounds how many remainders exist, while the cycle length says how quickly the powers come back round, and it is usually much smaller.",
+  // L3 against spider-and-fly-box's L2, though that one has more arithmetic to grind: the
+  // ranking is about what has to be JUSTIFIED, not how many operations get done. Comparing
+  // three squared lengths is mechanical once you have unfolded. Here the reduction is only
+  // licensed because the base is coprime to the modulus — without that the powers still
+  // cycle but not from the first one, and the exponent's remainder no longer indexes the
+  // cycle. A candidate who cannot say why coprimality matters cannot defend the method.
   expectedPaceS: 110,
   verify: { method: "brute-force" },
   constants: [1, 2],
