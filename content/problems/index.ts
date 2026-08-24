@@ -204,6 +204,14 @@ import { minVarianceWeight } from "./statistics/min-variance-weight";
 import { correlationBoundThirdPair } from "./statistics/correlation-bound-third-pair";
 import { regressionSlopeFromMoments } from "./statistics/regression-slope-from-moments";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
+import { sampleMeanAndVariance } from "./statistics/sample-mean-and-variance";
+import { varianceOfAScaledSum } from "./statistics/variance-of-a-scaled-sum";
+import { covarianceFromATable } from "./statistics/covariance-from-a-table";
+import { correlationFromCovariance } from "./statistics/correlation-from-covariance";
+import { standardErrorOfTheMean } from "./statistics/standard-error-of-the-mean";
+import { pooledMeanOfTwoGroups } from "./statistics/pooled-mean-of-two-groups";
+import { medianVsMeanWithAnOutlier } from "./statistics/median-vs-mean-with-an-outlier";
+import { zScoreFromMeanAndSd } from "./statistics/z-score-from-mean-and-sd";
 import { bookOverroundArbitrage } from "./finance/book-overround-arbitrage";
 import { triangularFxArbitrage } from "./finance/triangular-fx-arbitrage";
 import { putCallParity } from "./finance/put-call-parity";
@@ -430,6 +438,14 @@ export const PROBLEMS: ProblemTemplate[] = [
   correlationBoundThirdPair,
   regressionSlopeFromMoments,
   sharpeTimeScaling,
+  sampleMeanAndVariance,
+  varianceOfAScaledSum,
+  covarianceFromATable,
+  correlationFromCovariance,
+  standardErrorOfTheMean,
+  pooledMeanOfTwoGroups,
+  medianVsMeanWithAnOutlier,
+  zScoreFromMeanAndSd,
   bookOverroundArbitrage,
   triangularFxArbitrage,
   putCallParity,
