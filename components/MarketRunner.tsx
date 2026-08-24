@@ -1,14 +1,22 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { isValidQuote, settle, summarizeMarket, type MarketResult } from "@qp/engine";
+import { fmtNum, isValidQuote, settle, summarizeMarket, type MarketResult } from "@qp/engine";
 import { marketRounds } from "@/content/problems/market";
 import PnlSparkline from "./charts/PnlSparkline";
 
 const ROUND_S = 25;
 
-const unitLabel = (unit: number) =>
-  unit === 0.01 ? "percentage points" : unit === 1 ? "whole units" : `units of ${unit}`;
-const inUnits = (value: number, unit: number) => (value / unit).toFixed(1);
+// The player quotes in the quantity's OWN scale — 0.75 for a probability, 4.08 for a price in
+// dollars, 1001 for a count — matching what the statement asks for and what ProblemRunner
+// grades against everywhere else in the app. `unit` never reaches the input: it stays purely a
+// scoring normaliser, which is what lets one CREDIT_CAP mean the same thing across templates.
+//
+// The rejected alternative was quoting IN units, with the input labelled "in percentage
+// points". It reads fine on the 82 templates at unit 0.01 and the 52 at unit 1, and badly on
+// the other 85: "in units of 0.1" on a question that says "a fair price for one ticket, in
+// dollars" (truth $4.08) asks the player to type 40.8, and typing the natural 4.08 quotes a
+// tenth of the truth and is picked off for it. A label that contradicts the question is worse
+// than no label.
 
 export default function MarketRunner({ seed }: { seed: number }) {
   const rounds = useMemo(() => marketRounds(seed), [seed]);
@@ -44,8 +52,7 @@ export default function MarketRunner({ seed }: { seed: number }) {
   function submit() {
     const b = Number(bid), a = Number(ask);
     if (bid.trim() === "" || ask.trim() === "" || !isValidQuote(b, a)) { setHint(true); return; }
-    // The player types in units; the rule settles in the quantity's own scale.
-    commit(settle({ bid: b * round.unit, ask: a * round.unit }, round.truth, round.unit));
+    commit(settle({ bid: b, ask: a }, round.truth, round.unit));
   }
 
   function next() {
@@ -66,8 +73,8 @@ export default function MarketRunner({ seed }: { seed: number }) {
         <PnlSparkline pnls={results.map((r) => r.pnl)} totalRounds={rounds.length} />
         <div style={{ display: "flex", gap: 30, flexWrap: "wrap", margin: "22px 0" }}>
           <div><p className="microlabel">Picked off</p><b className="mono" style={{ fontSize: 22 }}>{s.pickedOff} / {s.rounds}</b></div>
-          <div><p className="microlabel">Avg width</p><b className="mono" style={{ fontSize: 22 }}>{s.avgWidthUnits.toFixed(1)}</b></div>
-          <div><p className="microlabel">Avg centre error</p><b className="mono" style={{ fontSize: 22 }}>{s.avgCentreErrorUnits.toFixed(1)}</b></div>
+          <div><p className="microlabel">Avg width (pts)</p><b className="mono" style={{ fontSize: 22 }}>{s.avgWidthUnits.toFixed(1)}</b></div>
+          <div><p className="microlabel">Avg centre error (pts)</p><b className="mono" style={{ fontSize: 22 }}>{s.avgCentreErrorUnits.toFixed(1)}</b></div>
         </div>
         <p style={{ maxWidth: "60ch", color: "var(--body)" }} data-testid="diagnosis">{s.diagnosis}</p>
       </div>
@@ -89,9 +96,9 @@ export default function MarketRunner({ seed }: { seed: number }) {
           <p data-testid="settlement" style={{ fontSize: 16 }}>
             {!settled.quoted
               ? "You did not quote."
-              : settled.traded === "lifted" ? `Bot lifts your offer. Truth ${inUnits(round.truth, round.unit)}.`
-              : settled.traded === "hit" ? `Bot hits your bid. Truth ${inUnits(round.truth, round.unit)}.`
-              : `No trade — truth ${inUnits(round.truth, round.unit)} landed inside your market.`}
+              : settled.traded === "lifted" ? `Bot lifts your offer. Truth ${fmtNum(round.truth)}.`
+              : settled.traded === "hit" ? `Bot hits your bid. Truth ${fmtNum(round.truth)}.`
+              : `No trade — truth ${fmtNum(round.truth)} landed inside your market.`}
           </p>
           <p className="mono" style={{ fontSize: 30, margin: "10px 0" }} data-testid="round-pnl">
             {settled.pnl >= 0 ? "+" : ""}{settled.pnl.toFixed(1)}
@@ -110,7 +117,6 @@ export default function MarketRunner({ seed }: { seed: number }) {
             <input aria-label="ask" className="mono" value={ask} inputMode="decimal"
                    onChange={(e) => { setAsk(e.target.value); setHint(false); }} style={{ width: 90 }} /></label>
           <button onClick={submit} style={{ padding: "8px 18px" }}>Quote</button>
-          <span className="microlabel" style={{ paddingBottom: 6 }}>in {unitLabel(round.unit)}</span>
         </div>
       )}
       <p data-testid={hint ? "quote-hint" : undefined} aria-live="polite" className="mono"

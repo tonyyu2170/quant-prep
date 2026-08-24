@@ -3,17 +3,32 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import MarketRunner from "./MarketRunner";
+import { marketRounds } from "@/content/problems/market";
 import { CREDIT_CAP } from "@qp/engine";
 
 describe("MarketRunner", () => {
   it("settles a submitted quote in place and shows the round P&L", () => {
     render(<MarketRunner seed={4242} />);
-    fireEvent.change(screen.getByLabelText("bid"), { target: { value: "-99999" } });
-    fireEvent.change(screen.getByLabelText("ask"), { target: { value: "99999" } });
+    fireEvent.change(screen.getByLabelText("bid"), { target: { value: "-1e12" } });
+    fireEvent.change(screen.getByLabelText("ask"), { target: { value: "1e12" } });
     fireEvent.click(screen.getByRole("button", { name: /quote/i }));
     // An absurdly wide market is never picked off and floors at zero credit.
     expect(screen.getByTestId("round-pnl")).toHaveTextContent("0");
     expect(screen.getByTestId("settlement")).toHaveTextContent(/no trade/i);
+  });
+
+  it("takes the quote in the quantity's own scale, not in scoring units", () => {
+    // Seed 1's first round is a probability at unit 0.001 and truth ~0.191. Quoting the truth
+    // itself must settle inside for full credit. Under the rejected "type in units" reading the
+    // same input meant 0.191 x 0.001, three orders of magnitude low, and would be picked off.
+    const r = marketRounds(1)[0];
+    expect(r.unit).not.toBe(1);   // a unit-1 round could not tell the two readings apart
+    render(<MarketRunner seed={1} />);
+    fireEvent.change(screen.getByLabelText("bid"), { target: { value: String(r.truth) } });
+    fireEvent.change(screen.getByLabelText("ask"), { target: { value: String(r.truth) } });
+    fireEvent.click(screen.getByRole("button", { name: /^quote$/i }));
+    expect(screen.getByTestId("settlement")).toHaveTextContent(/no trade/i);
+    expect(screen.getByTestId("round-pnl")).toHaveTextContent(String(CREDIT_CAP));
   });
 
   it("refuses an inverted quote without consuming the round", () => {
@@ -31,10 +46,14 @@ describe("MarketRunner", () => {
     // The end screen is pure render over summarizeMarket, but nothing else renders it — a
     // crash there would only show up in a hand-played session. Quoting absurdly wide every
     // round is never picked off and floors at zero credit, so the total is deterministic.
+    //
+    // 1e12, not 1e5: now that the quote is taken in the quantity's own scale, "wide" is
+    // scale-relative. A session drawing one of the two templates at unit 1e7 made +-99999 a
+    // razor-thin market worth nearly full credit, and this assertion caught it.
     render(<MarketRunner seed={4242} />);
     for (let i = 0; i < 12; i++) {
-      fireEvent.change(screen.getByLabelText("bid"), { target: { value: "-99999" } });
-      fireEvent.change(screen.getByLabelText("ask"), { target: { value: "99999" } });
+      fireEvent.change(screen.getByLabelText("bid"), { target: { value: "-1e12" } });
+      fireEvent.change(screen.getByLabelText("ask"), { target: { value: "1e12" } });
       fireEvent.click(screen.getByRole("button", { name: /^quote$/i }));
       fireEvent.click(screen.getByRole("button", { name: /next round|see results/i }));
     }
