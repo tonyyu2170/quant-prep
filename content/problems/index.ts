@@ -263,6 +263,12 @@ import { crtTwoCongruences } from "./number-theory/crt-two-congruences";
 import { diophantineCountSolutions } from "./number-theory/diophantine-count-solutions";
 import { linearCongruenceSolve } from "./number-theory/linear-congruence-solve";
 import { frobeniusFitThenCount } from "./number-theory/frobenius-fit-then-count";
+import { volumeScalingUnderSimilarity } from "./solid-geometry/volume-scaling-under-similarity";
+import { triangularPrismVolume } from "./solid-geometry/triangular-prism-volume";
+import { sphericalCapFraction } from "./solid-geometry/spherical-cap-fraction";
+import { coneFrustumFraction } from "./solid-geometry/cone-frustum-fraction";
+import { displacementWaterLevelRise } from "./solid-geometry/displacement-water-level-rise";
+import { boxFitThenDiagonal } from "./solid-geometry/box-fit-then-diagonal";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -550,6 +556,12 @@ export const PROBLEMS: ProblemTemplate[] = [
   diophantineCountSolutions,
   linearCongruenceSolve,
   frobeniusFitThenCount,
+  volumeScalingUnderSimilarity,
+  triangularPrismVolume,
+  sphericalCapFraction,
+  coneFrustumFraction,
+  displacementWaterLevelRise,
+  boxFitThenDiagonal,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
