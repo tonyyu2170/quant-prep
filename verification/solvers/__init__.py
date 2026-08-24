@@ -11,5 +11,7 @@ from .statistics import SOLVERS as _statistics
 from .finance import SOLVERS as _finance
 from .stochastic import SOLVERS as _stochastic
 from .linear_algebra import SOLVERS as _linear_algebra
+from .number_theory import SOLVERS as _number_theory
+from .solid_geometry import SOLVERS as _solid_geometry
 
-SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric, **_markov, **_symmetry, **_brainteasers, **_statistics, **_finance, **_stochastic, **_linear_algebra}
+SOLVERS = {**_bayes, **_counting, **_ev_variance, **_distributions, **_ruin, **_geometric, **_markov, **_symmetry, **_brainteasers, **_statistics, **_finance, **_stochastic, **_linear_algebra, **_number_theory, **_solid_geometry}
