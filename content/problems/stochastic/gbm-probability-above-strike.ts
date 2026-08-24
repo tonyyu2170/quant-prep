@@ -2,6 +2,14 @@ import type { ProblemTemplate } from "@qp/engine";
 import { normalCdf } from "@qp/engine";
 import { fmtNum } from "../util";
 
+// Licensed module-level helper: `constraint` never sees `derived`, and the rejection rule here
+// genuinely needs the answer's own statistic. Bounding the standardised distance keeps the
+// probability off the deep tail — at an answer of 1.7e-4 the relative tolerance works out to
+// about 8e9 Monte Carlo draws, which is not a check anyone will run.
+const zOf = (par: { spot: number; strike: number; growPct: number; volPct: number; years: number }) =>
+  (100 * Math.log(par.strike / par.spot) - (par.growPct - (par.volPct * par.volPct) / 200) * par.years) /
+  (par.volPct * Math.sqrt(par.years));
+
 export const gbmProbabilityAboveStrike: ProblemTemplate = {
   id: "stochastic/gbm-probability-above-strike",
   version: 1,
@@ -18,7 +26,7 @@ export const gbmProbabilityAboveStrike: ProblemTemplate = {
     // chain stays exact. A root of 2 would print at four figures and cost the next step a digit.
     years: { choices: [1, 4, 9] },
   },
-  constraint: (p) => p.strike > p.spot && p.strike <= 2 * p.spot && p.growPct * p.years <= 32,
+  constraint: (p) => p.strike > p.spot && p.strike <= 2 * p.spot && p.growPct * p.years <= 32 && Math.abs(zOf(p as Parameters<typeof zOf>[0])) <= 1.5,
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
     const halfVarPct = round((p.volPct * p.volPct) / 200);

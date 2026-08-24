@@ -13,7 +13,10 @@ export const brownianCovarianceCorrelation: ProblemTemplate = {
     late: { choices: [6, 8, 9, 10, 12, 15, 16, 18, 20, 24] },
     volPct: { choices: [12, 15, 20, 25, 30, 40] },
   },
-  constraint: (p) => p.early < p.late,
+  // The ratio floor is a VERIFICATION constraint, not a pedagogical one: the Monte Carlo
+  // counterpart's standard error scales as (1 - r*r)/sqrt(n), so a small correlation needs
+  // quadratically more draws to clear verify.py's noise bar.
+  constraint: (p) => p.early < p.late && p.early / p.late >= 0.2,
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
     return {

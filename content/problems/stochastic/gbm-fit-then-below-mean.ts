@@ -22,15 +22,23 @@ export const gbmFitThenBelowMean: ProblemTemplate = {
   constraint: (p) => p.markPct !== 100 && (p.median * p.meanPct) % 100 === 0 && (p.median * p.markPct) % 100 === 0,
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    const skewLog = round(Math.log(p.meanPct / 100));
-    const totalSd = round(Math.sqrt(2 * skewLog));
-    const markLog = round(Math.log(p.markPct / 100));
-    const z = round(markLog / totalSd);
+    // The answer is computed from RAW values and rounded once, at the end. Chaining the
+    // rounded intermediates instead makes it sensitive in the ninth decimal — which is exactly
+    // the absolute tolerance verify.py holds an independent brute route to, so the checker
+    // would be measuring a rounding convention rather than the formula. The rounded values
+    // below exist to be PRINTED; only `answer` is load-bearing.
+    const skewLogRaw = Math.log(p.meanPct / 100);
+    const totalSdRaw = Math.sqrt(2 * skewLogRaw);
+    const markLogRaw = Math.log(p.markPct / 100);
+    const zRaw = markLogRaw / totalSdRaw;
     return {
       mean: round((p.median * p.meanPct) / 100),
       mark: round((p.median * p.markPct) / 100),
-      skewLog, totalSd, markLog, z,
-      answer: round(normalCdf(z)),
+      skewLog: round(skewLogRaw),
+      totalSd: round(totalSdRaw),
+      markLog: round(markLogRaw),
+      z: round(zRaw),
+      answer: round(normalCdf(zRaw)),
     };
   },
   answerKey: "answer",
