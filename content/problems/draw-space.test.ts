@@ -20,7 +20,7 @@ import { distinctAtBand, emittedSpread, legalAnswers, neighbourDensity, printedO
 // Scope is ev-variance and distributions. Constraint 8 is a B3 rule and the 55 bayes and
 // counting problems predate it; widening further is a decision to take on its own evidence,
 // not a side effect of this file.
-const TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing"];
+const TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing", "pure-math/stochastic", "pure-math/linear-algebra"];
 
 // A counter nobody has watched fail is not evidence that anything passed.
 describe("the draw-space counters fail when they should", () => {

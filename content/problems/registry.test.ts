@@ -10,16 +10,18 @@ describe("problem registry invariants", () => {
   it("every non-choice template is playable in the market game", () => {
     // MARKET_TEMPLATES is derived so it cannot drift out of sync — but the COUNT can fall,
     // and a sudden drop is how we would learn that a batch shipped as choice templates by
-    // accident. 219 was the count on 2026-08-24, at a bank of 224.
+    // accident. The floor tracks the REAL count rather than an old one: 219 was pinned at a
+    // bank of 224 and was 25 too loose by the time the bank reached 249. 249 is the true
+    // count at a bank of 254, all five B14 templates so far being number answers.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
-    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(219);
+    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(249);
   });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
-    // Four families now: probability/*, brainteasers/*, statistics/* and finance/*. The
-    // prefix is still pinned — an id must declare which family it belongs to — but none of
-    // the other three is a probability sub-topic.
-    const FAMILIES = ["probability/", "brainteasers/", "statistics/", "finance/"];
+    // Five families now: probability/*, brainteasers/*, statistics/*, finance/* and
+    // pure-math/*. The prefix is still pinned — an id must declare which family it belongs
+    // to — but none of the other four is a probability sub-topic.
+    const FAMILIES = ["probability/", "brainteasers/", "statistics/", "finance/", "pure-math/"];
     for (const t of PROBLEMS) expect(FAMILIES.some((f) => t.topic.startsWith(f)), `${t.id}: unknown topic family "${t.topic}"`).toBe(true);
   });
   // `firms` is a free-form string rendered raw to users at ProblemRunner.tsx. Two spellings of one
@@ -84,6 +86,8 @@ describe("problem registry invariants", () => {
     const estimation = problemsFor("statistics/estimation").length;
     const inference = problemsFor("statistics/inference").length;
     const finance = problemsFor("finance/pricing").length;
+    const stochastic = problemsFor("pure-math/stochastic").length;
+    const linearAlgebra = problemsFor("pure-math/linear-algebra").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(27);
     expect(ev).toBe(35);
@@ -97,7 +101,9 @@ describe("problem registry invariants", () => {
     expect(estimation).toBe(15);
     expect(inference).toBe(3);
     expect(finance).toBe(10);
-    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance).toBe(PROBLEMS.length);
+    expect(stochastic).toBe(3);
+    expect(linearAlgebra).toBe(2);
+    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance + stochastic + linearAlgebra).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

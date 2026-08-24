@@ -239,6 +239,11 @@ import { putHedgeFromParity } from "./finance/put-hedge-from-parity";
 import { coveredCallMaxProfit } from "./finance/covered-call-max-profit";
 import { callLowerBoundArbitrage } from "./finance/call-lower-bound-arbitrage";
 import { boxSpreadArbitrage } from "./finance/box-spread-arbitrage";
+import { expectedSquareOfAWalk } from "./stochastic/expected-square-of-a-walk";
+import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff";
+import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
+import { twoByTwoEigenvalues } from "./linear-algebra/two-by-two-eigenvalues";
+import { traceOfAMatrixPower } from "./linear-algebra/trace-of-a-matrix-power";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -502,6 +507,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   overlappingWindowSums,
   reverseRegressionSlope,
   sampleSizeForMargin,
+  expectedSquareOfAWalk,
+  martingaleMissingPayoff,
+  riskNeutralUpProbability,
+  twoByTwoEigenvalues,
+  traceOfAMatrixPower,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
@@ -535,4 +545,6 @@ export const TOPIC_LABELS: Record<string, string> = {
   "statistics/estimation": "estimation",
   "statistics/inference": "inference",
   "finance/pricing": "finance",
+  "pure-math/stochastic": "stochastic",
+  "pure-math/linear-algebra": "linear algebra",
 };
