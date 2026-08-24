@@ -89,6 +89,15 @@ Round to two significant figures. log10 scoring cannot see more than that — a 
 log units against interval widths near a full decade (spec §6) — and rounding stops the file
 implying precision the source does not have.
 
+**Name the column year, and check the runway it buys.** WUP is a time series, so "the UN table"
+is not a source — the 2018 estimate column and a 2025 column are different data from the same
+file, and the year you pick goes straight into `vintage`, which Task 5's staleness gate runs on
+with `MAX_DATA_AGE_YEARS = 10`. A 2018 column is already ~8.6 years old today: CI turns red in
+about 16 months. Record in `sources.md`: the column year, whether it is an estimate or a
+projection, and the resulting years of runway. **If the runway comes out under two years, decide
+now** — take a fresher column, or raise `MAX_DATA_AGE_YEARS` deliberately with the reasoning
+written down. Discovering it when the gate trips is the expensive version of this decision.
+
 - [ ] **Step 2: Retrieve the reference figures**
 
 Two independently published counts, one per template, for cities that are in the table.
@@ -116,7 +125,17 @@ in, and this is the expensive part of authoring (spec §11).
 **If you cannot find a citable figure for a rate, that template does not ship.** Substituting a
 plausible number is the exact failure this task exists to prevent, and it is invisible to every
 gate downstream. Two templates is the spec's target; one template with real rates beats two with
-invented ones, and Task 5 gate 3's reach assertion drops to 60 accordingly.
+invented ones.
+
+Dropping `barbers` is four edits, not a judgement call — make all four, do not improvise:
+
+1. `content/fermi/index.ts` — remove the `barbers` import and the entry in `FERMI_TEMPLATES`.
+2. `tools/fermi-crosscheck.ts` — remove its import and its row of the measurement loop.
+3. `content/fermi/fermi.test.ts` — remove its import and its gate-1 test.
+4. `content/fermi/fermi.test.ts` — drop gate 3's reach floor from 60 to 30, and say in a comment
+   that the second template is pending a citable rate rather than deleted.
+
+Task 3 step 2 and Task 4's second line then have nothing to do. Everything else is unchanged.
 
 - [ ] **Step 4: Write it down**
 
@@ -918,6 +937,11 @@ describe("gate 2: citation PRESENCE (not truth — see Task 0)", () => {
           if (!f.cite) continue;
           expect(f.cite.source.length, `${item.id}: "${f.label}" has an empty source`).toBeGreaterThan(10);
           expect(Number.isFinite(Date.parse(f.cite.retrievedAt)), `${item.id}: "${f.label}" has no valid date`).toBe(true);
+          // DELIBERATE: rate vintages are parsed for validity but NOT age-gated, unlike the
+          // table's. A trade survey may have no fresher edition, and failing CI over a 1995
+          // piano-ownership figure that nothing can replace would just teach people to bump the
+          // date. The table is the number that moves and the number that is replaceable, so it
+          // is the one on a clock. Revisit if a rate ever gets a live source.
           expect(Number.isFinite(Date.parse(f.cite.vintage)), `${item.id}: "${f.label}" has no valid vintage`).toBe(true);
         }
         expect(item.truth.source.length, `${item.id}: truth has no source`).toBeGreaterThan(10);
@@ -1089,9 +1113,12 @@ N_SAMPLES = 400_000
 #     sqrt(p(1-p)/N) / phi(z) * sigma = sqrt(.05*.95/400000) / 0.1031 * sigma = 0.00334 * sigma,
 # so this is a 6-sigma band. A fixed 2% RELATIVE tolerance in value space was tried first and is
 # wrong: sigma reaches ~2.4 decades at six factors, where 1 SE is already ~1.9% of the endpoint.
-# MEASURED at 200 cases x 2 endpoints: the 2% rule failed 11/400 on a CORRECT implementation
-# (worst 3.28%); this rule fails 0/400, and still fails 400/400 when combineFactors is broken to
-# add sigmas instead of variances.
+# MEASURED at 200 cases x 2 endpoints. The 2% rule failed 11/400 on a CORRECT implementation
+# (worst 3.28%); this rule fails 0/400. Against the exact mutation Task 6 step 5 seeds
+# (`varSum += s`, so sigma becomes sqrt(sum s) rather than sqrt(sum s^2)) it fails 400/400 —
+# but the TIGHTEST of those catches is only 3.3x the tolerance, not a landslide. The two sigmas
+# converge as every factor's sigma approaches 1.0, so do not widen ATOL_LOG without re-running
+# that measurement: at 3x this stops catching the bug it was built to catch.
 ATOL_LOG = 0.02           # per unit of sigma
 ATOL_SCORE = 1e-9
 
@@ -1699,9 +1726,11 @@ Checked before writing, not assumed:
 - The Task 1 properness test was run as written: honest 2.07, tooTight 5.65, tooWide 4.00, and
   the deterministic generator's own coverage of the honest interval is 90.0%. Wide margins, not
   flaky.
-- Task 6's tolerance rule was run at full scale in both directions: 0/400 endpoint failures on a
-  correct implementation, 400/400 on the seeded quadrature bug. The 2%-relative rule it replaces
-  failed 11/400 on correct code.
+- Task 6's tolerance rule was run at full scale in both directions, using the exact mutation
+  Task 6 step 5 seeds (`varSum += s`, giving sigma = sqrt(sum s), not sum s — an earlier
+  measurement used the larger corruption and overstated the margin): 0/400 endpoint failures on
+  a correct implementation, 400/400 on the bug, tightest catch 3.3x the tolerance. The
+  2%-relative rule it replaces failed 11/400 on correct code.
 
 ## Self-review notes
 
@@ -1754,7 +1783,8 @@ than counted toward the independence claim.
    order — the cheapest possible signal that values had been edited one at a time, and nothing
    was looking for it.
 6. **Python endpoint tolerance moved into log space, scaled by sigma.** The 2%-relative rule
-   failed 11 of 400 comparisons on correct code.
+   failed 11 of 400 comparisons on correct code. The replacement's catch margin is 3.3x at its
+   tightest, which is recorded in the file so nobody widens it casually.
 7. **`verification/fermi-instances.json` gitignore made mandatory rather than conditional**, with
    the reason named: a committed fixture reproduces the `instances.json` incident this repo has
    already had once.
