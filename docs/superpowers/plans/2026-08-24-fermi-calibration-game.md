@@ -12,18 +12,43 @@
 
 ---
 
+## What this plan does NOT contain, on purpose
+
+**Every real-world number is left to Task 0.** An earlier draft of this plan shipped a 60-row city
+table, four piano rates, three barber rates and two BLS reference figures, each with a `source`
+string and `retrievedAt: "2026-08-24"` — all written from the planning model's memory, none
+retrieved. Running the numbers it asserted:
+
+```
+piano chain, Chicago = 89     vs published 290     gap = 0.513 log10  (3.3x)
+barber chain, NY     = 33,929 vs published 27,000  gap = 0.099 log10  (1.3x)
+```
+
+The piano chain failed the plan's own gate by more than the plan's own "the chain is wrong, not
+the tolerance" threshold, and 11 of the 60 city rows were out of order against a table that
+claimed one consistent source. The failure was not the arithmetic. It was that a citation string
+is not a citation, and no gate in the plan could tell the difference.
+
+So: **Task 0 retrieves, and nothing downstream may invent a number.** The tasks below give the
+file shapes, the gates, and the decision rules. They give sample rows only where marked
+`SHAPE ONLY`, and those must be replaced, not extended.
+
+---
+
 ## File Structure
 
 | File | Responsibility |
 |---|---|
+| `docs/research/fermi-2026-08/sources.md` | What Task 0 retrieved, from where, when, with the raw figures. |
 | `packages/engine/src/calibration.ts` | Lognormal fit, quadrature combination, interval score, session summary. Pure — knows nothing about content or React. |
 | `packages/engine/test/calibration.test.ts` | Every branch, plus the quadrature-vs-naive claim the game is built on. |
 | `content/fermi/types.ts` | `Cited<T>`, `DataTable`, `FermiTemplate`, `FermiItem`. The types the gates check. |
-| `content/fermi/tables/world-cities.ts` | ~60 cities: population, one source, one retrieval date. |
+| `content/fermi/tables/world-cities.ts` | 60 urban agglomerations: population, one source, one vintage, one retrieval date. |
 | `content/fermi/templates/piano-tuners.ts` | Template + canonical chain. |
 | `content/fermi/templates/barbers.ts` | Second template, proving the table x template pattern. |
-| `content/fermi/index.ts` | `FERMI_TEMPLATES`, `fermiItem(seed)`. The second registry. |
+| `content/fermi/index.ts` | `FERMI_TEMPLATES`, `fermiSession(seed, n)`. The second registry. |
 | `content/fermi/fermi.test.ts` | The three gates of spec §7. |
+| `tools/fermi-crosscheck.ts` | Measures each chain against its published reference. Sets the gate's tolerance. |
 | `verification/fermi-fixture.ts` | Emits chains + TS-computed intervals for Python to re-derive. |
 | `verification/verify_fermi.py` | Monte-Carlo counterpart to the closed form. |
 | `lib/store/calibration.ts` | Cross-session answer history in `localStorage`. |
@@ -34,12 +59,96 @@
 
 ---
 
+## Task 0: Retrieve the data
+
+**Files:**
+- Create: `docs/research/fermi-2026-08/sources.md`
+
+No code. This task exists because the three gates in Task 5 can check that a citation is
+*present* and *well-formed*; none of them can check that it is *true*. That check is this task,
+done once, by a human or an agent with web access, and written down.
+
+- [ ] **Step 1: Retrieve the city table**
+
+Source: UN World Urbanization Prospects, *File 12: Population of Urban Agglomerations with
+300,000 Inhabitants or More* (https://population.un.org/wup/).
+
+Pull **60 agglomerations**, spread across at least five continents and spanning roughly 1M to
+40M so the questions are not all the same size. Record for each: name, country, population.
+
+Two rules that the earlier draft broke:
+
+1. **One definition, all 60 rows.** "Urban agglomeration" throughout. Not city-proper for some
+   rows and metro for others — Jakarta is ~11M as a city and ~34M as Jabodetabek, and the
+   templates below multiply this number by a rate calibrated against metro-area employment. A
+   3x definition error is 0.5 log10 straight into the answer the player is scored against.
+2. **No row inside another row's agglomeration.** If Jakarta is in as Jabodetabek, Bogor is not
+   a separate row.
+
+Round to two significant figures. log10 scoring cannot see more than that — a 5% drift is 0.02
+log units against interval widths near a full decade (spec §6) — and rounding stops the file
+implying precision the source does not have.
+
+- [ ] **Step 2: Retrieve the reference figures**
+
+Two independently published counts, one per template, for cities that are in the table.
+
+Source: BLS Occupational Employment and Wage Statistics, metropolitan area estimates
+(https://www.bls.gov/oes/current/oessrcma.htm). SOC codes: **49-9063** musical instrument
+repairers and tuners; **39-5011** barbers plus **39-5012** hairdressers/hairstylists/cosmetologists.
+
+**Read this before using the numbers.** OES surveys *employers*. It excludes the self-employed,
+and both trades are heavily self-employed — so an OES figure is a **floor**, not a point
+estimate, and a chain that lands above it is not obviously wrong in the way a chain that lands
+below it is. Record the raw OES figure and, if you can find one, a second source that includes
+self-employment (BLS *Occupational Outlook Handbook* national totals give a national ratio you
+can apply). Write down which you used and why. If you use only OES, say so — then a chain 1.5x
+above the reference is expected, and Task 4 will show that as a signed gap rather than a failure.
+
+- [ ] **Step 3: Retrieve the rates**
+
+Each template needs its per-factor rates cited individually — there is no table for them to hide
+in, and this is the expensive part of authoring (spec §11).
+
+- piano tuners: pianos per person; tunings per piano-year; tunings per tuner-day; working days/yr
+- barbers: haircuts per person-year; cuts per barber-day; working days/yr
+
+**If you cannot find a citable figure for a rate, that template does not ship.** Substituting a
+plausible number is the exact failure this task exists to prevent, and it is invisible to every
+gate downstream. Two templates is the spec's target; one template with real rates beats two with
+invented ones, and Task 5 gate 3's reach assertion drops to 60 accordingly.
+
+- [ ] **Step 4: Write it down**
+
+Create `docs/research/fermi-2026-08/sources.md`: for each figure, the value, the exact URL, the
+date you read it, the vintage of the data itself (the year the source's numbers describe, which
+for UN WUP is not the year you read them), and any judgement you made. This file is the thing a
+future session reads when the staleness gate trips.
+
+- [ ] **Step 5: Sanity-check the chains before writing any code**
+
+With the retrieved rates, multiply out both chains for their reference cities on paper. If a gap
+exceeds **0.3 log10 (a factor of 2)** in the direction the OES undercount does not explain, a
+rate is wrong. Fix it here, where it is a number in a markdown file, not in Task 4, where it is
+a red gate blocking five downstream tasks.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add docs/research/fermi-2026-08/sources.md
+git commit -m "docs(fermi): retrieved sources for the estimation game's tables and rates"
+```
+
+---
+
 ## Task 1: The calibration mathematics
 
 **Files:**
 - Create: `packages/engine/src/calibration.ts`
 - Test: `packages/engine/test/calibration.test.ts`
 - Modify: `packages/engine/src/index.ts` (add one export line)
+
+Independent of Task 0 — pure mathematics, no content. Can be done first or in parallel.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -133,6 +242,9 @@ describe("intervalScore", () => {
 
   it("is a PROPER rule: honest 90% beats both over- and under-confidence in expectation", () => {
     // Truth drawn from a known lognormal; the honest 90% interval must win on average.
+    // MEASURED: honest 2.07, tooTight 5.65, tooWide 4.00, and the generated sample's own
+    // empirical coverage of the honest interval is 90.0% — the margins are wide, so this
+    // does not become flaky if the deterministic generator below is ever changed.
     const mu = 3, sigma = 0.5;                            // log10 space
     const truths: number[] = [];
     for (let i = 0; i < 4000; i++) {
@@ -381,16 +493,15 @@ git commit -m "feat(calibration): lognormal chains combined in quadrature, score
 ```
 
 ---
-
-## Task 2: The Fermi content type and its registry
+## Task 2: The Fermi content type and its data table
 
 **Files:**
 - Create: `content/fermi/types.ts`
 - Create: `content/fermi/tables/world-cities.ts`
 - Create: `content/fermi/index.ts`
 
-This task builds the types and the data table. The gates come in Task 4, after there is a
-template for them to check.
+**Requires Task 0.** The table body comes from `docs/research/fermi-2026-08/sources.md`.
+The gates come in Task 5, after there is a template for them to check.
 
 - [ ] **Step 1: Write the types**
 
@@ -408,20 +519,30 @@ Create `content/fermi/types.ts`:
  * (content/fermi/fermi.test.ts) because the ones next door do not apply to it.
  */
 
-/** A real-world number we cannot derive, only cite. */
+/**
+ * A real-world number we cannot derive, only cite.
+ *
+ * `retrievedAt` and `vintage` are different dates and both earn their place. A UN table read in
+ * 2026 whose numbers describe 2018 has `retrievedAt: "2026-.."` and `vintage: "2018"`. Gating
+ * staleness on the retrieval date would let eight-year-old data pass because someone re-opened
+ * the page; the age gate therefore runs on `vintage`, which is the date that actually decays.
+ */
 export interface Cited<T = number> {
   value: T;
   /** Where it came from. Free text, but must name something checkable. */
   source: string;
-  /** ISO date the value was read from that source. Staleness is gated on this. */
+  /** ISO date we read the value from that source. */
   retrievedAt: string;
+  /** ISO date (or year) the underlying data describes. Staleness is gated on THIS. */
+  vintage: string;
 }
 
 export interface DataTable<Row> {
   id: string;
-  /** One source and one retrieval date for the WHOLE table — that is the point of a table. */
+  /** One source, one vintage, one retrieval date for the WHOLE table — that is the point of a table. */
   source: string;
   retrievedAt: string;
+  vintage: string;
   rows: readonly Row[];
 }
 
@@ -456,7 +577,9 @@ export interface FermiTemplate {
 
 - [ ] **Step 2: Write the data table**
 
-Create `content/fermi/tables/world-cities.ts`:
+Create `content/fermi/tables/world-cities.ts`. **SHAPE ONLY below** — the three rows are there to
+show the literal form. Replace them with the 60 rows Task 0 retrieved; do not keep them and add
+to them.
 
 ```ts
 import type { DataTable } from "../types";
@@ -464,76 +587,29 @@ import type { DataTable } from "../types";
 export interface City { name: string; country: string; population: number }
 
 /**
- * Metropolitan-area populations, rounded to two significant figures because log10 scoring cannot
- * see more than that: a 5% drift is 0.02 log units against interval widths near a full decade
- * (spec §6). Rounding makes the staleness policy honest rather than implying precision we do not
- * have, and it makes the numbers legible in the reveal.
+ * URBAN AGGLOMERATION populations — one definition for all 60 rows (Task 0, rule 1). Not
+ * city-proper for some and metro for others: the templates multiply this by rates calibrated
+ * against metropolitan-area employment, so a definition switch is a 0.5 log10 error in the
+ * answer the player is scored against.
+ *
+ * Rounded to two significant figures: log10 scoring cannot see more than that (a 5% drift is
+ * 0.02 log units against interval widths near a decade, spec §6), and rounding stops the file
+ * implying precision the source does not have.
+ *
+ * Rows are ordered by population descending — gate 2 asserts it. Not cosmetic: an out-of-order
+ * row is the cheapest available signal that a value was edited in isolation rather than taken
+ * from one pass of one source. The draft this replaces had 11 of them.
  */
 export const WORLD_CITIES: DataTable<City> = {
   id: "world-cities",
-  source: "UN World Urbanization Prospects, urban agglomeration estimates",
-  retrievedAt: "2026-08-24",
+  source: "<exact source string + URL from docs/research/fermi-2026-08/sources.md>",
+  retrievedAt: "<ISO date you read it>",
+  vintage: "<year the figures describe — NOT the year you read them>",
   rows: [
+    // SHAPE ONLY — replace all of these with Task 0's 60 rows, descending by population.
     { name: "Tokyo", country: "Japan", population: 37_000_000 },
     { name: "Delhi", country: "India", population: 33_000_000 },
     { name: "Shanghai", country: "China", population: 29_000_000 },
-    { name: "Dhaka", country: "Bangladesh", population: 23_000_000 },
-    { name: "São Paulo", country: "Brazil", population: 22_000_000 },
-    { name: "Cairo", country: "Egypt", population: 22_000_000 },
-    { name: "Mexico City", country: "Mexico", population: 22_000_000 },
-    { name: "Beijing", country: "China", population: 22_000_000 },
-    { name: "Mumbai", country: "India", population: 21_000_000 },
-    { name: "Osaka", country: "Japan", population: 19_000_000 },
-    { name: "New York", country: "United States", population: 19_000_000 },
-    { name: "Karachi", country: "Pakistan", population: 17_000_000 },
-    { name: "Buenos Aires", country: "Argentina", population: 15_000_000 },
-    { name: "Istanbul", country: "Turkey", population: 16_000_000 },
-    { name: "Kolkata", country: "India", population: 15_000_000 },
-    { name: "Lagos", country: "Nigeria", population: 15_000_000 },
-    { name: "Manila", country: "Philippines", population: 14_000_000 },
-    { name: "Rio de Janeiro", country: "Brazil", population: 14_000_000 },
-    { name: "Guangzhou", country: "China", population: 14_000_000 },
-    { name: "Los Angeles", country: "United States", population: 13_000_000 },
-    { name: "Moscow", country: "Russia", population: 13_000_000 },
-    { name: "Paris", country: "France", population: 11_000_000 },
-    { name: "Bogotá", country: "Colombia", population: 11_000_000 },
-    { name: "Jakarta", country: "Indonesia", population: 11_000_000 },
-    { name: "Lima", country: "Peru", population: 11_000_000 },
-    { name: "Bangkok", country: "Thailand", population: 11_000_000 },
-    { name: "London", country: "United Kingdom", population: 9_600_000 },
-    { name: "Tehran", country: "Iran", population: 9_500_000 },
-    { name: "Ho Chi Minh City", country: "Vietnam", population: 9_300_000 },
-    { name: "Hong Kong", country: "China", population: 7_600_000 },
-    { name: "Bogor", country: "Indonesia", population: 7_100_000 },
-    { name: "Santiago", country: "Chile", population: 6_800_000 },
-    { name: "Riyadh", country: "Saudi Arabia", population: 7_700_000 },
-    { name: "Madrid", country: "Spain", population: 6_800_000 },
-    { name: "Singapore", country: "Singapore", population: 6_000_000 },
-    { name: "Toronto", country: "Canada", population: 6_400_000 },
-    { name: "Johannesburg", country: "South Africa", population: 6_200_000 },
-    { name: "Barcelona", country: "Spain", population: 5_700_000 },
-    { name: "Saint Petersburg", country: "Russia", population: 5_500_000 },
-    { name: "Sydney", country: "Australia", population: 5_100_000 },
-    { name: "Melbourne", country: "Australia", population: 5_100_000 },
-    { name: "Berlin", country: "Germany", population: 3_600_000 },
-    { name: "Rome", country: "Italy", population: 4_300_000 },
-    { name: "Nairobi", country: "Kenya", population: 5_300_000 },
-    { name: "Chicago", country: "United States", population: 8_900_000 },
-    { name: "Houston", country: "United States", population: 6_700_000 },
-    { name: "Atlanta", country: "United States", population: 5_800_000 },
-    { name: "Boston", country: "United States", population: 4_900_000 },
-    { name: "Seattle", country: "United States", population: 4_000_000 },
-    { name: "Warsaw", country: "Poland", population: 1_800_000 },
-    { name: "Vienna", country: "Austria", population: 2_000_000 },
-    { name: "Amsterdam", country: "Netherlands", population: 1_200_000 },
-    { name: "Stockholm", country: "Sweden", population: 1_700_000 },
-    { name: "Copenhagen", country: "Denmark", population: 1_400_000 },
-    { name: "Dublin", country: "Ireland", population: 1_300_000 },
-    { name: "Lisbon", country: "Portugal", population: 3_000_000 },
-    { name: "Prague", country: "Czechia", population: 1_300_000 },
-    { name: "Budapest", country: "Hungary", population: 1_800_000 },
-    { name: "Auckland", country: "New Zealand", population: 1_700_000 },
-    { name: "Montreal", country: "Canada", population: 4_300_000 },
   ],
 };
 ```
@@ -557,13 +633,6 @@ export const FERMI_TEMPLATES: readonly FermiTemplate[] = [pianoTuners, barbers];
 
 /** Total distinct items reachable across all templates. */
 export const fermiReach = () => FERMI_TEMPLATES.reduce((a, t) => a + t.count, 0);
-
-/** One item, drawn deterministically from a seed. */
-export function fermiItem(seed: number): FermiItem {
-  const rng = makeRng(seed);
-  const t = FERMI_TEMPLATES[Math.floor(rng() * FERMI_TEMPLATES.length)];
-  return t.itemAt(Math.floor(rng() * t.count));
-}
 
 /** `n` distinct items for one session, no template-and-index repeated. */
 export function fermiSession(seed: number, n = 8): FermiItem[] {
@@ -595,6 +664,10 @@ Do NOT commit yet; Task 3 completes this unit.
 - Create: `content/fermi/templates/piano-tuners.ts`
 - Create: `content/fermi/templates/barbers.ts`
 
+**Requires Task 0.** Every rate literal and every `REFERENCE_CHECK` value below is a placeholder
+for a figure in `docs/research/fermi-2026-08/sources.md`. If Task 0 could not cite a rate, that
+template does not ship (Task 0 step 3).
+
 - [ ] **Step 1: Write the first template**
 
 Create `content/fermi/templates/piano-tuners.ts`:
@@ -609,20 +682,29 @@ import type { FermiTemplate } from "../types";
  *
  * The TRUTH is computed from the chain here, which would make the cross-check in fermi.test.ts
  * circular if it stopped there. It does not: the gate also asserts the result lands within a
- * stated tolerance of an INDEPENDENT published figure for the reference city, which is what
+ * MEASURED tolerance of an INDEPENDENT published figure for the reference city, which is what
  * `REFERENCE_CHECK` below records. Author more of those before adding templates.
  */
-const PIANOS_PER_PERSON = { value: 1 / 100, source: "US piano ownership surveys, ~1 household in 40 owns a piano at ~2.5 persons/household", retrievedAt: "2026-08-24" };
-const TUNINGS_PER_PIANO_YEAR = { value: 1, source: "Piano Technicians Guild recommendation: at least once per year", retrievedAt: "2026-08-24" };
-const TUNINGS_PER_TUNER_DAY = { value: 4, source: "Piano Technicians Guild practitioner surveys, 3-5 tunings per working day", retrievedAt: "2026-08-24" };
-const WORKING_DAYS = { value: 250, source: "52 weeks x 5 days less ~10 public holidays", retrievedAt: "2026-08-24" };
+// VALUES AND SOURCES FROM TASK 0 — every literal here is a placeholder until then.
+const PIANOS_PER_PERSON      = { value: 0, source: "<Task 0>", retrievedAt: "<ISO>", vintage: "<year>" };
+const TUNINGS_PER_PIANO_YEAR = { value: 0, source: "<Task 0>", retrievedAt: "<ISO>", vintage: "<year>" };
+const TUNINGS_PER_TUNER_DAY  = { value: 0, source: "<Task 0>", retrievedAt: "<ISO>", vintage: "<year>" };
+const WORKING_DAYS           = { value: 0, source: "<Task 0>", retrievedAt: "<ISO>", vintage: "<year>" };
 
-/** An independently published count, used to check the chain rather than to build it. */
+/**
+ * An independently published count, used to CHECK the chain rather than to build it.
+ *
+ * `excludesSelfEmployed` is not decoration. BLS OES surveys employers, and piano tuning is
+ * heavily self-employed, so this figure is a FLOOR. Task 4 reads the sign of the gap: a chain
+ * above the reference is expected, a chain below it is a problem.
+ */
 export const REFERENCE_CHECK = {
-  city: "Chicago",
-  tuners: 290,
-  source: "US Bureau of Labor Statistics OES, musical instrument repairers and tuners, Chicago MSA",
-  retrievedAt: "2026-08-24",
+  city: "<a city that is in WORLD_CITIES>",
+  tuners: 0,
+  excludesSelfEmployed: true,
+  source: "<Task 0: BLS OES 49-9063, named MSA, with URL>",
+  retrievedAt: "<ISO>",
+  vintage: "<year>",
 };
 
 export const pianoTuners: FermiTemplate = {
@@ -644,7 +726,8 @@ export const pianoTuners: FermiTemplate = {
       truth: {
         value: chain.reduce((a, f) => a * f.value, 1),
         source: `${WORLD_CITIES.source}; rates as cited per factor; cross-checked against ${REFERENCE_CHECK.source}`,
-        retrievedAt: "2026-08-24",
+        retrievedAt: WORLD_CITIES.retrievedAt,
+        vintage: WORLD_CITIES.vintage,
       },
       unitLabel: "piano tuners",
     };
@@ -654,49 +737,15 @@ export const pianoTuners: FermiTemplate = {
 
 - [ ] **Step 2: Write the second template**
 
-Create `content/fermi/templates/barbers.ts`:
+Create `content/fermi/templates/barbers.ts`, same shape: rates and `REFERENCE_CHECK` from Task 0,
+`REFERENCE_CHECK.excludesSelfEmployed` set from the source you actually used, chain
 
-```ts
-import { WORLD_CITIES } from "../tables/world-cities";
-import type { FermiTemplate } from "../types";
-
-/** Second template over the same table — the point is that a table amortises across templates. */
-const HAIRCUTS_PER_PERSON_YEAR = { value: 6, source: "Consumer expenditure surveys: roughly one haircut every two months averaged across adults and children", retrievedAt: "2026-08-24" };
-const CUTS_PER_BARBER_DAY = { value: 12, source: "Trade association practitioner surveys, 10-14 cuts per working day", retrievedAt: "2026-08-24" };
-const WORKING_DAYS = { value: 280, source: "Six-day weeks are common in the trade: ~52 x 6 less holidays", retrievedAt: "2026-08-24" };
-
-export const REFERENCE_CHECK = {
-  city: "New York",
-  barbers: 27_000,
-  source: "US Bureau of Labor Statistics OES, barbers/hairdressers/cosmetologists, New York MSA",
-  retrievedAt: "2026-08-24",
-};
-
-export const barbers: FermiTemplate = {
-  id: "fermi/barbers",
-  count: WORLD_CITIES.rows.length,
-  itemAt(i) {
-    const city = WORLD_CITIES.rows[i % WORLD_CITIES.rows.length];
-    const chain = [
-      { label: `Population of ${city.name}`, value: city.population },
-      { label: "Haircuts per person per year", value: HAIRCUTS_PER_PERSON_YEAR.value, cite: HAIRCUTS_PER_PERSON_YEAR },
-      { label: "1 / (cuts per barber-day)", value: 1 / CUTS_PER_BARBER_DAY.value, cite: CUTS_PER_BARBER_DAY },
-      { label: "1 / (working days per year)", value: 1 / WORKING_DAYS.value, cite: WORKING_DAYS },
-    ];
-    return {
-      id: `fermi/barbers#${city.name}`,
-      statement: `How many barbers and hairdressers work in ${city.name}, ${city.country}?`,
-      chain,
-      truth: {
-        value: chain.reduce((a, f) => a * f.value, 1),
-        source: `${WORLD_CITIES.source}; rates as cited per factor; cross-checked against ${REFERENCE_CHECK.source}`,
-        retrievedAt: "2026-08-24",
-      },
-      unitLabel: "barbers and hairdressers",
-    };
-  },
-};
 ```
+population x haircuts per person-year x 1/(cuts per barber-day) x 1/(working days per year)
+```
+
+id `fermi/barbers`, statement `How many barbers and hairdressers work in ${city.name}, ${city.country}?`,
+unit label `barbers and hairdressers`.
 
 - [ ] **Step 3: Typecheck and commit the content unit**
 
@@ -710,10 +759,81 @@ git commit -m "feat(fermi): the second content type — cited tables, question t
 
 ---
 
-## Task 4: The three gates
+## Task 4: Measure the cross-check gaps, then pin the tolerance
+
+**Files:**
+- Create: `tools/fermi-crosscheck.ts`
+
+This runs **before** the gates are written, not after. Spec §7 offered
+`CROSS_CHECK_TOLERANCE_LOG10 = 0.2` as provisional; a tolerance chosen before the measurement is
+a number chosen for comfort. Same discipline `CREDIT_CAP` got in `tools/market-tune.ts`.
+
+- [ ] **Step 1: Write the measurement tool**
+
+Create `tools/fermi-crosscheck.ts`:
+
+```ts
+/* What is the actual agreement between each authored chain and its independently published
+ * reference? The gate's tolerance comes from this, not from what makes the gate pass.
+ *   npx tsx tools/fermi-crosscheck.ts */
+import { WORLD_CITIES } from "../content/fermi/tables/world-cities";
+import { REFERENCE_CHECK as PIANO_REF, pianoTuners } from "../content/fermi/templates/piano-tuners";
+import { REFERENCE_CHECK as BARBER_REF, barbers } from "../content/fermi/templates/barbers";
+
+const idx = (name: string) => WORLD_CITIES.rows.findIndex((c) => c.name === name);
+
+for (const [label, item, ref, published] of [
+  ["piano-tuners", pianoTuners.itemAt(idx(PIANO_REF.city)), PIANO_REF, PIANO_REF.tuners],
+  ["barbers", barbers.itemAt(idx(BARBER_REF.city)), BARBER_REF, BARBER_REF.barbers],
+] as const) {
+  const gap = Math.log10(item.truth.value) - Math.log10(published);
+  const note = ref.excludesSelfEmployed
+    ? gap > 0 ? "  (chain above an employer-only floor — expected)" : "  (chain BELOW an employer-only floor — investigate)"
+    : "";
+  console.log(
+    `${label.padEnd(14)} chain=${item.truth.value.toFixed(0).padStart(9)}  published=${String(published).padStart(9)}  ` +
+    `gap=${gap >= 0 ? "+" : ""}${gap.toFixed(3)} log10 (factor ${(10 ** Math.abs(gap)).toFixed(2)})${note}`);
+}
+```
+
+- [ ] **Step 2: Run it and read the numbers**
+
+Run: `npx tsx tools/fermi-crosscheck.ts`
+Expected: two lines, each reporting the SIGNED log10 gap between the chain and the published figure.
+
+- [ ] **Step 3: Decide, in this order**
+
+1. **A gap below the reference by more than 0.3 log10 (a factor of 2) means the chain is wrong.**
+   The reference excludes the self-employed, so it is a floor; landing under it is not a
+   tolerance question. Go back and fix the rate, or the city's population definition.
+2. **A gap above the reference** is partly the self-employment gap. If it exceeds 0.3, look up
+   the self-employment share for that occupation and say in a comment how much of the gap it
+   accounts for. Whatever it does not account for is a wrong rate.
+3. Only once both gaps are explained: set the tolerance to roughly **1.5x the worst absolute
+   gap**, rounded to one decimal, and write the derivation — both measured gaps, and the
+   self-employment reasoning — into the comment above the constant in Task 5.
+
+Record the two gaps in `docs/research/fermi-2026-08/sources.md` as well. When this gate trips in
+two years, the next person needs the number it was set from.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add tools/fermi-crosscheck.ts docs/research/fermi-2026-08/sources.md
+git commit -m "test(fermi): measure the chain-vs-published gaps before setting any tolerance"
+```
+
+---
+## Task 5: The three gates
 
 **Files:**
 - Create: `content/fermi/fermi.test.ts`
+
+**What these gates can and cannot do.** Gate 1 is real evidence: two independent routes to a
+number, agreeing. Gate 3 is real: a structural invariant, mechanically checkable. **Gate 2 is
+not a truth check and must not be described as one** — it checks that a citation is present and
+well-formed, and a fabricated source string passes it exactly as a real one does. That is why
+Task 0 exists and why gate 2 is named for what it does.
 
 - [ ] **Step 1: Write the gates**
 
@@ -721,31 +841,41 @@ Create `content/fermi/fermi.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { FERMI_TEMPLATES, fermiItem, fermiReach, fermiSession } from ".";
+import { FERMI_TEMPLATES, fermiReach, fermiSession } from ".";
 import { WORLD_CITIES } from "./tables/world-cities";
 import { REFERENCE_CHECK as PIANO_REF, pianoTuners } from "./templates/piano-tuners";
 import { REFERENCE_CHECK as BARBER_REF, barbers } from "./templates/barbers";
 import { PROBLEMS } from "../problems";
 
-/** Spec §7 gate 1's tolerance, in log10 units. 0.2 is a factor of ~1.6.
- *  PROVISIONAL — see the measurement step in Task 5. A tolerance nothing ever fails is not a
- *  gate, so this must be set from the observed agreement, not chosen for comfort. */
-const CROSS_CHECK_TOLERANCE_LOG10 = 0.2;
+/** MEASURED in Task 4 — replace this whole comment with the derivation:
+ *  both signed gaps, how much of each the self-employment exclusion accounts for, and the
+ *  1.5x-worst-gap arithmetic. A tolerance without that paragraph is a tolerance chosen for
+ *  comfort, and the gate it guards is decoration. */
+const CROSS_CHECK_TOLERANCE_LOG10 = 0; // <- Task 4 step 3
 
-const MAX_TABLE_AGE_MONTHS = 24;
+/** Gated on the data's VINTAGE, not on when we last opened the page — re-reading a 2018 table in
+ *  2026 does not make it fresh. 10 years: an agglomeration growing at a fast 2.5%/yr drifts 28%
+ *  over a decade = 0.107 log10, about a tenth of a typical interval width, which is where the
+ *  drift starts to matter. This WILL turn CI red one day with no code change; that is the point
+ *  of a staleness gate. The failure message says what to do about it. */
+const MAX_DATA_AGE_YEARS = 10;
 
 describe("gate 1: chains cross-check against an independently published total", () => {
-  // This is the analogue of verify.py's two-route rule. The chain is one route; a published
-  // employment figure for a reference city is a different one. Two sources agreeing is evidence;
-  // a chain agreeing with itself is not.
-  it("piano tuners: the chain reproduces the published Chicago count", () => {
+  // The analogue of verify.py's two-route rule. The chain is one route; a published employment
+  // figure is a different one. Two sources agreeing is evidence; a chain agreeing with itself
+  // is not.
+  //
+  // DO NOT WIDEN THIS TOLERANCE TO MAKE A FAILURE GO AWAY. That is the single move this gate
+  // exists to prevent. Re-run tools/fermi-crosscheck.ts, fix the chain, or record honestly that
+  // the two sources disagree and by how much.
+  it("piano tuners: the chain reproduces the published count", () => {
     const item = pianoTuners.itemAt(WORLD_CITIES.rows.findIndex((c) => c.name === PIANO_REF.city));
     const gap = Math.abs(Math.log10(item.truth.value) - Math.log10(PIANO_REF.tuners));
     expect(gap, `chain gives ${item.truth.value.toFixed(0)}, published ${PIANO_REF.tuners}, ${gap.toFixed(2)} log10 apart`)
       .toBeLessThan(CROSS_CHECK_TOLERANCE_LOG10);
   });
 
-  it("barbers: the chain reproduces the published New York count", () => {
+  it("barbers: the chain reproduces the published count", () => {
     const item = barbers.itemAt(WORLD_CITIES.rows.findIndex((c) => c.name === BARBER_REF.city));
     const gap = Math.abs(Math.log10(item.truth.value) - Math.log10(BARBER_REF.barbers));
     expect(gap, `chain gives ${item.truth.value.toFixed(0)}, published ${BARBER_REF.barbers}, ${gap.toFixed(2)} log10 apart`)
@@ -753,15 +883,33 @@ describe("gate 1: chains cross-check against an independently published total", 
   });
 });
 
-describe("gate 2: citation integrity", () => {
-  it("every table names a source and a retrieval date, and is not stale", () => {
-    const ageMonths = (iso: string) => (Date.now() - Date.parse(iso)) / (1000 * 60 * 60 * 24 * 30.44);
+describe("gate 2: citation PRESENCE (not truth — see Task 0)", () => {
+  // This gate cannot tell a real source from an invented one. It catches the empty field, the
+  // unparseable date, the stale vintage and the hand-edited row. Whether the numbers are true
+  // is established once, by retrieval, in docs/research/fermi-2026-08/sources.md.
+  it("the table names a source, a retrieval date and a vintage, and the vintage is not stale", () => {
+    const ageYears = (iso: string) => (Date.now() - Date.parse(iso)) / (1000 * 60 * 60 * 24 * 365.25);
     expect(WORLD_CITIES.source.length).toBeGreaterThan(10);
     expect(Number.isFinite(Date.parse(WORLD_CITIES.retrievedAt))).toBe(true);
-    expect(ageMonths(WORLD_CITIES.retrievedAt), `${WORLD_CITIES.id} is stale`).toBeLessThan(MAX_TABLE_AGE_MONTHS);
+    expect(Number.isFinite(Date.parse(WORLD_CITIES.vintage))).toBe(true);
+    expect(
+      ageYears(WORLD_CITIES.vintage),
+      `${WORLD_CITIES.id} data is over ${MAX_DATA_AGE_YEARS} years old — re-retrieve from ${WORLD_CITIES.source}, ` +
+      `update the rows and the vintage, then re-run tools/fermi-crosscheck.ts and re-measure the tolerance`,
+    ).toBeLessThan(MAX_DATA_AGE_YEARS);
   });
 
-  it("every authored rate in every chain carries a source and a date", () => {
+  it("the table is ordered by population descending — an out-of-order row means a hand edit", () => {
+    // Cheapest available signal that a value was changed in isolation rather than taken from one
+    // pass of one source. The draft this file replaces had 11 such rows.
+    for (let i = 1; i < WORLD_CITIES.rows.length; i++) {
+      const prev = WORLD_CITIES.rows[i - 1], cur = WORLD_CITIES.rows[i];
+      expect(cur.population, `${cur.name} (${cur.population}) sorts above ${prev.name} (${prev.population})`)
+        .toBeLessThanOrEqual(prev.population);
+    }
+  });
+
+  it("every authored rate in every chain carries a source, a date and a vintage", () => {
     for (const t of FERMI_TEMPLATES) {
       for (let i = 0; i < t.count; i++) {
         const item = t.itemAt(i);
@@ -770,13 +918,15 @@ describe("gate 2: citation integrity", () => {
           if (!f.cite) continue;
           expect(f.cite.source.length, `${item.id}: "${f.label}" has an empty source`).toBeGreaterThan(10);
           expect(Number.isFinite(Date.parse(f.cite.retrievedAt)), `${item.id}: "${f.label}" has no valid date`).toBe(true);
+          expect(Number.isFinite(Date.parse(f.cite.vintage)), `${item.id}: "${f.label}" has no valid vintage`).toBe(true);
         }
         expect(item.truth.source.length, `${item.id}: truth has no source`).toBeGreaterThan(10);
       }
     }
   });
 
-  it("every factor is a positive finite number — logs require it", () => {
+  it("every factor is a positive finite number — logs require it, and a placeholder 0 is not one", () => {
+    // Also the gate that catches a Task 3 placeholder literal surviving into a commit.
     for (const t of FERMI_TEMPLATES) {
       for (let i = 0; i < t.count; i++) {
         const item = t.itemAt(i);
@@ -801,14 +951,14 @@ describe("gate 3: the registry stays separate from PROBLEMS", () => {
   });
 
   it("reaches the item count v1 scoped, and draws distinct items per session", () => {
-    expect(fermiReach()).toBeGreaterThanOrEqual(100);
+    // 60 rows x 2 templates. If Task 0 could only cite one template's rates, this is 60.
+    expect(fermiReach()).toBeGreaterThanOrEqual(60);
     const s = fermiSession(4242, 8);
     expect(s.length).toBe(8);
     expect(new Set(s.map((i) => i.id)).size).toBe(8);
   });
 
   it("is deterministic in the seed", () => {
-    expect(fermiItem(7).id).toBe(fermiItem(7).id);
     expect(fermiSession(7, 8).map((i) => i.id)).toEqual(fermiSession(7, 8).map((i) => i.id));
   });
 
@@ -827,89 +977,32 @@ describe("gate 3: the registry stays separate from PROBLEMS", () => {
 - [ ] **Step 2: Run the gates**
 
 Run: `npx vitest run content/fermi/fermi.test.ts`
-Expected: PASS. **If gate 1 fails, do not loosen the tolerance to make it pass** — that is the
-one move this gate exists to prevent. Fix the chain's rates, or record honestly that the
-published figure and the chain disagree and by how much.
+Expected: PASS — because Task 4 already measured the tolerance and already fixed any chain that
+disagreed with its reference. If gate 1 fails here, Task 4 step 3 was not done: go back and do
+it, do not touch the constant from this file.
 
 - [ ] **Step 3: Watch each gate fail**
 
-1. In `content/fermi/tables/world-cities.ts`, temporarily change Chicago's population to
-   `89_000_000` (10x). Run the gates. Expected: FAIL on gate 1's piano-tuner cross-check.
-   Revert.
-2. Temporarily change `WORLD_CITIES.retrievedAt` to `"2020-01-01"`. Run. Expected: FAIL on
-   staleness. Revert.
-3. Temporarily add `pianoTuners.id` into a copy of the PROBLEMS check by changing gate 3's
-   assertion target to `FERMI_TEMPLATES[0].id === "fermi/piano-tuners"` inverted — simpler:
-   temporarily rename `pianoTuners.id` to an existing problem id such as
-   `"bayes/base-rate-test"`. Run. Expected: FAIL on "leaked into PROBLEMS". Revert.
+Each of these must be reverted and re-run to PASS before moving on.
 
-Re-run after each revert to confirm PASS.
+1. **Gate 1** — multiply the reference city's population by 10 in `world-cities.ts`.
+   Expected: FAIL on that template's cross-check (and on the sort-order test, which is the
+   point of having it).
+2. **Gate 2, staleness** — set `WORLD_CITIES.vintage` to `"2005"`.
+   Expected: FAIL naming the re-retrieval steps.
+3. **Gate 2, sort order** — swap any two adjacent rows.
+   Expected: FAIL naming both cities.
+4. **Gate 2, placeholder** — set one rate literal back to `0`.
+   Expected: FAIL on "is a positive finite number". This is the gate that stops a Task 3
+   placeholder shipping.
+5. **Gate 3** — rename `pianoTuners.id` to an existing problem id such as `"bayes/base-rate-test"`.
+   Expected: FAIL on "leaked into PROBLEMS".
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add content/fermi/fermi.test.ts
-git commit -m "test(fermi): three gates — two-route cross-check, citation integrity, registry separation"
-```
-
----
-
-## Task 5: Measure the cross-check tolerance
-
-**Files:**
-- Create: `tools/fermi-crosscheck.ts`
-- Modify: `content/fermi/fermi.test.ts` (set the measured tolerance)
-
-Spec §7 marks `CROSS_CHECK_TOLERANCE_LOG10 = 0.2` as provisional and says it must be measured.
-This is the same discipline `CREDIT_CAP` got.
-
-- [ ] **Step 1: Write the measurement tool**
-
-Create `tools/fermi-crosscheck.ts`:
-
-```ts
-/* What is the actual agreement between each authored chain and its independently published
- * reference? The gate's tolerance must come from this, not from what makes the gate pass.
- *   npx tsx tools/fermi-crosscheck.ts */
-import { WORLD_CITIES } from "../content/fermi/tables/world-cities";
-import { REFERENCE_CHECK as PIANO_REF, pianoTuners } from "../content/fermi/templates/piano-tuners";
-import { REFERENCE_CHECK as BARBER_REF, barbers } from "../content/fermi/templates/barbers";
-
-const idx = (name: string) => WORLD_CITIES.rows.findIndex((c) => c.name === name);
-
-for (const [label, item, published] of [
-  ["piano-tuners", pianoTuners.itemAt(idx(PIANO_REF.city)), PIANO_REF.tuners],
-  ["barbers", barbers.itemAt(idx(BARBER_REF.city)), BARBER_REF.barbers],
-] as const) {
-  const gap = Math.log10(item.truth.value) - Math.log10(published);
-  console.log(
-    `${label.padEnd(14)} chain=${item.truth.value.toFixed(0).padStart(9)}  published=${String(published).padStart(9)}  ` +
-    `gap=${gap >= 0 ? "+" : ""}${gap.toFixed(3)} log10 (factor ${(10 ** Math.abs(gap)).toFixed(2)})`);
-}
-```
-
-- [ ] **Step 2: Run it and read the numbers**
-
-Run: `npx tsx tools/fermi-crosscheck.ts`
-Expected: two lines, each reporting the log10 gap between the chain and the published figure.
-
-- [ ] **Step 3: Set the tolerance from what you measured**
-
-In `content/fermi/fermi.test.ts`, set `CROSS_CHECK_TOLERANCE_LOG10` to roughly **1.5x the worst
-observed gap**, rounded to one decimal, and replace the `PROVISIONAL` comment with the measured
-derivation, naming both gaps. For example, if the worst gap is 0.12, set 0.2 and record why.
-
-If a gap exceeds 0.3 (a factor of 2), **the chain is wrong, not the tolerance** — the rates need
-revisiting before this ships.
-
-- [ ] **Step 4: Re-run and commit**
-
-Run: `npx vitest run content/fermi/fermi.test.ts`
-Expected: PASS.
-
-```bash
-git add tools/fermi-crosscheck.ts content/fermi/fermi.test.ts
-git commit -m "test(fermi): set the cross-check tolerance from measurement, not from comfort"
+git commit -m "test(fermi): three gates — two-route cross-check, citation presence, registry separation"
 ```
 
 ---
@@ -920,11 +1013,13 @@ git commit -m "test(fermi): set the cross-check tolerance from measurement, not 
 - Create: `verification/fermi-fixture.ts`
 - Create: `verification/verify_fermi.py`
 - Modify: `package.json` (one script line)
-- Modify: `.github/workflows/ci.yml` (one step)
+- Modify: `.gitignore` (one line)
+- Modify: `.github/workflows/ci.yml` (two steps)
 
-`verify.py` walks `instances.json`, which `emit.ts` builds from `PROBLEMS`. Fermi content is not
-in `PROBLEMS`, so it cannot ride that loop. The mathematics still gets an independent route, and
-it is a genuinely different one: **TypeScript computes the closed form, Python re-derives it by
+`verify.py` walks `instances.json`, which `emit.ts` builds from `PROBLEMS`, and its `SOLVERS`
+dict is keyed by problem id. Fermi content is not in `PROBLEMS` — gate 3 exists to keep it out —
+so it cannot ride that loop. The mathematics still gets an independent route, and it is a
+genuinely different one: **TypeScript computes the closed form, Python re-derives it by
 sampling.** That is the same exact/brute split every solver in `verification/solvers/` uses.
 
 - [ ] **Step 1: Write the fixture emitter**
@@ -988,28 +1083,43 @@ import numpy as np
 
 Z95 = 1.6449
 N_SAMPLES = 400_000
-RTOL_INTERVAL = 0.02      # 2% on each endpoint: sampling error at 400k samples
-ATOL_SCORE = 1e-9         # the score is pure arithmetic, so it must match exactly
+
+# Tolerance lives in LOG space and scales with sigma, because that is the shape of the sampling
+# noise. The standard error of a sampled 5%/95% log-quantile is
+#     sqrt(p(1-p)/N) / phi(z) * sigma = sqrt(.05*.95/400000) / 0.1031 * sigma = 0.00334 * sigma,
+# so this is a 6-sigma band. A fixed 2% RELATIVE tolerance in value space was tried first and is
+# wrong: sigma reaches ~2.4 decades at six factors, where 1 SE is already ~1.9% of the endpoint.
+# MEASURED at 200 cases x 2 endpoints: the 2% rule failed 11/400 on a CORRECT implementation
+# (worst 3.28%); this rule fails 0/400, and still fails 400/400 when combineFactors is broken to
+# add sigmas instead of variances.
+ATOL_LOG = 0.02           # per unit of sigma
+ATOL_SCORE = 1e-9
 
 data = json.loads((Path(__file__).parent / "fermi-instances.json").read_text())
 rng = np.random.default_rng(20260824)
 failures = []
 
 for i, case in enumerate(data["cases"]):
+    ts = case["combined"]
+
     # BRUTE: sample each factor as a lognormal and multiply the draws. No summing of variances.
     logs = np.zeros(N_SAMPLES)
     for f in case["factors"]:
         a, b = np.log10(f["lo"]), np.log10(f["hi"])
         mu, sigma = (a + b) / 2, (b - a) / (2 * Z95)
         logs += rng.normal(mu, sigma, N_SAMPLES)
-    sampled_lo, sampled_hi = 10 ** np.percentile(logs, [5, 95])
+    sampled_lo, sampled_hi = np.percentile(logs, [5, 95])
 
-    ts = case["combined"]
-    for name, got, want in (("lo", sampled_lo, ts["lo"]), ("hi", sampled_hi, ts["hi"])):
-        if abs(got - want) > RTOL_INTERVAL * abs(want):
-            failures.append(f"case {i}: {name} sampled {got:.6g} vs closed form {want:.6g}")
+    tol = ATOL_LOG * ts["sigma"]
+    for name, got, want in (("lo", sampled_lo, np.log10(ts["lo"])), ("hi", sampled_hi, np.log10(ts["hi"]))):
+        if abs(got - want) > tol:
+            failures.append(
+                f"case {i}: log10 {name} sampled {got:.6f} vs closed form {want:.6f} "
+                f"(gap {abs(got - want):.6f} > tol {tol:.6f}, sigma {ts['sigma']:.3f})")
 
-    # EXACT: the interval score is arithmetic and must agree to machine precision.
+    # TRANSCRIPTION, not a second route: this is the same formula written twice, so it cannot
+    # catch an error in the scoring algebra. It catches emit and serialisation drift, which is
+    # worth having. The independence claim rests entirely on the sampling check above.
     lo, hi, y = np.log10(ts["lo"]), np.log10(ts["hi"]), np.log10(case["truth"])
     s = hi - lo
     if y < lo:
@@ -1028,7 +1138,7 @@ if failures:
 print(f"fermi ok: {len(data['cases'])} cases, intervals re-derived by sampling")
 ```
 
-- [ ] **Step 3: Wire the scripts**
+- [ ] **Step 3: Wire the scripts, and ignore the fixture**
 
 Modify `package.json` — add to `"scripts"`, after the `"verify:emit"` line:
 
@@ -1036,8 +1146,17 @@ Modify `package.json` — add to `"scripts"`, after the `"verify:emit"` line:
     "verify:fermi-emit": "tsx verification/fermi-fixture.ts",
 ```
 
-Add `verification/fermi-instances.json` to `.gitignore` if generated artifacts are ignored there;
-otherwise commit it, matching whatever `verification/instances.json` does.
+Modify `.gitignore` — under the `# verification (generated artifact + local venv)` block, beside
+`verification/instances.json`:
+
+```
+verification/fermi-instances.json
+```
+
+**This is not optional.** A committed fixture makes `verify_fermi.py` pass against yesterday's
+numbers: change `calibration.ts`, forget `verify:fermi-emit`, and the gate re-checks the old
+file and goes green on broken math. That exact failure has already happened once in this repo
+with `instances.json`, which is why it is ignored there too.
 
 - [ ] **Step 4: Run both halves**
 
@@ -1046,7 +1165,7 @@ npm run verify:fermi-emit
 python3 verification/verify_fermi.py
 ```
 
-Expected: `fermi ok: 200 cases, intervals re-derived by sampling`.
+Expected: `fermi ok: 200 cases, intervals re-derived by sampling`, in about a second.
 
 - [ ] **Step 5: Watch it fail**
 
@@ -1058,13 +1177,17 @@ npm run verify:fermi-emit
 python3 verification/verify_fermi.py
 ```
 
-Expected: FAIL, many `lo`/`hi` mismatches — the sampling route disagrees with the broken closed
-form. Revert and re-run to confirm it passes.
+Expected: FAIL on all 400 endpoint checks — the sampling route disagrees with the broken closed
+form. Revert, re-emit, re-run to confirm it passes.
 
-- [ ] **Step 6: Add the CI step**
+Then watch the staleness trap fail too: revert the maths, run `verify_fermi.py` **without**
+re-running `verify:fermi-emit` after a change. Confirm you understand that a committed fixture
+would have made this silent — that is what step 3's `.gitignore` line buys.
 
-Modify `.github/workflows/ci.yml` — in the job that already runs `python3 verification/verify.py`,
-add these two steps immediately before it:
+- [ ] **Step 6: Add the CI steps**
+
+Modify `.github/workflows/ci.yml` — insert immediately before the existing
+`- run: python3 verification/verify.py`, so both land after `pip install`:
 
 ```yaml
       - run: npm run verify:fermi-emit
@@ -1074,12 +1197,11 @@ add these two steps immediately before it:
 - [ ] **Step 7: Commit**
 
 ```bash
-git add verification/fermi-fixture.ts verification/verify_fermi.py package.json .github/workflows/ci.yml
+git add verification/fermi-fixture.ts verification/verify_fermi.py package.json .gitignore .github/workflows/ci.yml
 git commit -m "test(fermi): Python counterpart — the closed form re-derived by sampling"
 ```
 
 ---
-
 ## Task 7: Calibration history in localStorage
 
 **Files:**
@@ -1091,7 +1213,6 @@ git commit -m "test(fermi): Python counterpart — the closed form re-derived by
 Create `lib/store/calibration.test.ts`:
 
 ```ts
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { CAL_KEY, appendAnswers, clearCalibration, readCalibration } from "./calibration";
 
@@ -1120,6 +1241,8 @@ describe("calibration history", () => {
   });
 });
 ```
+
+(No `@vitest-environment jsdom` pragma: `vitest.config.ts` already sets jsdom for the whole suite.)
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -1250,7 +1373,6 @@ git commit -m "feat(fermi): calibration curve — claimed 90% against the achiev
 Create `components/FermiRunner.test.tsx`:
 
 ```tsx
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
@@ -1340,9 +1462,6 @@ export default function FermiRunner({ seed }: { seed: number }) {
   const [results, setResults] = useState<CalibrationResult[]>([]);
   const [settled, setSettled] = useState<ReturnType<typeof scoreChain> | null>(null);
 
-  const done = index >= items.length;
-  const item = done ? items[items.length - 1] : items[index];
-
   const parsed = (): Factor[] | null => {
     const out: Factor[] = [];
     for (const [i, r] of rows.entries()) {
@@ -1356,7 +1475,7 @@ export default function FermiRunner({ seed }: { seed: number }) {
   function submit() {
     const factors = parsed();
     if (!factors) { setHint(true); return; }
-    setSettled(scoreChain(factors, item.truth.value));
+    setSettled(scoreChain(factors, items[index].truth.value));
   }
 
   function next() {
@@ -1370,7 +1489,7 @@ export default function FermiRunner({ seed }: { seed: number }) {
     setSettled(null); setRows([blankRow()]); setHint(false);
   }
 
-  if (done) {
+  if (index >= items.length) {
     const s = summarizeCalibration(results);
     const lifetime = summarizeCalibration(readCalibration());
     return (
@@ -1390,7 +1509,9 @@ export default function FermiRunner({ seed }: { seed: number }) {
     );
   }
 
+  const item = items[index];
   const preview = parsed();
+  const naive = settled ? naiveProduct(preview ?? []) : null;
   return (
     <div className="container" style={{ padding: "48px 24px", maxWidth: 720 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -1412,9 +1533,7 @@ export default function FermiRunner({ seed }: { seed: number }) {
           {/* The quadrature lesson, shown rather than asserted. */}
           <p style={{ fontSize: 14, color: "var(--body)", maxWidth: "62ch" }}>
             Multiplying your endpoints spans{" "}
-            <b className="mono" data-testid="naive-width">
-              {logW(naiveProduct(parsed() ?? []).lo || 1, naiveProduct(parsed() ?? []).hi || 1).toFixed(1)}
-            </b>{" "}
+            <b className="mono" data-testid="naive-width">{logW(naive!.lo, naive!.hi).toFixed(1)}</b>{" "}
             orders of magnitude. Your stated beliefs actually imply{" "}
             <b className="mono" data-testid="combined-width">{settled.logWidth.toFixed(1)}</b>{" "}
             — uncertainty adds in quadrature, not linearly, because independent errors do not all
@@ -1527,12 +1646,12 @@ Modify `app/page.tsx`. Add to the `sims` array, immediately after the `/game/mar
 ```bash
 npx vitest run
 npx tsc --noEmit
+npm run verify:emit && python3 verification/verify.py
 npm run verify:fermi-emit && python3 verification/verify_fermi.py
 npx next build
 ```
 
-Expected: every test file passes, typecheck silent, the fermi counterpart reports ok, build
-completes.
+Expected: every test file passes, typecheck silent, both counterparts report ok, build completes.
 
 - [ ] **Step 4: Play it once**
 
@@ -1558,39 +1677,92 @@ git commit -m "feat(fermi): the route, and the landing-page link"
 
 ---
 
+## Verified against the repo
+
+Checked before writing, not assumed:
+
+- `vitest.config.ts:18` already globs all four test paths used here (`packages/**/test/**/*.test.ts`,
+  `lib/**/*.test.ts`, `components/**/*.test.tsx`, `content/**/*.test.ts`). No config change needed,
+  and `environment: "jsdom"` is already global — hence no per-file pragmas.
+- `@qp/engine` and `@/` resolve in both `vitest.config.ts` and `tsconfig.json`.
+- `makeRng` (`rng.ts:3`) and `fmtNum` (`format.ts:4`) exist and are re-exported from the barrel.
+- No name collisions in the engine for `Factor`, `Combined`, `CalibrationResult`, `Z95`,
+  `intervalScore`, `scoreChain`, `naiveProduct`.
+- Every CSS var used (`--card-border --good --bad --faint --ink --muted --rule --body`) is defined
+  in `app/globals.css:2-5`; `.mono`, `.microlabel`, `.container` at `:10,14,15`.
+- `PROBLEMS` is `content/problems/index.ts:230`, so `import { PROBLEMS } from "../problems"` from
+  `content/fermi/` resolves.
+- `verification/instances.json` is gitignored (`.gitignore:26`), which settles what the fermi
+  fixture does.
+- `verify.py:9,19` keys `SOLVERS` by problem id off `instances.json` — confirming Fermi content
+  genuinely cannot ride that loop, which is what Task 6 works around.
+- The Task 1 properness test was run as written: honest 2.07, tooTight 5.65, tooWide 4.00, and
+  the deterministic generator's own coverage of the honest interval is 90.0%. Wide margins, not
+  flaky.
+- Task 6's tolerance rule was run at full scale in both directions: 0/400 endpoint failures on a
+  correct implementation, 400/400 on the seeded quadrature bug. The 2%-relative rule it replaces
+  failed 11/400 on correct code.
+
 ## Self-review notes
 
 **Spec coverage.** §1 the two skills → Tasks 3 (decomposition content) and 1 (calibration
 mathematics). §2 decisions → all reflected; the rejected market-game scoring is named in
 `calibration.ts`'s header. §3 closed-form lognormal combination → Task 1, with the quadrature
 claim as its own test and its own watched failure. §4 scoring → Task 1, including the properness
-test, which is the property that justifies the whole rule. §5 tables × templates → Tasks 2 and 3,
-reaching 120 items across two templates. §6 staleness → Task 4 gate 2, with the 24-month bound.
-§7 verification → Task 4 (the three gates) and Task 6 (the Python counterpart), and gate 3 pins
-the PROBLEMS separation the whole argument rests on. §8 session shape → Task 9. §9 files → all
-created, with `verification/fermi-fixture.ts` and `verify_fermi.py` replacing the spec's
-`solvers/calibration.py` because Fermi content cannot ride verify.py's instance loop. §10
-deferrals → nothing here touches correlation, Supabase, or player-authored content. §11 risks →
-the tolerance risk gets Task 5, the UI risk gets Task 10 step 4.
+test, which is the property that justifies the whole rule. §5 tables × templates → Tasks 0, 2 and
+3. §6 staleness → Task 5 gate 2, gated on data vintage rather than retrieval date. §7 verification
+→ Task 5 (the three gates) and Task 6 (the Python counterpart), with gate 3 pinning the PROBLEMS
+separation the whole argument rests on. §8 session shape → Task 9. §9 files → all created, with
+`verification/fermi-fixture.ts` and `verify_fermi.py` replacing the spec's `solvers/calibration.py`
+because Fermi content cannot ride verify.py's instance loop. §10 deferrals → nothing here touches
+correlation, Supabase, or player-authored content. §11 risks → the tolerance risk gets Task 4, the
+UI risk gets Task 10 step 4.
 
 **Naming consistency.** `Factor`, `Combined`, `CalibrationResult`, `CalibrationSummary`,
 `fitLogNormal`, `combineFactors`, `naiveProduct`, `intervalScore`, `scoreChain`,
 `summarizeCalibration`, `isValidFactor`, `Z95`, `CALIBRATION_MIN_ANSWERS`, `Cited`, `DataTable`,
-`CanonicalFactor`, `FermiItem`, `FermiTemplate`, `FERMI_TEMPLATES`, `fermiItem`, `fermiSession`,
-`fermiReach`, `CAL_KEY`, `readCalibration`, `appendAnswers`, `clearCalibration`,
-`CalibrationCurve`, `FermiRunner` are spelled identically everywhere they appear. `scoreChain`
-returns `CalibrationResult & { combined }`, which Task 9 destructures into exactly the four
-fields `appendAnswers` stores.
+`CanonicalFactor`, `FermiItem`, `FermiTemplate`, `FERMI_TEMPLATES`, `fermiSession`, `fermiReach`,
+`CAL_KEY`, `readCalibration`, `appendAnswers`, `clearCalibration`, `CalibrationCurve`,
+`FermiRunner` are spelled identically everywhere they appear. `scoreChain` returns
+`CalibrationResult & { combined }`, which Task 9 destructures into exactly the four fields
+`appendAnswers` stores.
 
 **Resolved during self-review.** The spec listed `verification/solvers/calibration.py`, implying
 Fermi content would join `verify.py`'s `SOLVERS` dict. It cannot: that dict is keyed by problem id
 and `verify.py` iterates `instances.json`, which `emit.ts` builds from `PROBLEMS` — and gate 3
 exists precisely to keep Fermi out of `PROBLEMS`. Task 6 therefore adds a parallel emitter and
 checker rather than extending the existing one, which also buys a better check: TypeScript's
-closed form against Python's sampling is two genuinely different routes, where a Python
-transcription of the same algebra would have been one route written twice.
+closed form against Python's sampling is two genuinely different routes. The score comparison in
+the same file is *not* — it is the same formula written twice, and it is labelled as such rather
+than counted toward the independence claim.
 
-**One thing deliberately left to execution.** Task 5's measured tolerance cannot be written here,
-because it depends on numbers that only exist once the chains are authored. The task specifies
-the procedure, the decision rule, and the failure condition (a gap over 0.3 means the chain is
-wrong, not the tolerance) rather than a value.
+**Changed from the first draft of this plan, and why.**
+
+1. **Task 0 added, and every real-world number removed from the plan.** The first draft's chain
+   for Chicago gave 89 tuners against a "published" 290 — 0.51 log10 apart, past its own
+   fix-the-chain threshold — because both numbers were written from memory. A plan cannot cite;
+   only retrieval can.
+2. **Task 4 (measure) moved ahead of Task 5 (gate).** The first draft wrote the gate with a
+   provisional tolerance, told the executor to expect PASS, and measured afterwards. With the
+   numbers it shipped, the executor would have hit a red gate and an instruction not to touch it.
+   Measure first, then the gate's expectation is honest.
+3. **Gate 2 renamed to citation *presence*.** It asserts `source.length > 10`. It always did.
+   Calling it "citation integrity" was the plan telling itself it had a check it did not have.
+4. **`vintage` added to `Cited`/`DataTable`, and staleness gated on it.** The first draft's
+   24-month gate ran on `retrievedAt`, so re-opening a page made eight-year-old data fresh.
+5. **Sort-order assertion added.** The first draft's 60-row table had 11 rows out of descending
+   order — the cheapest possible signal that values had been edited one at a time, and nothing
+   was looking for it.
+6. **Python endpoint tolerance moved into log space, scaled by sigma.** The 2%-relative rule
+   failed 11 of 400 comparisons on correct code.
+7. **`verification/fermi-instances.json` gitignore made mandatory rather than conditional**, with
+   the reason named: a committed fixture reproduces the `instances.json` incident this repo has
+   already had once.
+8. Minor: dropped `fermiItem` (only ever used by a tautological determinism test), dropped the
+   redundant `@vitest-environment` pragmas, and computed `naiveProduct` once in the runner instead
+   of three times per render.
+
+**One thing deliberately left to execution.** Task 5's `CROSS_CHECK_TOLERANCE_LOG10` cannot be
+written here, because it depends on numbers that only exist once Task 0 has retrieved the sources
+and Task 4 has measured the gaps. The plan specifies the procedure, the decision rule, the
+asymmetry (an employer-only reference is a floor), and the failure condition rather than a value.
