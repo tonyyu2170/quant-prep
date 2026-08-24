@@ -532,5 +532,7 @@ export const TOPIC_LABELS: Record<string, string> = {
   "probability/symmetry": "symmetry",
   "brainteasers/logic": "brainteasers",
   "statistics/moments": "statistics",
+  "statistics/estimation": "estimation",
+  "statistics/inference": "inference",
   "finance/pricing": "finance",
 };

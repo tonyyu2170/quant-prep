@@ -9,7 +9,7 @@ import { fmtNum } from "../util";
 export const adjustedRSquaredFromSums: ProblemTemplate = {
   id: "statistics/adjusted-r-squared-from-sums",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 3,
   firms: [{ firm: "two-sigma", weight: 0.3 }, { firm: "de-shaw", weight: 0.25 }, { firm: "millennium", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "R-squared from the ANOVA sums of squares, and the degrees-of-freedom adjustment" },

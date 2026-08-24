@@ -14,7 +14,7 @@ const reverseOf = (par: { rho: number; byx: number }) => (par.rho * par.rho) / p
 export const reverseRegressionSlope: ProblemTemplate = {
   id: "statistics/reverse-regression-slope",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "millennium", weight: 0.3 }, { firm: "two-sigma", weight: 0.25 }, { firm: "sig", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the two least-squares slopes multiply to the squared correlation" },

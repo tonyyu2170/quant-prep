@@ -2871,7 +2871,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "finance/pricing"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

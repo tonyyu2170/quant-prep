@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const twoSidedZTestStatistic: ProblemTemplate = {
   id: "statistics/two-sided-z-test-statistic",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/inference",
   difficulty: 2,
   firms: [{ firm: "imc", weight: 0.2 }, { firm: "optiver", weight: 0.2 }, { firm: "flow", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the z-statistic for a sample mean against a null" },

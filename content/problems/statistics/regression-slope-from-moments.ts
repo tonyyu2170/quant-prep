@@ -10,7 +10,7 @@ const slopeOf = (par: { rho: number; sdX: number; sdY: number }) => (par.rho * p
 export const regressionSlopeFromMoments: ProblemTemplate = {
   id: "statistics/regression-slope-from-moments",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "two-sigma", weight: 0.3 }, { firm: "de-shaw", weight: 0.25 }, { firm: "jump", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "least-squares slope as correlation times the ratio of standard deviations" },

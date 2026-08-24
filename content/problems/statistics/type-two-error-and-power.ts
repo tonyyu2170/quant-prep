@@ -11,7 +11,7 @@ const critOf = (par: { alphaPct: number }) =>
 export const typeTwoErrorAndPower: ProblemTemplate = {
   id: "statistics/type-two-error-and-power",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/inference",
   difficulty: 3,
   firms: [{ firm: "de-shaw", weight: 0.25 }, { firm: "two-sigma", weight: 0.2 }, { firm: "hrt", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the power of a one-sided z-test against a specific alternative" },

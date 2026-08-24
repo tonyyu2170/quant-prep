@@ -15,7 +15,7 @@ const sizeOf = (par: { conf: number; pPct: number; marginPct: number }) => {
 export const sampleSizeForAProportion: ProblemTemplate = {
   id: "statistics/sample-size-for-a-proportion",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "jump", weight: 0.2 }, { firm: "millennium", weight: 0.2 }, { firm: "imc", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the sample size needed for a proportion at a target margin" },

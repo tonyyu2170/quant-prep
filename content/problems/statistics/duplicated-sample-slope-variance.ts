@@ -21,7 +21,7 @@ import { fmtNum } from "../util";
 export const duplicatedSampleSlopeVariance: ProblemTemplate = {
   id: "statistics/duplicated-sample-slope-variance",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "de-shaw", weight: 0.3 }, { firm: "two-sigma", weight: 0.25 }, { firm: "akuna", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "what duplicating every observation does to the variance of a least-squares slope" },

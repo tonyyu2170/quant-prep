@@ -21,7 +21,7 @@ const sizeOf = (par: { sd: number; margin: number; conf: number }) =>
 export const sampleSizeForMargin: ProblemTemplate = {
   id: "statistics/sample-size-for-margin",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.3 }, { firm: "jane-street", weight: 0.25 }, { firm: "imc", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "sample size for a target margin of error on a mean" },

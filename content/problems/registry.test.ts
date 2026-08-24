@@ -81,6 +81,8 @@ describe("problem registry invariants", () => {
     const symmetry = problemsFor("probability/symmetry").length;
     const brainteasers = problemsFor("brainteasers/logic").length;
     const statistics = problemsFor("statistics/moments").length;
+    const estimation = problemsFor("statistics/estimation").length;
+    const inference = problemsFor("statistics/inference").length;
     const finance = problemsFor("finance/pricing").length;
     expect(bayes).toBe(30);
     expect(counting).toBe(27);
@@ -91,9 +93,11 @@ describe("problem registry invariants", () => {
     expect(markov).toBe(8);
     expect(symmetry).toBe(12);
     expect(brainteasers).toBe(23);
-    expect(statistics).toBe(35);
+    expect(statistics).toBe(17);
+    expect(estimation).toBe(15);
+    expect(inference).toBe(3);
     expect(finance).toBe(10);
-    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + finance).toBe(PROBLEMS.length);
+    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

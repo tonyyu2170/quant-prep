@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const standardErrorOfTheMean: ProblemTemplate = {
   id: "statistics/standard-error-of-the-mean",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 1,
   firms: [{ firm: "jane-street", weight: 0.2 }, { firm: "hrt", weight: 0.2 }, { firm: "jump", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the standard error of a sample mean under independent sampling" },

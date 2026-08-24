@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const finitePopulationCorrection: ProblemTemplate = {
   id: "statistics/finite-population-correction",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 3,
   firms: [{ firm: "sig", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }, { firm: "two-sigma", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the finite population correction for sampling without replacement" },

@@ -7,7 +7,7 @@ import { fmtNum } from "../util";
 export const cltProbabilityForASampleMean: ProblemTemplate = {
   id: "statistics/clt-probability-for-a-sample-mean",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.2 }, { firm: "imc", weight: 0.2 }, { firm: "akuna", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the central limit theorem applied to a sample mean" },

@@ -17,7 +17,7 @@ const critOf = (par: { alphaPct: number }) =>
 export const pValueFromAZStatistic: ProblemTemplate = {
   id: "statistics/p-value-from-a-z-statistic",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/inference",
   difficulty: 2,
   firms: [{ firm: "two-sigma", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }, { firm: "citadel", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the two-sided p-value of a z-statistic" },

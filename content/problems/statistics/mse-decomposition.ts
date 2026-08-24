@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const mseDecomposition: ProblemTemplate = {
   id: "statistics/mse-decomposition",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.2 }, { firm: "hrt", weight: 0.2 }, { firm: "jump", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "mean squared error as bias squared plus variance" },

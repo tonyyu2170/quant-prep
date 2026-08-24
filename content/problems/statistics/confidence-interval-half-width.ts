@@ -9,7 +9,7 @@ const zOf = (par: { conf: number }) => (par.conf === 90 ? 1.645 : par.conf === 9
 export const confidenceIntervalHalfWidth: ProblemTemplate = {
   id: "statistics/confidence-interval-half-width",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "akuna", weight: 0.2 }, { firm: "sig", weight: 0.2 }, { firm: "citadel-securities", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the half-width of a normal confidence interval for a mean" },

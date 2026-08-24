@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const biasOfThePlugInVariance: ProblemTemplate = {
   id: "statistics/bias-of-the-plug-in-variance",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.2 }, { firm: "two-sigma", weight: 0.2 }, { firm: "de-shaw", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the downward bias of the 1/n variance estimator" },

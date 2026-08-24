@@ -4,7 +4,7 @@ import { fmtNum } from "../util";
 export const varianceOfADifferenceInMeans: ProblemTemplate = {
   id: "statistics/variance-of-a-difference-in-means",
   version: 1,
-  topic: "statistics/moments",
+  topic: "statistics/estimation",
   difficulty: 2,
   firms: [{ firm: "millennium", weight: 0.2 }, { firm: "citadel-securities", weight: 0.2 }, { firm: "optiver", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the standard error of a difference between two independent sample means" },
