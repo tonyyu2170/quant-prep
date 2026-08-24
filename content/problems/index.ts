@@ -251,6 +251,10 @@ import { brownianCovarianceCorrelation } from "./stochastic/brownian-covariance-
 import { compoundSumVariance } from "./stochastic/compound-sum-variance";
 import { gbmProbabilityAboveStrike } from "./stochastic/gbm-probability-above-strike";
 import { gbmFitThenBelowMean } from "./stochastic/gbm-fit-then-below-mean";
+import { constantPlusDiagonalDeterminant } from "./linear-algebra/constant-plus-diagonal-determinant";
+import { determinantScalingAndPower } from "./linear-algebra/determinant-scaling-and-power";
+import { inverseOfAConstantPlusDiagonal } from "./linear-algebra/inverse-of-a-constant-plus-diagonal";
+import { equicorrelationFitThenInverse } from "./linear-algebra/equicorrelation-fit-then-inverse";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -526,6 +530,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   compoundSumVariance,
   gbmProbabilityAboveStrike,
   gbmFitThenBelowMean,
+  constantPlusDiagonalDeterminant,
+  determinantScalingAndPower,
+  inverseOfAConstantPlusDiagonal,
+  equicorrelationFitThenInverse,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
