@@ -59,19 +59,19 @@ describe("DrillRunner", () => {
     render(<DrillRunner topic="sequences" />);
     const input = await screen.findByLabelText("answer");
     const q1 = screen.getByTestId("prompt").textContent!;
-    expect(q1.split(",").length).toBe(6); // L1 shows 5 terms + "?"
+    expect([5, 6]).toContain(q1.split(",").length); // 4 terms + "?", or 5 + "?" for interleaved
     fireEvent.click(screen.getByText("L2"));
     expect(screen.getByTestId("prompt").textContent).toBe(q1); // current question unchanged
     fireEvent.change(screen.getByLabelText("answer"), { target: { value: "1" } });
     fireEvent.keyDown(screen.getByLabelText("answer"), { key: "Enter" });
     fireEvent.keyDown(screen.getByTestId("feedback"), { key: "Enter" });
-    // Term count is no longer a difficulty signal: the fast-growing sequence families show five
-    // terms at every level (packages/generators/src/sequences.ts SHORT), because six terms of a
-    // climbing-multiplier rule put the answer in the hundreds of thousands. What the difficulty
-    // control must still guarantee is that it takes effect on the NEXT question, not this one.
+    // Term count is not a difficulty signal at all now: every family shows four terms, and only
+    // `interleaved` shows five (two points per stream cannot pin a four-term prompt). What the
+    // difficulty control must still guarantee is that it takes effect on the NEXT question, not
+    // this one — which is the whole point of this test, and is what the assertions below check.
     const q2 = screen.getByTestId("prompt").textContent!;
     expect(q2).not.toBe(q1);
-    expect([6, 7]).toContain(q2.split(",").length);
+    expect([5, 6]).toContain(q2.split(",").length);
     expect(screen.getByText("L2")).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("L1")).toHaveAttribute("aria-pressed", "false");
   });

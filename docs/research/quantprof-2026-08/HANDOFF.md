@@ -73,9 +73,25 @@ All fourteen printed under `--stragglers`. Every one is a **between-family** cla
 gate's test), `3, 5, 8, 13`, and twelve `ratio-linear-offset` against `mult-plus-linear`
 collisions. **Zero are within-family underdetermination**, which was the stated blocker.
 
-### The ruling this implies — NOT taken, it needs a call
+### The ruling this implies — **TAKEN 2026-08-24, SHIPPED**
 
-Four-term display looks shippable behind two changes: drop `interleaved` from the four-term
+Implemented, with one change from the recommendation below: `interleaved` is kept and shown at
+**five** terms rather than dropped from the draw. Term count already varied by family, and
+losing a pattern family to a display change was the worse trade. It is still excluded from the
+FIT space, which is the part that was structural.
+
+Shipped as: `packages/generators/src/seq-ambiguity.ts` (the SPACE C fitter and the solver rules,
+in ONE module so the redraw loop and the gate cannot drift), a redraw loop in
+`sequenceItemOfFamily`, and a gate asserting no shipped prompt admits a next term other than its
+own answer — strictly stronger than the tripwire it replaced. Both were watched failing.
+
+One caveat on the numbers below, recorded because it bounds what was measured: SPACE A mirrors
+the generator's bounds at the **widest difficulty per axis**, so the population is a union across
+tiers and is unweighted, while shipping draws weighted by `SEQ_WEIGHTS` per tier. The 0.2%/2.4%
+are therefore not the shipped rate. The redraw loop does not depend on them being exact.
+
+The original recommendation, for the record — four-term display looks shippable behind two
+changes: drop `interleaved` from the four-term
 draw, and add a generation-time rejection loop that redraws when the SPACE B fitter returns
 more than one next term. 2.4% rejection is cheap. **Not implemented** — the tripwire in
 `packages/generators/test/sequences.test.ts` still asserts the block, and reversing a landed

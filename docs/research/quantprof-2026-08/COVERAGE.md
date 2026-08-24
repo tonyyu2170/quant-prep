@@ -337,7 +337,27 @@ live footgun for the next re-tag.
 
 ---
 
-# Four-term sequence display — TRIED AND REVERTED 2026-08-22
+# Four-term sequence display — TRIED AND REVERTED 2026-08-22 — **SUPERSEDED, SHIPPED 2026-08-24**
+
+> **SUPERSEDED. Four-term display shipped on 2026-08-24.** The text below is kept as the record
+> of what was believed at the time, and it is wrong in its central claim. This section closes by
+> asking for exactly one measurement — "fit each of their 652 four-term prompts across a
+> parameter sweep and count how many admit more than one next term. That measurement, not a
+> checker, is what would unblock this." It was done (`four-term-sweep.ts`, HANDOFF.md), and it
+> unblocked it.
+>
+> **The nineteen answers below are an artefact of an unbounded parameter window.** Enumerated
+> against `ratio-linear-offset`'s REAL range (start 2..6, p 1..3, c -4..5, s = +-1), the prompt
+> `3, -1, -5, -17` admits exactly ONE tuple. Widen the window and the count rises with it, which
+> is the tell that what was counted was the window, not the ambiguity. The claim below that the
+> ambiguity is *within* one family rather than between families is also wrong: all 14 stragglers
+> the sweep found are between-family clashes, the class a rejection loop fixes, and zero are
+> within-family underdetermination.
+>
+> What survived: `interleaved` genuinely cannot show four terms — two points per stream means a
+> line always fits — so it ships at five. Everything else shows four, behind a generation-time
+> redraw loop in `packages/generators/src/sequences.ts` using the shared fitter in
+> `seq-ambiguity.ts`.
 
 The handoff carried this as integration candidate 3, blocked on "the answer checker
 accepting any rule consistent with the shown terms." That framing is wrong, and the

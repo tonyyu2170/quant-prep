@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeRng } from "@qp/engine";
 import { sequenceItem, sequenceItemOfFamily, SEQ_FAMILIES, SEQ_WEIGHTS, type SeqFamily } from "../src/sequences";
+import { alternativeNexts, nextsFittingFamily } from "../src/seq-ambiguity";
 
 type Verifier = (terms: number[], answer: number) => boolean;
 
@@ -261,44 +262,42 @@ describe("sequenceItemOfFamily", () => {
 });
 
 // --- solver-ambiguity gate ------------------------------------------------------------
-// The rule classes a solver actually reaches for, each over-determined by at least one
-// constraint at the term counts we ship. Cubics are deliberately absent: four points always
-// admit one exactly, so a degree-3 fitter matches everything and proves nothing.
+// The rules live in src/seq-ambiguity.ts, NOT here. They used to be a copy in this file, which
+// was safe only while nothing else checked ambiguity. The generation-time redraw loop now does,
+// and a gate written to different rules than the loop that fed it proves nothing — the same
+// reason draw-space.ts was extracted so probe.ts and its gate could not drift.
 //
-// This exists because of a change that was tried and reverted — showing FOUR terms, which is
-// what QuantProf does and what the research called the headline finding. It does not survive
-// our family set. The gate below is the tripwire: it passes at 5-6 terms and fails the moment
-// anyone shortens them, so the next person meets the evidence instead of the idea.
-const SOLVER_RULES: ReadonlyArray<(t: readonly number[]) => number | null> = [
-  (t) => { const d = t[1] - t[0]; return t.every((v, i) => i === 0 || v - t[i - 1] === d) ? t[t.length - 1] + d : null; },
-  (t) => {
-    const d1 = t.slice(1).map((v, i) => v - t[i]);
-    const dd = d1[1] - d1[0];
-    return d1.every((v, i) => i === 0 || v - d1[i - 1] === dd) ? t[t.length - 1] + d1[d1.length - 1] + dd : null;
-  },
-  (t) => {
-    if (t[1] - t[0] === 0) return null;
-    const a = (t[2] - t[1]) / (t[1] - t[0]);
-    const b = t[1] - a * t[0];
-    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
-    for (let i = 3; i < t.length; i++) if (Math.abs(a * t[i - 1] + b - t[i]) > 1e-9) return null;
-    return a * t[t.length - 1] + b;
-  },
-  (t) => {
-    for (let i = 2; i < t.length; i++) if (t[i] !== t[i - 1] + t[i - 2]) return null;
-    return t[t.length - 1] + t[t.length - 2];
-  },
-];
-
-const contradicted = (t: readonly number[], ans: number) =>
-  SOLVER_RULES.some((f) => { const v = f(t); return v !== null && Math.abs(v - ans) > 1e-9; });
+// This gate USED to be a tripwire that failed the moment anyone shortened the shown terms,
+// because showing four had been tried and reverted. Four now ships (see the note on `n` in
+// src/sequences.ts): the sweep showed the revert's "nineteen next terms" was an artefact of an
+// unbounded parameter window, and the residual 2.4% is handled by the redraw loop. So the gate
+// asserts the invariant that replaced the block — no SHIPPED prompt admits a next term other
+// than its own answer — which is strictly stronger than what the tripwire checked.
 
 describe("no shipped sequence is contradicted by a rule a solver would try", () => {
   it("fires on the textbook four-term clashes", () => {
     // 2, 3, 5, 8 is fiblike's 13 and a quadratic's 12 with equal justice.
-    expect(contradicted([2, 3, 5, 8], 13)).toBe(true);
-    expect(contradicted([4, 6, 10, 16], 24)).toBe(true);
-    expect(contradicted([3, 7, 11, 15], 19)).toBe(false);
+    expect(alternativeNexts([2, 3, 5, 8], 13)).toContain(12);
+    expect(alternativeNexts([4, 6, 10, 16], 24).length).toBeGreaterThan(0);
+    // A plain arithmetic run is explained by nothing else, at any term count.
+    expect(alternativeNexts([3, 7, 11, 15], 19)).toEqual([]);
+  });
+
+  it("every family's own form fits its own shipped prompt — the mirror on forward-build drift", () => {
+    // seq-ambiguity.ts re-implements the forward recurrences in order to fit them. If a
+    // generator recurrence changed and that copy did not, the fitter would quietly stop
+    // recognising our own prompts and every ambiguity number it reports would be worthless.
+    for (const f of SEQ_FAMILIES) {
+      for (const d of [1, 2, 3] as const) {
+        const rng = makeRng(777 + d);
+        for (let i = 0; i < 40; i++) {
+          const it = sequenceItemOfFamily(rng, f, d);
+          const terms = String(it.meta.terms).split(",").map(Number);
+          expect(nextsFittingFamily(f, terms), `${f} L${d}: ${terms.join(",")} -> ${it.answer} unreachable by its own fitter`)
+            .toContain(it.answer);
+        }
+      }
+    }
   });
 
   it("no family at its shipped term count admits a contradicting simple rule", () => {
@@ -308,8 +307,8 @@ describe("no shipped sequence is contradicted by a rule a solver would try", () 
         for (let i = 0; i < 400; i++) {
           const it = sequenceItemOfFamily(rng, f, d);
           const terms = String(it.meta.terms).split(",").map(Number);
-          expect(contradicted(terms, it.answer),
-            `${f} L${d}: ${terms.join(", ")}, ? -> ${it.answer} is contradicted by a simple rule`).toBe(false);
+          expect(alternativeNexts(terms, it.answer),
+            `${f} L${d}: ${terms.join(", ")}, ? -> ${it.answer} also admits another next term`).toEqual([]);
         }
       }
     }

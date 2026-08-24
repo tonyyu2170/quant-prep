@@ -1,4 +1,5 @@
 import { randInt, type Item, type Rng } from "@qp/engine";
+import { isAmbiguous } from "./seq-ambiguity";
 
 export const SEQ_FAMILIES = [
   "arithmetic", "geometric", "quadratic", "interleaved",
@@ -33,12 +34,6 @@ export const SEQ_WEIGHTS: Record<1 | 2 | 3, Record<SeqFamily, number>> = {
   },
 };
 
-// Multiplicative families compound too fast to show six terms — one fewer keeps answers
-// four to five digits, the same scale the rest of the bank already lands in.
-const SHORT: ReadonlySet<string> = new Set([
-  "ratio-linear-offset", "mult-plus-linear", "ratio-arith", "divisor-arith", "power-offset",
-]);
-
 function pickFamily(rng: Rng, difficulty: 1 | 2 | 3): SeqFamily {
   const w = SEQ_WEIGHTS[difficulty];
   let r = rng() * 100; // weights sum to 100; one draw, exactly like the uniform pick it replaced
@@ -50,13 +45,23 @@ function pickFamily(rng: Rng, difficulty: 1 | 2 | 3): SeqFamily {
 }
 
 function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: number[]; answer: number; rule: string; extra?: Record<string, number> } {
-  // Shown terms: difficulty-driven, except the SHORT families above, which show 5 at every difficulty.
-  // NOT four. Four is what QuantProf shows and the research named it the headline finding, but
-  // it does not survive our family set: at four terms `ratio-linear-offset` — 47% of the hard
-  // tier — is underdetermined within its OWN parameter range. `3, -1, -5, -17` fits every
-  // multiplier from -6 to 12 and each predicts a different next term, 19 answers for one
-  // prompt. See the note in docs/research/quantprof-2026-08/COVERAGE.md.
-  const n = SHORT.has(family) ? 5 : difficulty === 1 ? 5 : 6;
+  // FOUR shown terms, which is what QuantProf ships and what the research called the headline
+  // finding. This was tried, reverted on 2026-08-22, and reinstated on 2026-08-24 after the
+  // measurement the revert lacked — docs/research/quantprof-2026-08/four-term-sweep.ts.
+  //
+  // The revert's stated basis does not survive that sweep. It rested on `3, -1, -5, -17`
+  // "fitting every multiplier from -6 to 12, nineteen different next terms". Enumerated against
+  // `ratio-linear-offset`'s REAL window (start 2..6, p 1..3, c -4..5, s = +-1) that prompt
+  // admits exactly ONE tuple. The nineteen came from letting the multiplier run unbounded,
+  // which is not our generator: widen the window and the count rises with it, which is the tell
+  // that what was being counted was the window, not the ambiguity. A blocking count is only as
+  // real as the parameter window behind it.
+  //
+  // `interleaved` is the one family that genuinely cannot show four. Its two streams hold two
+  // points each, a line through two points always exists, so at four terms the prompt is
+  // justified by more rules than its own. That is structural, not a window artefact, so it
+  // shows five. Term count already varied by family before this change.
+  const n = family === "interleaved" ? 5 : 4;
   // Per (family, difficulty) the number of rng draws is fixed — changing a family's draw count breaks seed replay.
   switch (family) {
     case "arithmetic": {
@@ -176,8 +181,19 @@ function build(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): { terms: num
   }
 }
 
+// Fewer shown terms means more prompts that more than one rule explains. The sweep measured
+// 2.4% of draws ambiguous under a generous fit space, and all of them BETWEEN families rather
+// than within one — the class a redraw fixes. Twelve attempts puts the odds of shipping an
+// ambiguous prompt below one in 10^19 at that rate; if a family were ever systematically
+// ambiguous the loop would exhaust silently, which is what the gate in the test file is for.
+const REDRAW_LIMIT = 12;
+
 export function sequenceItemOfFamily(rng: Rng, family: SeqFamily, difficulty: 1 | 2 | 3): Item {
-  const { terms, answer, rule, extra } = build(rng, family, difficulty);
+  let drawn = build(rng, family, difficulty);
+  for (let i = 0; i < REDRAW_LIMIT && isAmbiguous(drawn.terms, drawn.answer); i++) {
+    drawn = build(rng, family, difficulty);
+  }
+  const { terms, answer, rule, extra } = drawn;
   return {
     id: `seq-${family}-${terms.join("_")}`,
     topic: "sequences",
