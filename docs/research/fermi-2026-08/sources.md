@@ -317,3 +317,14 @@ template from a genuinely different domain, not a third slice of FHWA.
 
 **Cosmetic, not a defect.** A two-line question statement shifts the form down; nothing overlaps
 or clips.
+
+**A contradiction the play-through screenshot contained and this note first missed.** The results
+page showed *"8 of 50 answers — hit rate hidden until it can mean something"* and, one line below,
+*"Well calibrated — your 90% is behaving like 90%."* `summarizeCalibration` computed
+`headlineReady` and used it only to gate the number, never the prose. The dangerous direction is
+the other one: 5 hits in 8 would have printed *"you are overconfident: you claimed 90% and were
+right 63% of the time"* — a specific accusation whose 95% interval spans roughly 0.25 to 0.90.
+Fixed by gating all three verdicts on `headlineReady`; below the floor the page now says how many
+more answers are needed. This departs from the plan, whose test asserted "overconfident" from
+five results.
+
