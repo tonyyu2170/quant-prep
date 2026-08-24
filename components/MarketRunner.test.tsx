@@ -27,6 +27,21 @@ describe("MarketRunner", () => {
     expect(screen.queryByTestId("settlement")).not.toBeInTheDocument();
   });
 
+  it("plays through to the session summary and reports the diagnosis", () => {
+    // The end screen is pure render over summarizeMarket, but nothing else renders it — a
+    // crash there would only show up in a hand-played session. Quoting absurdly wide every
+    // round is never picked off and floors at zero credit, so the total is deterministic.
+    render(<MarketRunner seed={4242} />);
+    for (let i = 0; i < 12; i++) {
+      fireEvent.change(screen.getByLabelText("bid"), { target: { value: "-99999" } });
+      fireEvent.change(screen.getByLabelText("ask"), { target: { value: "99999" } });
+      fireEvent.click(screen.getByRole("button", { name: /^quote$/i }));
+      fireEvent.click(screen.getByRole("button", { name: /next round|see results/i }));
+    }
+    expect(screen.getByTestId("total-pnl")).toHaveTextContent("+0.0");
+    expect(screen.getByTestId("diagnosis")).toHaveTextContent(/too wide/i);
+  });
+
   it("charges the full credit cap when the clock runs out with no quote", () => {
     vi.useFakeTimers();
     try {
