@@ -3,8 +3,17 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { answerOf, drawParams, grade } from "@qp/engine";
 import { PROBLEMS, byId, problemsFor } from "./index";
+import { MARKET_TEMPLATES } from "./market";
 
 describe("problem registry invariants", () => {
+
+  it("every non-choice template is playable in the market game", () => {
+    // MARKET_TEMPLATES is derived so it cannot drift out of sync — but the COUNT can fall,
+    // and a sudden drop is how we would learn that a batch shipped as choice templates by
+    // accident. 219 was the count on 2026-08-24, at a bank of 224.
+    expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
+    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(219);
+  });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
     // Four families now: probability/*, brainteasers/*, statistics/* and finance/*. The

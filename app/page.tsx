@@ -9,6 +9,7 @@ const sims = [
   { href: "/test/optiver-80in8", label: "80-in-8 numerical sprint", sub: "Free entry · 8 minutes · +1/−2 scoring" },
   { href: "/test/optiver-mc-80in8", label: "Optiver 80-in-8", sub: "Their real format · blanked operand · 4 options" },
   { href: "/test/sequences-sprint", label: "Sequences sprint", sub: "20 patterns · 8 minutes · rule shown on every miss" },
+  { href: "/game/market-maker", label: "Market-making game", sub: "Quote a two-way market · 12 rounds · 25s each" },
 ];
 
 const drills = [
@@ -51,8 +52,7 @@ export default function Home() {
       <List items={drills} />
 
       <p className="mono" style={{ marginTop: 26, fontSize: 12, color: "var(--muted)" }}>
-        Missed problems come back on a spaced schedule in <Link href="/review">Review</Link> ·
-        {" "}Coming next: market-making game
+        Missed problems come back on a spaced schedule in <Link href="/review">Review</Link>
       </p>
     </div>
   );
