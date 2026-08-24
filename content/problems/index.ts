@@ -212,6 +212,23 @@ import { standardErrorOfTheMean } from "./statistics/standard-error-of-the-mean"
 import { pooledMeanOfTwoGroups } from "./statistics/pooled-mean-of-two-groups";
 import { medianVsMeanWithAnOutlier } from "./statistics/median-vs-mean-with-an-outlier";
 import { zScoreFromMeanAndSd } from "./statistics/z-score-from-mean-and-sd";
+import { pValueFromAZStatistic } from "./statistics/p-value-from-a-z-statistic";
+import { biasOfThePlugInVariance } from "./statistics/bias-of-the-plug-in-variance";
+import { mseDecomposition } from "./statistics/mse-decomposition";
+import { varianceOfADifferenceInMeans } from "./statistics/variance-of-a-difference-in-means";
+import { efficiencyOfTwoUnbiasedEstimators } from "./statistics/efficiency-of-two-unbiased-estimators";
+import { sampleVarianceOfALinearCombination } from "./statistics/sample-variance-of-a-linear-combination";
+import { cltProbabilityForASampleMean } from "./statistics/clt-probability-for-a-sample-mean";
+import { finitePopulationCorrection } from "./statistics/finite-population-correction";
+import { weightedLeastSquaresSingleMean } from "./statistics/weighted-least-squares-single-mean";
+import { twoSidedZTestStatistic } from "./statistics/two-sided-z-test-statistic";
+import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-half-width";
+import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
+import { sampleSizeForAProportion } from "./statistics/sample-size-for-a-proportion";
+import { expectedMaximumOfUniforms } from "./statistics/expected-maximum-of-uniforms";
+import { expectedRangeOfUniforms } from "./statistics/expected-range-of-uniforms";
+import { probabilityAGivenOrderStatisticExceeds } from "./statistics/probability-a-given-order-statistic-exceeds";
+import { medianOfAnOddSampleFromTwoGroups } from "./statistics/median-of-an-odd-sample-from-two-groups";
 import { bookOverroundArbitrage } from "./finance/book-overround-arbitrage";
 import { triangularFxArbitrage } from "./finance/triangular-fx-arbitrage";
 import { putCallParity } from "./finance/put-call-parity";
@@ -446,6 +463,23 @@ export const PROBLEMS: ProblemTemplate[] = [
   pooledMeanOfTwoGroups,
   medianVsMeanWithAnOutlier,
   zScoreFromMeanAndSd,
+  pValueFromAZStatistic,
+  biasOfThePlugInVariance,
+  mseDecomposition,
+  varianceOfADifferenceInMeans,
+  efficiencyOfTwoUnbiasedEstimators,
+  sampleVarianceOfALinearCombination,
+  cltProbabilityForASampleMean,
+  finitePopulationCorrection,
+  weightedLeastSquaresSingleMean,
+  twoSidedZTestStatistic,
+  confidenceIntervalHalfWidth,
+  typeTwoErrorAndPower,
+  sampleSizeForAProportion,
+  expectedMaximumOfUniforms,
+  expectedRangeOfUniforms,
+  probabilityAGivenOrderStatisticExceeds,
+  medianOfAnOddSampleFromTwoGroups,
   bookOverroundArbitrage,
   triangularFxArbitrage,
   putCallParity,
