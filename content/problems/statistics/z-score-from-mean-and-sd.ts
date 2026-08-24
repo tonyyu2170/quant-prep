@@ -30,7 +30,7 @@ export const zScoreFromMeanAndSd: ProblemTemplate = {
     `What is today's z-score?`,
   solution: (p, d) => [
     { title: "A z-score counts standard deviations, not units", body: `Standardising subtracts the mean and then divides by the standard deviation: $z=\\dfrac{x-\\mu}{\\sigma}$. The subtraction says how far from typical today is; the division converts that distance into the only unit that is comparable across different quantities.` },
-    { title: "Measure the gap from the mean", body: `Today came in at $${fmtNum(d.obs)}-${fmtNum(p.mu)}=${fmtNum(d.gap)}$ thousand contracts away from the long-run average.` },
+    { title: "Measure the gap from the mean", body: `The signed gap is $${fmtNum(d.obs)}-${fmtNum(p.mu)}=${fmtNum(d.gap)}$ thousand contracts. Signed, not a bare distance: which side of typical the day fell on is half of what the answer says.` },
     { title: "Express the gap in standard deviations", body: `One standard deviation is ${fmtNum(p.sigma)} thousand, so the gap is $\\dfrac{${fmtNum(d.gap)}}{${fmtNum(p.sigma)}}=${fmtNum(d.answer)}$ of them.` },
     { title: "Answer", body: `Today's z-score is ${fmtNum(d.answer)}.` },
     { title: "Sanity check", body: `Two standard deviations either side of the mean spans ${fmtNum(d.twoSigmaBand)} thousand contracts in each direction, the band that holds roughly nineteen days in twenty for a bell-shaped quantity. Comparing today's gap of ${fmtNum(d.gap)} against that band says immediately whether the day was merely busy or genuinely unusual.` },
