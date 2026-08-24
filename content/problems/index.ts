@@ -255,6 +255,9 @@ import { constantPlusDiagonalDeterminant } from "./linear-algebra/constant-plus-
 import { determinantScalingAndPower } from "./linear-algebra/determinant-scaling-and-power";
 import { inverseOfAConstantPlusDiagonal } from "./linear-algebra/inverse-of-a-constant-plus-diagonal";
 import { equicorrelationFitThenInverse } from "./linear-algebra/equicorrelation-fit-then-inverse";
+import { multiplesInARange } from "./number-theory/multiples-in-a-range";
+import { coprimeCountTwoPrimes } from "./number-theory/coprime-count-two-primes";
+import { gcdLcmProduct } from "./number-theory/gcd-lcm-product";
 import { adjustedRSquaredFromSums } from "./statistics/adjusted-r-squared-from-sums";
 import { duplicatedSampleSlopeVariance } from "./statistics/duplicated-sample-slope-variance";
 import { overlappingWindowSums } from "./statistics/overlapping-window-sums";
@@ -534,6 +537,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   determinantScalingAndPower,
   inverseOfAConstantPlusDiagonal,
   equicorrelationFitThenInverse,
+  multiplesInARange,
+  coprimeCountTwoPrimes,
+  gcdLcmProduct,
 ];
 
 export const byId = new Map(PROBLEMS.map((t) => [t.id, t]));
@@ -569,4 +575,6 @@ export const TOPIC_LABELS: Record<string, string> = {
   "finance/pricing": "finance",
   "pure-math/stochastic": "stochastic",
   "pure-math/linear-algebra": "linear algebra",
+  "pure-math/number-theory": "number theory",
+  "pure-math/solid-geometry": "solid geometry",
 };
