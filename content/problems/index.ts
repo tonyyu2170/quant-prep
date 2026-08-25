@@ -249,6 +249,9 @@ import { atmStraddleFromDollarVol } from "./finance/atm-straddle-from-dollar-vol
 import { putButterflyFromCallQuotes } from "./finance/put-butterfly-from-call-quotes";
 import { twoStepBinomialCallPrice } from "./finance/two-step-binomial-call-price";
 import { putCallParityWithDividend } from "./finance/put-call-parity-with-dividend";
+import { americanVsEuropeanCallCredit } from "./finance/american-vs-european-call-credit";
+import { multiWinnerBookArbitrage } from "./finance/multi-winner-book-arbitrage";
+import { forwardMispricingArbitrage } from "./finance/forward-mispricing-arbitrage";
 import { expectedSquareOfAWalk } from "./stochastic/expected-square-of-a-walk";
 import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff";
 import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
@@ -547,6 +550,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   putButterflyFromCallQuotes,
   twoStepBinomialCallPrice,
   putCallParityWithDividend,
+  americanVsEuropeanCallCredit,
+  multiWinnerBookArbitrage,
+  forwardMispricingArbitrage,
   adjustedRSquaredFromSums,
   duplicatedSampleSlopeVariance,
   overlappingWindowSums,
