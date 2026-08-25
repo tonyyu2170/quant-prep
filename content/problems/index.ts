@@ -203,6 +203,9 @@ import { portfolioVarianceTwoAsset } from "./statistics/portfolio-variance-two-a
 import { minVarianceWeight } from "./statistics/min-variance-weight";
 import { correlationBoundThirdPair } from "./statistics/correlation-bound-third-pair";
 import { regressionSlopeFromMoments } from "./statistics/regression-slope-from-moments";
+import { fittedValueAndResidual } from "./statistics/fitted-value-and-residual";
+import { regressionInterceptFromMeans } from "./statistics/regression-intercept-from-means";
+import { rSquaredFromSumsOfSquares } from "./statistics/r-squared-from-sums-of-squares";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
 import { sampleMeanAndVariance } from "./statistics/sample-mean-and-variance";
 import { varianceOfAScaledSum } from "./statistics/variance-of-a-scaled-sum";
@@ -512,6 +515,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   minVarianceWeight,
   correlationBoundThirdPair,
   regressionSlopeFromMoments,
+  fittedValueAndResidual,
+  regressionInterceptFromMeans,
+  rSquaredFromSumsOfSquares,
   sharpeTimeScaling,
   sampleMeanAndVariance,
   varianceOfAScaledSum,
