@@ -1,11 +1,17 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { exact4, fmtNum } from "../util";
 
-// The intercept from the point of means. Both means are integers and the slope steps in fifths,
-// so the slope term is exact on every draw and the subtraction that produces the answer has no
-// rounded operand. The answer is the axis nobody can read off the statement: it moves with all
-// three params and runs from well below zero to well above it, which is also what stops a
-// student pattern-matching the intercept to the mean response.
+// The intercept from the point of means. The answer is the axis nobody can read off the
+// statement: it moves with all three params and runs from well below zero to well above it,
+// which is also what stops a student pattern-matching the intercept to the mean response.
+//
+// `constraint` needs the answer, the same reason regression-slope-from-moments needs one. An
+// intercept of exactly 0 is a draw on which this template's own commonTrap — subtracting the
+// wrong way round — grades as CORRECT, because it is its own negation. The smallest nonzero
+// intercept the grid produces is exactly 1, so the floor removes those draws and nothing else.
+//
+// `exact4` is the guarantee, not the grid: integer means against a slope stepping in fifths
+// happen to make the slope term exact today, and this fails loud if that changes.
 export const regressionInterceptFromMeans: ProblemTemplate = {
   id: "statistics/regression-intercept-from-means",
   version: 1,
@@ -18,6 +24,7 @@ export const regressionInterceptFromMeans: ProblemTemplate = {
     ybar: { choices: [30, 45, 60, 72, 84, 96, 110, 125, 140] },
     b: { range: { min: 0.4, max: 2.6, step: 0.2 } },
   },
+  constraint: (p) => Math.abs(p.ybar - p.b * p.xbar) >= 1 && exact4(p.b * p.xbar),
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
     return {
@@ -39,7 +46,7 @@ export const regressionInterceptFromMeans: ProblemTemplate = {
   ],
   keyInsight: "The least-squares line is pinned to the point of means, so the intercept is not a free parameter: once the slope is chosen, the requirement that the residuals sum to zero fixes the height. That is why the intercept moves whenever the slope does, and why it carries the units of the response rather than a ratio of units.",
   commonTrap: "Reading the intercept as the response's average, which it only equals when the predictor has been centred at its own mean. The other slip is subtracting the wrong way round and reporting the slope term less the mean response, which flips the sign.",
-  expectedPaceS: 45,
+  expectedPaceS: 55,
   verify: { method: "brute-force" },
   constants: [0],
 };

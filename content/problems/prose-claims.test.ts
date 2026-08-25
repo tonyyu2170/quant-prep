@@ -2495,9 +2495,10 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "The prediction on the day: intercept plus slope times predictor, each step printed",
       holds: (p, d) => same(d.slopeTerm, r9(p.b * p.x0)) && same(d.fitted, r9(p.a + p.b * p.x0)),
       breaks: (_p, d) => ({ ...d, fitted: d.fitted + 1 }) },
-    { says: "Answer: the sign says the day came in above or below the line, and it agrees with the residual",
-      holds: (_p, d) => (d.above === 1) === (P(d.answer) > 0),
-      nonVacuous: (_p, d) => d.above === 0,
+    { says: "Answer: the fitted value and the residual reconstruct the observation",
+      // Also the check that both are on the SAME rounding basis: `fitted` rounds a+b*x0 while
+      // `answer` comes from the exact operands, and a divergence between them lands here.
+      holds: (p, d) => same(r9(d.fitted + d.answer), p.y0),
       breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
     { says: "Sanity: the miss stays inside the readable band the constraint pins, so it is a residual and not an outlier",
       holds: (_p, d) => Math.abs(P(d.answer)) >= 1.5 && Math.abs(P(d.answer)) <= 14,
