@@ -1245,3 +1245,393 @@ SOLVERS.update({
     "statistics/probability-a-given-order-statistic-exceeds": {"exact": probability_a_given_order_statistic_exceeds_exact, "brute": probability_a_given_order_statistic_exceeds_brute},
     "statistics/median-of-an-odd-sample-from-two-groups": {"exact": median_of_an_odd_sample_from_two_groups_exact, "brute": median_of_an_odd_sample_from_two_groups_brute},
 })
+
+
+# ---------------------------------------------------------------------------------------------
+# B17 (2026-08-25): the inference batch. Twelve templates. Every brute route below reaches the
+# answer WITHOUT the closed form the template teaches:
+#
+# - one proportion: a 0/1 array with exactly k ones, the statistic from numpy's MEASURED mean in
+#   the proportion form (p_hat - p0)/sqrt(p0 q0/n); the count form never appears.
+# - chi-square die: scipy.stats.chisquare on the six observed counts.
+# - two-sample z: two arrays CONSTRUCTED with the quoted mean and population variance, both
+#   measured back by numpy, the statistic assembled from what was measured.
+# - two proportions: chi2_contingency on the 2x2 table without continuity correction — for a 2x2
+#   table Pearson's chi-square IS the pooled z squared — signed by the difference in rates.
+# - Sharpe clock: brentq on S*sqrt(T) - t for T; the inverted square never appears.
+# - many backtests: the binomial PMF summed over j >= 1; the complement is never taken.
+# - correlation t: two series CONSTRUCTED with exactly the given correlation (Gram-Schmidt), and
+#   scipy's linregress slope over its standard error — the regression route to the same t.
+# - two-sided power: the density under the ALTERNATIVE integrated over both rejection regions.
+# - sample size for power: scan n upward until the CDF power clears the target the statement's
+#   power point defines; the count below is asserted to fail.
+# - paired: paired arrays CONSTRUCTED with the quoted moments, the difference's spread MEASURED.
+# - likelihood ratio: the two binomial PMFs as exact Fractions, coefficient included, divided.
+# - Sharpe standard error: the delta method from first principles — a complex-step gradient of
+#   m/sqrt(v) and the asymptotic covariance of (mean, variance) under normality — never Lo's form.
+# ---------------------------------------------------------------------------------------------
+
+from fractions import Fraction as _Fraction
+
+from scipy.stats import binom as _binom, chi2_contingency as _chi2_contingency, chisquare as _chisquare, linregress as _linregress
+
+_POWER_POINT = {80: 0.842, 90: 1.282, 95: 1.645}
+
+_DIE_PATTERNS = [
+    [3, -2, 1, -4, 0, 2], [5, -3, 2, -4, 1, -1], [2, 2, -1, -1, -3, 1], [6, -1, -2, -3, 1, -1],
+    [-5, 4, 3, -2, -1, 1], [4, -4, 2, -2, 1, -1], [7, -2, -3, 1, -2, -1], [1, -1, 2, -2, 3, -3],
+    [8, -5, -1, -2, 2, -2], [2, -3, 4, -1, -2, 0], [-6, 2, 1, 3, -1, 1], [3, 3, -3, -3, 2, -2],
+    [10, -4, -3, -2, 0, -1], [1, 2, 3, -1, -2, -3],
+]
+
+
+def _unit_pattern(n):
+    """A mean-zero vector of n points with population variance exactly one: [1, -1, 0, ...]
+    scaled by sqrt(n/2)."""
+    e = np.zeros(n)
+    e[0], e[1] = 1.0, -1.0
+    return e * math.sqrt(n / 2)
+
+
+def _orthonormal_pair(n):
+    """Two mean-zero vectors of n points, each with population variance one and population
+    covariance zero: [1, -1, 0, ...] and [1, 1, -2, 0, ...], scaled."""
+    e1 = np.zeros(n); e1[0], e1[1] = 1.0, -1.0
+    e2 = np.zeros(n); e2[0], e2[1], e2[2] = 1.0, 1.0, -2.0
+    return e1 * math.sqrt(n / 2), e2 * math.sqrt(n / 6)
+
+
+def one_proportion_z_statistic_exact(p):
+    p0 = p["p0Pct"] / 100
+    expected = p["n"] * p0
+    sd = _round9(math.sqrt(p["n"] * p0 * (1 - p0)))
+    return {
+        "p0": p0,
+        "q0": _round9(1 - p0),
+        "expected": float(expected),
+        "variance": _round9(p["n"] * p0 * (1 - p0)),
+        "sdCount": sd,
+        "k": float(expected + p["off"]),
+        "excess": float(p["off"]),
+        "pHat": _round9((expected + p["off"]) / p["n"]),
+        "answer": _round9(p["off"] / sd),
+    }
+
+
+def one_proportion_z_statistic_brute(p):
+    n, p0 = int(p["n"]), p["p0Pct"] / 100
+    k = int(round(n * p0 + p["off"]))
+    x = np.r_[np.ones(k), np.zeros(n - k)]
+    p_hat = float(x.mean())
+    return (p_hat - p0) / math.sqrt(p0 * (1 - p0) / n)
+
+
+def chi_square_statistic_for_a_die_exact(p):
+    e, scale = p["expected"], p["scale"]
+    dev = [scale * d for d in _DIE_PATTERNS[int(p["pat"])]]
+    sum_sq = sum(d * d for d in dev)
+    out = {"rolls": float(6 * e), "sumSq": float(sum_sq), "crit": 11.07 if p["alphaPct"] == 5 else 15.09, "df": 5.0,
+           "answer": _round9(sum_sq / e)}
+    for i, d in enumerate(dev):
+        out[f"c{i + 1}"] = float(e + d)
+        out[f"d{i + 1}"] = float(d)
+    return out
+
+
+def chi_square_statistic_for_a_die_brute(p):
+    e, scale = p["expected"], p["scale"]
+    observed = [e + scale * d for d in _DIE_PATTERNS[int(p["pat"])]]
+    return float(_chisquare(observed, f_exp=[e] * 6).statistic)
+
+
+def two_sample_z_statistic_exact(p):
+    term_a = _round9(p["varA"] / p["nA"])
+    term_b = _round9(p["varB"] / p["nB"])
+    se_sq = _round9(term_a + term_b)
+    return {
+        "termA": term_a,
+        "termB": term_b,
+        "seSq": se_sq,
+        "se": _round9(math.sqrt(se_sq)),
+        "meanA": float(p["meanB"] + p["gap"]),
+        "gap": float(p["gap"]),
+        "answer": _round9(p["gap"] / math.sqrt(se_sq)),
+    }
+
+
+def two_sample_z_statistic_brute(p):
+    n_a, n_b = int(p["nA"]), int(p["nB"])
+    a = (p["meanB"] + p["gap"]) + math.sqrt(p["varA"]) * _unit_pattern(n_a)
+    b = p["meanB"] + math.sqrt(p["varB"]) * _unit_pattern(n_b)
+    assert abs(a.var() - p["varA"]) < 1e-9 and abs(b.var() - p["varB"]) < 1e-9, "constructed samples have the wrong spread"
+    return float((a.mean() - b.mean()) / math.sqrt(a.var() / n_a + b.var() / n_b))
+
+
+def two_proportion_z_statistic_exact(p):
+    n_b = p["nA"] * p["ratio"]
+    p_a = _round9(p["pAPct"] / 100)
+    p_b = _round9((p["pAPct"] + p["diffPct"]) / 100)
+    k_a = _round9(p["nA"] * p_a)
+    k_b = _round9(n_b * p_b)
+    pbar = _round9((k_a + k_b) / (p["nA"] + n_b))
+    qbar = _round9(1 - pbar)
+    pooled_var = _round9(pbar * qbar)
+    inv_sum = _round9(1 / p["nA"] + 1 / n_b)
+    return {
+        "nB": float(n_b),
+        "pA": p_a,
+        "pB": p_b,
+        "kA": k_a,
+        "kB": k_b,
+        "pbar": pbar,
+        "qbar": qbar,
+        "pooledVar": pooled_var,
+        "invSum": inv_sum,
+        "se": _round9(math.sqrt(pooled_var * inv_sum)),
+        "diff": _round9(p_a - p_b),
+        "answer": _round9((p_a - p_b) / math.sqrt(pooled_var * inv_sum)),
+    }
+
+
+def two_proportion_z_statistic_brute(p):
+    n_a = int(p["nA"]); n_b = n_a * int(p["ratio"])
+    k_a = int(round(n_a * p["pAPct"] / 100)); k_b = int(round(n_b * (p["pAPct"] + p["diffPct"]) / 100))
+    chi2 = float(_chi2_contingency([[k_a, n_a - k_a], [k_b, n_b - k_b]], correction=False)[0])
+    return math.copysign(math.sqrt(chi2), k_a / n_a - k_b / n_b)
+
+
+def years_to_a_significant_sharpe_exact(p):
+    ratio = _round9(p["t"] / p["sr"])
+    years = _round9(ratio * ratio)
+    return {
+        "meanPct": _round9(p["sr"] * p["volPct"]),
+        "ratio": ratio,
+        "years": years,
+        "answer": _round9(years - p["elapsed"]),
+    }
+
+
+def years_to_a_significant_sharpe_brute(p):
+    sr, t = float(p["sr"]), float(p["t"])
+    total = float(optimize.brentq(lambda T: sr * math.sqrt(T) - t, 1e-6, 1e4, xtol=1e-14, rtol=1e-15))
+    return total - float(p["elapsed"])
+
+
+def false_positive_among_many_backtests_exact(p):
+    alpha = _round9(p["alphaPct"] / 100)
+    rate = _round9(alpha ** p["k"])
+    survive = _round9(1 - rate)
+    return {
+        "alpha": alpha,
+        "rate": rate,
+        "survive": survive,
+        "noneProb": _round9(survive ** p["m"]),
+        "expectedFalse": _round9(p["m"] * rate),
+        "answer": _round9(1 - survive ** p["m"]),
+    }
+
+
+def false_positive_among_many_backtests_brute(p):
+    m, rate = int(p["m"]), (p["alphaPct"] / 100) ** int(p["k"])
+    return float(sum(_binom.pmf(j, m, rate) for j in range(1, m + 1)))
+
+
+def correlation_significance_t_statistic_exact(p):
+    sx, sy = math.sqrt(p["varX"]), math.sqrt(p["varY"])
+    cov = _round9(p["sign"] * p["rAbs"] * sx * sy)
+    r = _round9(cov / (sx * sy))
+    r_sq = _round9(r * r)
+    one_minus = _round9(1 - r_sq)
+    root = _round9(math.sqrt(one_minus))
+    root_df = math.sqrt(p["nMinus2"])
+    return {
+        "sx": sx,
+        "sy": sy,
+        "sxsy": sx * sy,
+        "cov": cov,
+        "r": r,
+        "rSq": r_sq,
+        "oneMinusRSq": one_minus,
+        "rootOneMinus": root,
+        "n": float(p["nMinus2"] + 2),
+        "rootDf": root_df,
+        "answer": _round9((r * root_df) / root),
+    }
+
+
+def correlation_significance_t_statistic_brute(p):
+    n = int(p["nMinus2"]) + 2
+    r = float(p["sign"] * p["rAbs"])
+    e1, e2 = _orthonormal_pair(n)
+    x = math.sqrt(p["varX"]) * e1
+    y = math.sqrt(p["varY"]) * (r * e1 + math.sqrt(1 - r * r) * e2)
+    assert abs(np.corrcoef(x, y)[0, 1] - r) < 1e-12, "constructed series have the wrong correlation"
+    res = _linregress(x, y)
+    return float(res.slope / res.stderr)
+
+
+def power_of_a_two_sided_test_exact(p):
+    root = math.sqrt(p["n"])
+    crit = _crit_two_sided(p["alphaPct"])
+    delta = _round9((p["gap"] * root) / p["sigma"])
+    up = _round9(delta - crit)
+    far = _round9(delta + crit)
+    power = float(_norm.cdf(up) + _norm.cdf(-far))
+    one_sided = _crit_one_sided(p["alphaPct"])
+    return {
+        "root": root,
+        "crit": crit,
+        "delta": delta,
+        "shiftUp": up,
+        "farDistance": far,
+        "nearTail": _round9(_norm.cdf(up)),
+        "farTail": _round9(_norm.cdf(-far)),
+        "oneSidedCrit": one_sided,
+        "oneSidedPower": _round9(_norm.cdf(delta - one_sided)),
+        "beta": _round9(1 - power),
+        "answer": _round9(power),
+    }
+
+
+def power_of_a_two_sided_test_brute(p):
+    sigma, n, gap = float(p["sigma"]), int(p["n"]), float(p["gap"])
+    crit = _crit_two_sided(int(p["alphaPct"]))
+    se = sigma / math.sqrt(n)
+    dens = lambda x: math.exp(-((x - gap) / se) ** 2 / 2) / (se * math.sqrt(2 * math.pi))
+    upper, _ = integrate.quad(dens, crit * se, gap + 40 * se)
+    lower, _ = integrate.quad(dens, gap - 40 * se, -crit * se)
+    return upper + lower
+
+
+def sample_size_for_target_power_exact(p):
+    crit = _crit_one_sided(p["alphaPct"])
+    z_beta = _POWER_POINT[int(p["powerPct"])]
+    raw = _round9((((crit + z_beta) * p["sigma"]) / p["gap"]) ** 2)
+    answer = math.ceil(raw)
+    return {
+        "crit": crit,
+        "zBeta": z_beta,
+        "multiplier": _round9(crit + z_beta),
+        "raw": raw,
+        "powerAtAnswer": _round9(_norm.cdf((p["gap"] * math.sqrt(answer)) / p["sigma"] - crit)),
+        "answer": float(answer),
+    }
+
+
+def sample_size_for_target_power_brute(p):
+    crit, z_beta = _crit_one_sided(int(p["alphaPct"])), _POWER_POINT[int(p["powerPct"])]
+    sigma, gap = float(p["sigma"]), float(p["gap"])
+    target = float(_norm.cdf(z_beta))
+    power = lambda n: float(_norm.cdf(gap * math.sqrt(n) / sigma - crit))
+    n = 1
+    while power(n) < target:
+        n += 1
+    assert power(n - 1) < target <= power(n), "the scan did not stop at the first clearing count"
+    return float(n)
+
+
+def paired_test_statistic_with_correlation_exact(p):
+    var_x, var_y, var_d = p["sx"] ** 2, p["sy"] ** 2, p["sdD"] ** 2
+    cov = _round9((var_x + var_y - var_d) / 2)
+    root_n = math.sqrt(p["n"])
+    unpaired_var = var_x + var_y
+    unpaired_se = _round9(math.sqrt(unpaired_var / p["n"]))
+    return {
+        "varX": float(var_x),
+        "varY": float(var_y),
+        "cov": cov,
+        "rho": _round9(cov / (p["sx"] * p["sy"])),
+        "varD": float(var_d),
+        "rootN": root_n,
+        "se": _round9(p["sdD"] / root_n),
+        "unpairedVar": float(unpaired_var),
+        "unpairedSe": unpaired_se,
+        "unpairedZ": _round9(p["dbar"] / unpaired_se),
+        "answer": _round9((p["dbar"] * root_n) / p["sdD"]),
+    }
+
+
+def paired_test_statistic_with_correlation_brute(p):
+    n = int(p["n"]); sx, sy, sd_d, dbar = float(p["sx"]), float(p["sy"]), float(p["sdD"]), float(p["dbar"])
+    rho = (sx * sx + sy * sy - sd_d * sd_d) / (2 * sx * sy)
+    e1, e2 = _orthonormal_pair(n)
+    x = sx * e1 + dbar
+    y = sy * (rho * e1 + math.sqrt(1 - rho * rho) * e2)
+    assert abs(np.cov(x, y, ddof=0)[0, 1] - rho * sx * sy) < 1e-9, "constructed pair has the wrong covariance"
+    d = x - y
+    return float(d.mean() / (d.std(ddof=0) / math.sqrt(n)))
+
+
+def likelihood_ratio_for_a_biased_coin_exact(p):
+    p1 = _round9(p["p1Pct"] / 100)
+    q1 = _round9(1 - p1)
+    heads_factor = _round9(2 * p1)
+    tails_factor = _round9(2 * q1)
+    k = p["n"] / 2 + p["off"]
+    return {
+        "p1": p1,
+        "q1": q1,
+        "headsFactor": heads_factor,
+        "tailsFactor": tails_factor,
+        "k": float(k),
+        "tails": float(p["n"] - k),
+        "pHat": _round9(k / p["n"]),
+        "crossover": _round9(math.log(1 / tails_factor) / math.log(heads_factor / tails_factor)),
+        "answer": _round9(heads_factor ** k * tails_factor ** (p["n"] - k)),
+    }
+
+
+def likelihood_ratio_for_a_biased_coin_brute(p):
+    n = int(p["n"]); k = int(round(n / 2 + p["off"]))
+    p1 = _Fraction(int(p["p1Pct"]), 100)
+    pmf_biased = _comb(n, k) * p1 ** k * (1 - p1) ** (n - k)
+    pmf_fair = _comb(n, k) * _Fraction(1, 2) ** n
+    return float(pmf_biased / pmf_fair)
+
+
+def standard_error_of_a_sharpe_ratio_exact(p):
+    sr_sq = _round9(p["sr"] * p["sr"])
+    answer = _round9(math.sqrt((1 + sr_sq / (2 * p["q"])) / p["years"]))
+    return {
+        "srSq": sr_sq,
+        "term": _round9(sr_sq / (2 * p["q"])),
+        "inner": _round9(1 + sr_sq / (2 * p["q"])),
+        "periods": float(p["q"] * p["years"]),
+        "srPeriod": _round9(p["sr"] / math.sqrt(p["q"])),
+        "annualOnlySe": _round9(math.sqrt((1 + sr_sq / 2) / p["years"])),
+        "tStat": _round9(p["sr"] / answer),
+        "answer": answer,
+    }
+
+
+def standard_error_of_a_sharpe_ratio_brute(p):
+    """The delta method from first principles, not Lo's closed form: g(m, v) = m / sqrt(v) at the
+    per-period moments, its gradient by complex step (no cancellation), the exact asymptotic
+    covariance of (sample mean, sample variance) under normality diag(v/T, 2v^2/T), and the
+    per-period error scaled to annual by sqrt(q)."""
+    sr, years, q = float(p["sr"]), float(p["years"]), float(p["q"])
+    T = q * years
+    v = 0.02 ** 2                      # any per-period variance; the ratio is scale-free
+    m = (sr / math.sqrt(q)) * math.sqrt(v)
+    h = 1e-20
+    g = lambda mm, vv: mm / np.sqrt(vv)
+    dg_dm = (g(m + 1j * h, v)).imag / h
+    dg_dv = (g(m, v + 1j * h)).imag / h
+    var_g = dg_dm ** 2 * (v / T) + dg_dv ** 2 * (2 * v * v / T)
+    return math.sqrt(var_g) * math.sqrt(q)
+
+
+SOLVERS.update({
+    "statistics/one-proportion-z-statistic": {"exact": one_proportion_z_statistic_exact, "brute": one_proportion_z_statistic_brute},
+    "statistics/chi-square-statistic-for-a-die": {"exact": chi_square_statistic_for_a_die_exact, "brute": chi_square_statistic_for_a_die_brute},
+    "statistics/two-sample-z-statistic": {"exact": two_sample_z_statistic_exact, "brute": two_sample_z_statistic_brute},
+    "statistics/two-proportion-z-statistic": {"exact": two_proportion_z_statistic_exact, "brute": two_proportion_z_statistic_brute},
+    "statistics/years-to-a-significant-sharpe": {"exact": years_to_a_significant_sharpe_exact, "brute": years_to_a_significant_sharpe_brute},
+    "statistics/false-positive-among-many-backtests": {"exact": false_positive_among_many_backtests_exact, "brute": false_positive_among_many_backtests_brute},
+    "statistics/correlation-significance-t-statistic": {"exact": correlation_significance_t_statistic_exact, "brute": correlation_significance_t_statistic_brute},
+    "statistics/power-of-a-two-sided-test": {"exact": power_of_a_two_sided_test_exact, "brute": power_of_a_two_sided_test_brute},
+    "statistics/sample-size-for-target-power": {"exact": sample_size_for_target_power_exact, "brute": sample_size_for_target_power_brute},
+    "statistics/paired-test-statistic-with-correlation": {"exact": paired_test_statistic_with_correlation_exact, "brute": paired_test_statistic_with_correlation_brute},
+    "statistics/likelihood-ratio-for-a-biased-coin": {"exact": likelihood_ratio_for_a_biased_coin_exact, "brute": likelihood_ratio_for_a_biased_coin_brute},
+    "statistics/standard-error-of-a-sharpe-ratio": {"exact": standard_error_of_a_sharpe_ratio_exact, "brute": standard_error_of_a_sharpe_ratio_brute},
+})

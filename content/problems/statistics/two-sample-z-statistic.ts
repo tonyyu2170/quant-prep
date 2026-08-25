@@ -35,7 +35,7 @@ export const twoSampleZStatistic: ProblemTemplate = {
       se,
       meanA: p.meanB + p.gap,
       gap: p.gap,
-      answer: round(p.gap / se),
+      answer: round(p.gap / Math.sqrt(seSq)),   // from the exact sum, never the rounded root
     };
   },
   answerKey: "answer",

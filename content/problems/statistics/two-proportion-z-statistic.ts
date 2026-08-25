@@ -51,7 +51,7 @@ export const twoProportionZStatistic: ProblemTemplate = {
       invSum,
       se,
       diff: round(pA - pB),
-      answer: round((pA - pB) / se),
+      answer: round((pA - pB) / Math.sqrt(pooledVar * invSum)),   // from the exact product, never the rounded root
     };
   },
   answerKey: "answer",

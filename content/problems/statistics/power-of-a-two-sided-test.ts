@@ -32,6 +32,7 @@ export const powerOfATwoSidedTest: ProblemTemplate = {
     const delta = round((p.gap * root) / p.sigma);
     const shiftUp = round(delta - crit);
     const farDistance = round(delta + crit);
+    const power = normalCdf(shiftUp) + normalCdf(-farDistance);   // summed BEFORE rounding
     const nearTail = round(normalCdf(shiftUp));
     const farTail = round(normalCdf(-farDistance));
     const oneSidedCrit = p.alphaPct === 10 ? 1.282 : p.alphaPct === 5 ? 1.645 : 2.326;
@@ -45,8 +46,8 @@ export const powerOfATwoSidedTest: ProblemTemplate = {
       farTail,
       oneSidedCrit,
       oneSidedPower: round(normalCdf(delta - oneSidedCrit)),
-      beta: round(1 - nearTail - farTail),
-      answer: round(nearTail + farTail),
+      beta: round(1 - power),
+      answer: round(power),
     };
   },
   answerKey: "answer",
