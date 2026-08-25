@@ -206,6 +206,9 @@ import { regressionSlopeFromMoments } from "./statistics/regression-slope-from-m
 import { fittedValueAndResidual } from "./statistics/fitted-value-and-residual";
 import { regressionInterceptFromMeans } from "./statistics/regression-intercept-from-means";
 import { rSquaredFromSumsOfSquares } from "./statistics/r-squared-from-sums-of-squares";
+import { slopeAfterRescalingX } from "./statistics/slope-after-rescaling-x";
+import { interceptAfterShiftingX } from "./statistics/intercept-after-shifting-x";
+import { slopeThroughTheOrigin } from "./statistics/slope-through-the-origin";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
 import { sampleMeanAndVariance } from "./statistics/sample-mean-and-variance";
 import { varianceOfAScaledSum } from "./statistics/variance-of-a-scaled-sum";
@@ -518,6 +521,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   fittedValueAndResidual,
   regressionInterceptFromMeans,
   rSquaredFromSumsOfSquares,
+  slopeAfterRescalingX,
+  interceptAfterShiftingX,
+  slopeThroughTheOrigin,
   sharpeTimeScaling,
   sampleMeanAndVariance,
   varianceOfAScaledSum,

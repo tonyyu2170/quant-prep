@@ -2532,6 +2532,51 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => Math.abs(d.corr * d.corr - d.answer) < 1e-8,
       breaks: (_p, d) => ({ ...d, corr: d.answer }) },
   ],
+  "statistics/slope-after-rescaling-x": [
+    { says: "Solve: the new slope recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.b * p.ybarScale) / p.k)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The tick split multiplies it: the numerator is the response factor times the quoted slope",
+      holds: (p, d) => same(d.numer, r9(p.ybarScale * p.b)),
+      breaks: (_p, d) => ({ ...d, numer: d.numer + 1 }) },
+    { says: "Answer: the lot split divides, so the answer times the lot factor returns the tick-scaled slope",
+      // The tolerance is the ninth-decimal rounding `derived` applies, carried through a
+      // multiplication by k: 5e-10 times a lot factor of 50 is 2.5e-8, so EPS itself is too
+      // tight here and would fail on the exact draws it is meant to pass.
+      holds: (p, d) => Math.abs(d.answer * p.k - p.b * p.ybarScale) < 1e-7,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "Sanity check: a re-spec rescales a slope and can never flip its sign",
+      holds: (_p, d) => P(d.answer) > 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+  ],
+  "statistics/intercept-after-shifting-x": [
+    { says: "Solve: the rewritten intercept recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.a + p.b * p.c)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "What the slope used to account for is the slope times the reference",
+      holds: (p, d) => Math.abs(d.shiftTerm - p.b * p.c) < EPS,
+      breaks: (_p, d) => ({ ...d, shiftTerm: d.shiftTerm + 1 }) },
+    { says: "Answer: taking the shift term back off the new intercept returns the old one",
+      // The falsifier is the template's own commonTrap — subtracting the shift instead of
+      // adding it — which this predicate has to reject or the trap is unpunishable.
+      holds: (p, d) => Math.abs(d.answer - d.shiftTerm - p.a) < 1e-7,
+      breaks: (p, d) => ({ ...d, answer: r9(p.a - p.b * p.c) }) },
+    { says: "Sanity check: the rewritten intercept stays clear of zero, where rel-tolerance grading would be exact equality",
+      holds: (_p, d) => Math.abs(P(d.answer)) >= 1,
+      breaks: (_p, d) => ({ ...d, answer: 0 }) },
+  ],
+  "statistics/slope-through-the-origin": [
+    { says: "Solve: the hedge ratio recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.sumXY / p.sumX2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "One parameter, one normal equation: the slope times the raw sum of squares returns the cross-product",
+      // 5e-10 of ninth-decimal rounding carried through a sum of squares as large as 600.
+      holds: (p, d) => Math.abs(d.answer * p.sumX2 - p.sumXY) < 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "Answer: the hedge ratio sits inside the plausible band the constraint pins",
+      holds: (_p, d) => P(d.answer) >= 0.4 && P(d.answer) <= 5,
+      breaks: (_p, d) => ({ ...d, answer: 100 }) },
+  ],
   "statistics/sharpe-time-scaling": [
     { says: "Solve: the horizon Sharpe recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9((p.edge / p.sd) * Math.sqrt(p.periods))),
