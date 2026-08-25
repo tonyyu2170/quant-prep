@@ -239,6 +239,9 @@ import { putHedgeFromParity } from "./finance/put-hedge-from-parity";
 import { coveredCallMaxProfit } from "./finance/covered-call-max-profit";
 import { callLowerBoundArbitrage } from "./finance/call-lower-bound-arbitrage";
 import { boxSpreadArbitrage } from "./finance/box-spread-arbitrage";
+import { gammaPnlFromAMove } from "./finance/gamma-pnl-from-a-move";
+import { sharesToRehedgeAfterAMove } from "./finance/shares-to-rehedge-after-a-move";
+import { straddleImpliedMove } from "./finance/straddle-implied-move";
 import { expectedSquareOfAWalk } from "./stochastic/expected-square-of-a-walk";
 import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff";
 import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
@@ -527,6 +530,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   coveredCallMaxProfit,
   callLowerBoundArbitrage,
   boxSpreadArbitrage,
+  gammaPnlFromAMove,
+  sharesToRehedgeAfterAMove,
+  straddleImpliedMove,
   adjustedRSquaredFromSums,
   duplicatedSampleSlopeVariance,
   overlappingWindowSums,
