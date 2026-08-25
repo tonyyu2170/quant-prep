@@ -38,7 +38,9 @@ export const triangularFxArbitrage: ProblemTemplate = {
     `You start with ${fmtNum(p.start)} dollars and go all the way round the loop — dollars into euros, euros into yen, yen back into dollars. ` +
     `How many dollars do you finish with?`,
   solution: (p, d) => [
-    { title: "The loop is one number", body: `Each leg multiplies your holding by its quoted rate, and the units cancel round the circle: dollars to euros to yen and back to dollars. So the whole trip multiplies the starting balance by the product of the three rates, and nothing else about the path matters.` },
+    // Claim-free segment (non-negotiable 6): symbolic only, no printed operands. Added in B16's
+    // per-template measurement, which found this template at claimFree = 0.
+    { title: "The loop is one number", body: `Write $f$ for the loop factor: a balance $b$ sent round the circle comes back as $B=b\\,f$, and quotes that are consistent with one another have $f=1$ exactly. Each leg multiplies your holding by its quoted rate, and the units cancel round the circle: dollars to euros to yen and back to dollars. So the whole trip multiplies the starting balance by the product of the three rates, and nothing else about the path matters.` },
     { title: "Multiply the rates", body: `$${fmtNum(p.r1)}\\times${fmtNum(p.r2)}\\times${fmtNum(p.r3)}=${fmtNum(d.factor)}$ dollars come back for every dollar sent round.` },
     { title: "Answer", body: `Starting from ${fmtNum(p.start)} dollars, $${fmtNum(p.start)}\\times${fmtNum(p.r1)}\\times${fmtNum(p.r2)}\\times${fmtNum(p.r3)}=${fmtNum(d.answer)}$ dollars come back.` },
     { title: "Which way to go round", body: `The loop factor is ${d.factor > 1 ? "above" : "below"} one, at ${fmtNum(d.perDollar)} of profit per dollar sent ${d.factor > 1 ? "this way" : "this way — which is a loss, so the money is in running the circle in reverse, where every rate is replaced by its reciprocal and the factor inverts"}.` },

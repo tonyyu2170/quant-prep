@@ -41,7 +41,9 @@ export const butterflyMaxProfit: ProblemTemplate = {
     `You buy one of the ${fmtNum(p.k1)} calls, sell two of the ${fmtNum(d.k2)} calls, and buy one of the ${fmtNum(d.k3)} calls. ` +
     `What is the most this position can be worth in profit at expiry, per unit?`,
   solution: (p, d) => [
-    { title: "What the structure costs", body: `Buying the outer two and selling two of the middle costs $${fmtNum(p.cLow)}-${fmtNum(2)}\\times${fmtNum(p.cMid)}+${fmtNum(p.cHigh)}=${fmtNum(d.debit)}$ per unit, paid up front. That is also the most it can lose, since every leg is a call and none is naked once the position is held as a whole.` },
+    // Claim-free segment (non-negotiable 6): symbolic only, no printed operands. Added in B16's
+    // per-template measurement, which found this template at claimFree = 0.
+    { title: "What the structure costs", body: `Write $D$ for the debit and $w$ for the strike spacing: the structure costs $D=C_1-2C_2+C_3$, can never be worth more than $w$, and so can never make more than $w-D$. Buying the outer two and selling two of the middle costs $${fmtNum(p.cLow)}-${fmtNum(2)}\\times${fmtNum(p.cMid)}+${fmtNum(p.cHigh)}=${fmtNum(d.debit)}$ per unit, paid up front. That is also the most it can lose, since every leg is a call and none is naked once the position is held as a whole.` },
     { title: "Trace the payoff", body: `Below ${fmtNum(p.k1)} everything expires worthless. Between ${fmtNum(p.k1)} and ${fmtNum(d.k2)} only the lowest call is in the money and the payoff rises one-for-one. Past ${fmtNum(d.k2)} the two short calls bite twice as hard as the long one gains, so the payoff falls back at the same rate until ${fmtNum(d.k3)}, where the top call starts covering the shorts and the payoff flattens at zero.` },
     { title: "The peak sits at the middle strike", body: `The payoff is highest exactly at ${fmtNum(d.k2)}, where the lowest call is worth the full spacing of ${fmtNum(p.width)} and the other two are worthless.` },
     { title: "Answer", body: `Net of what the structure cost, the best case is $${fmtNum(p.width)}-${fmtNum(d.debit)}=${fmtNum(d.answer)}$ per unit.` },
@@ -51,5 +53,7 @@ export const butterflyMaxProfit: ProblemTemplate = {
   commonTrap: "Reading the maximum as the strike spacing and forgetting the debit, or forgetting that the middle leg is sold twice — one short call instead of two turns a capped structure into a spread with a different shape and a different worst case.",
   expectedPaceS: 90,
   verify: { method: "brute-force" },
-  constants: [2],
+  // 2 for the middle leg; 1 and 3 are the subscripts in the symbolic debit, which the
+  // traceability audit reads as numbers.
+  constants: [1, 2, 3],
 };
