@@ -229,6 +229,9 @@ import { chiSquareStatisticForADie } from "./statistics/chi-square-statistic-for
 import { twoSampleZStatistic } from "./statistics/two-sample-z-statistic";
 import { twoProportionZStatistic } from "./statistics/two-proportion-z-statistic";
 import { yearsToASignificantSharpe } from "./statistics/years-to-a-significant-sharpe";
+import { falsePositiveAmongManyBacktests } from "./statistics/false-positive-among-many-backtests";
+import { correlationSignificanceTStatistic } from "./statistics/correlation-significance-t-statistic";
+import { powerOfATwoSidedTest } from "./statistics/power-of-a-two-sided-test";
 import { sampleSizeForAProportion } from "./statistics/sample-size-for-a-proportion";
 import { expectedMaximumOfUniforms } from "./statistics/expected-maximum-of-uniforms";
 import { expectedRangeOfUniforms } from "./statistics/expected-range-of-uniforms";
@@ -531,6 +534,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   twoSampleZStatistic,
   twoProportionZStatistic,
   yearsToASignificantSharpe,
+  falsePositiveAmongManyBacktests,
+  correlationSignificanceTStatistic,
+  powerOfATwoSidedTest,
   sampleSizeForAProportion,
   expectedMaximumOfUniforms,
   expectedRangeOfUniforms,

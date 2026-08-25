@@ -2830,6 +2830,44 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(r9(p.sr * Math.sqrt(d.years)), p.t) && same(d.meanPct, r9(p.sr * p.volPct)),
       breaks: (_p, d) => ({ ...d, years: d.years * 4 }) },
   ],
+  "statistics/false-positive-among-many-backtests": [
+    { says: "Solve: one less the survival probability to the power of the strategies, recomputed fresh from params, matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(1 - Math.pow(1 - Math.pow(p.alphaPct / 100, p.k), p.m))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the probability of at least one never exceeds the expected count — the union bound",
+      holds: (p, d) => P(d.answer) <= P(d.expectedFalse) + EPS && same(d.expectedFalse, r9(p.m * d.rate)),
+      breaks: (_p, d) => ({ ...d, expectedFalse: 0 }) },
+    { says: "The rate per strategy is the level to the power of the periods, and survival is its complement",
+      holds: (p, d) => same(d.rate, r9(Math.pow(p.alphaPct / 100, p.k))) && same(r9(d.rate + d.survive), 1) && same(r9(1 - d.noneProb), d.answer),
+      breaks: (_p, d) => ({ ...d, rate: d.rate * 2 }) },
+  ],
+  "statistics/correlation-significance-t-statistic": [
+    { says: "Solve: the correlation times the root of the degrees of freedom over the residual root, recomputed fresh from params, matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.sign * p.rAbs * Math.sqrt(p.nMinus2)) / Math.sqrt(1 - p.rAbs * p.rAbs))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Answer: the sign is the sign of the correlation, which is the sign of the covariance",
+      holds: (p, d) => Math.sign(P(d.answer)) === p.sign && same(d.cov, r9(p.sign * p.rAbs * Math.sqrt(p.varX * p.varY))) && Math.sign(d.r) === p.sign,
+      nonVacuous: (p) => p.sign < 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+    { says: "Sanity: the statistic is at least the correlation times the root of the degrees of freedom, and the printed roots square back",
+      holds: (p, d) => Math.abs(P(d.answer)) >= Math.abs(d.r) * d.rootDf - EPS && same(r9(d.rSq + d.oneMinusRSq), 1) && same(r9(d.rootOneMinus * d.rootOneMinus), d.oneMinusRSq) && d.n === p.nMinus2 + 2,
+      breaks: (_p, d) => ({ ...d, rootOneMinus: 2 }) },
+  ],
+  "statistics/power-of-a-two-sided-test": [
+    { says: "Solve: the two normal areas beyond the shifted thresholds, recomputed fresh from params, match the printed power",
+      holds: (p, d) => {
+        const c = p.alphaPct === 10 ? 1.645 : p.alphaPct === 5 ? 1.96 : 2.576;
+        const delta = (p.gap * Math.sqrt(p.n)) / p.sigma;
+        return same(d.answer, r9(normalCdf(delta - c) + normalCdf(-delta - c)));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Sanity: the one-sided test at the same level is more powerful against a truth on its side",
+      holds: (_p, d) => d.oneSidedPower > d.answer + 1e-6 && d.oneSidedCrit < d.crit,
+      breaks: (_p, d) => ({ ...d, oneSidedPower: 0 }) },
+    { says: "Answer: the two tails add to the power, the far one is the smaller, and beta is the complement",
+      holds: (_p, d) => Math.abs(P(d.answer) + P(d.beta) - 1) <= 1e-3 && P(d.farTail) < P(d.nearTail) && same(d.farDistance, r9(d.delta + d.crit)) && same(d.shiftUp, r9(d.delta - d.crit)),
+      breaks: (_p, d) => ({ ...d, beta: d.answer, farTail: 1 }) },
+  ],
   "statistics/sample-size-for-a-proportion": [
     { says: "Solve: the ceiling of the squared requirement, recomputed fresh, matches the printed count",
       holds: (_p, d) => d.answer === Math.ceil(r9((d.z * d.z * d.variance) / (d.margin * d.margin))),
