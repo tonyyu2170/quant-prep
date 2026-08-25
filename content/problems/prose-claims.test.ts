@@ -2787,6 +2787,49 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => d.crit === (p.alphaPct === 5 ? 11.07 : 15.09) && d.df === 5 && (P(d.answer) < d.crit) === (d.answer < d.crit),
       breaks: (_p, d) => ({ ...d, crit: 0, df: 4 }) },
   ],
+  "statistics/two-sample-z-statistic": [
+    { says: "Solve: the gap over the root of the summed variances of the means, recomputed fresh from params, matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.gap / Math.sqrt(p.varA / p.nA + p.varB / p.nB))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Answer: the sign says which venue was slower, and A's mean is B's plus the gap",
+      holds: (p, d) => Math.sign(P(d.answer)) === Math.sign(p.gap) && d.meanA === p.meanB + p.gap && d.gap === p.gap,
+      nonVacuous: (p) => p.gap < 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+    { says: "Sanity: the variances add, so the yardstick is wider than either mean's own standard error",
+      holds: (_p, d) => same(d.seSq, r9(d.termA + d.termB)) && P(d.se) > Math.sqrt(d.termA) && P(d.se) > Math.sqrt(d.termB),
+      breaks: (_p, d) => ({ ...d, seSq: d.termA, se: Math.sqrt(d.termA) }) },
+  ],
+  "statistics/two-proportion-z-statistic": [
+    { says: "Solve: the pooled two-proportion statistic recomputed fresh from the counts matches the printed answer",
+      holds: (p, d) => {
+        const nB = p.nA * p.ratio, pA = p.pAPct / 100, pB = (p.pAPct + p.diffPct) / 100;
+        const pbar = (p.nA * pA + nB * pB) / (p.nA + nB);
+        return same(d.answer, r9((pA - pB) / Math.sqrt(pbar * (1 - pbar) * (1 / p.nA + 1 / nB))));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The two sample rates: the fill counts are the rates times the order counts, and B's arm is the drawn multiple of A's",
+      holds: (p, d) => d.kA === p.nA * p.pAPct / 100 && d.kB === d.nB * (p.pAPct + p.diffPct) / 100 && d.nB === p.nA * p.ratio,
+      breaks: (_p, d) => ({ ...d, kA: d.kA + 1 }) },
+    { says: "Sanity: the pooled rate lies between the two rates, halfway for equal arms and nearer B otherwise",
+      holds: (p, d) => d.pbar >= Math.min(d.pA, d.pB) - EPS && d.pbar <= Math.max(d.pA, d.pB) + EPS
+        && (p.ratio === 1 ? same(d.pbar, r9((d.pA + d.pB) / 2)) : Math.abs(d.pbar - d.pB) < Math.abs(d.pbar - d.pA)),
+      breaks: (_p, d) => ({ ...d, pbar: 2 }) },
+    { says: "Answer: the statistic carries the sign of A minus B, the opposite of the drawn B-minus-A difference",
+      holds: (p, d) => Math.sign(P(d.answer)) === -Math.sign(p.diffPct) && same(d.diff, r9(d.pA - d.pB)),
+      nonVacuous: (p) => p.diffPct < 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+  ],
+  "statistics/years-to-a-significant-sharpe": [
+    { says: "Solve: the squared ratio of the bar to the Sharpe, less the years elapsed, matches the printed answer",
+      holds: (p, d) => same(d.answer, r9((p.t / p.sr) ** 2 - p.elapsed)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Years to reach the bar: the total exceeds the years elapsed and is the square of the printed ratio",
+      holds: (p, d) => P(d.years) > p.elapsed && same(d.years, r9(d.ratio * d.ratio)) && same(d.ratio, r9(p.t / p.sr)),
+      breaks: (p, d) => ({ ...d, years: p.elapsed }) },
+    { says: "Sanity: the Sharpe times the root of the total years gives back the bar, and the mean is the Sharpe times the volatility",
+      holds: (p, d) => same(r9(p.sr * Math.sqrt(d.years)), p.t) && same(d.meanPct, r9(p.sr * p.volPct)),
+      breaks: (_p, d) => ({ ...d, years: d.years * 4 }) },
+  ],
   "statistics/sample-size-for-a-proportion": [
     { says: "Solve: the ceiling of the squared requirement, recomputed fresh, matches the printed count",
       holds: (_p, d) => d.answer === Math.ceil(r9((d.z * d.z * d.variance) / (d.margin * d.margin))),

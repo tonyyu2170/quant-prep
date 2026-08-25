@@ -226,6 +226,9 @@ import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-ha
 import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
 import { oneProportionZStatistic } from "./statistics/one-proportion-z-statistic";
 import { chiSquareStatisticForADie } from "./statistics/chi-square-statistic-for-a-die";
+import { twoSampleZStatistic } from "./statistics/two-sample-z-statistic";
+import { twoProportionZStatistic } from "./statistics/two-proportion-z-statistic";
+import { yearsToASignificantSharpe } from "./statistics/years-to-a-significant-sharpe";
 import { sampleSizeForAProportion } from "./statistics/sample-size-for-a-proportion";
 import { expectedMaximumOfUniforms } from "./statistics/expected-maximum-of-uniforms";
 import { expectedRangeOfUniforms } from "./statistics/expected-range-of-uniforms";
@@ -525,6 +528,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   typeTwoErrorAndPower,
   oneProportionZStatistic,
   chiSquareStatisticForADie,
+  twoSampleZStatistic,
+  twoProportionZStatistic,
+  yearsToASignificantSharpe,
   sampleSizeForAProportion,
   expectedMaximumOfUniforms,
   expectedRangeOfUniforms,
