@@ -8,7 +8,7 @@ import { exact4, fmtNum } from "../util";
 export const sharesToRehedgeAfterAMove: ProblemTemplate = {
   id: "finance/shares-to-rehedge-after-a-move",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 1,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "akuna", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "re-hedging a long-gamma book after the underlying moves" },

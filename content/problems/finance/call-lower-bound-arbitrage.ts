@@ -14,7 +14,7 @@ const edgeOf = (par: { spot: number; strike: number; df: number; call: number })
 export const callLowerBoundArbitrage: ProblemTemplate = {
   id: "finance/call-lower-bound-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 3,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "optiver", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the European call's lower bound, and the arbitrage when a quote violates it" },

@@ -9,7 +9,7 @@ import { exact4, fmtNum } from "../util";
 export const atmStraddleFromDollarVol: ProblemTemplate = {
   id: "finance/atm-straddle-from-dollar-vol",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "jane-street", weight: 0.2 }, { firm: "akuna", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the at-the-money straddle as the expected absolute move, and the four-fifths rule of thumb" },

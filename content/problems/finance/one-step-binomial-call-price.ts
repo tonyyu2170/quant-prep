@@ -10,7 +10,7 @@ import { exact4, fmtNum } from "../util";
 export const oneStepBinomialCallPrice: ProblemTemplate = {
   id: "finance/one-step-binomial-call-price",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "citadel-securities", weight: 0.2 }, { firm: "optiver", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "pricing a call on a one-period binomial tree" },

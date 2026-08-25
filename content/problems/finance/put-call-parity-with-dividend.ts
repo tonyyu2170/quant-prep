@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const putCallParityWithDividend: ProblemTemplate = {
   id: "finance/put-call-parity-with-dividend",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 3,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "akuna", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "put-call parity with a known dividend before expiry" },

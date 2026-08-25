@@ -13,7 +13,7 @@ const edgeOf = (par: { width: number; df: number; callSpread: number; putSpread:
 export const boxSpreadArbitrage: ProblemTemplate = {
   id: "finance/box-spread-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 3,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "hrt", weight: 0.25 }, { firm: "citadel-securities", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the box spread as synthetic lending, and the arbitrage when it is quoted cheap" },

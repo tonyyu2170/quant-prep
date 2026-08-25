@@ -18,7 +18,7 @@ const putOf = (par: { call: number; spot: number; strike: number; df: number }) 
 export const putCallParity: ProblemTemplate = {
   id: "finance/put-call-parity",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "akuna", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "put-call parity by replication, with the discount factor quoted directly" },

@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const twoStepBinomialCallPrice: ProblemTemplate = {
   id: "finance/two-step-binomial-call-price",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 3,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "citadel-securities", weight: 0.2 }, { firm: "sig", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "pricing a call on a two-period binomial tree, by path weights and by backward induction" },

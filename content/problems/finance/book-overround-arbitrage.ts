@@ -10,7 +10,7 @@ const bookOf = (par: { o1: number; o2: number; o3: number }) => 1 / par.o1 + 1 /
 export const bookOverroundArbitrage: ProblemTemplate = {
   id: "finance/book-overround-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 3,
   firms: [{ firm: "sig", weight: 0.3 }, { firm: "optiver", weight: 0.25 }, { firm: "drw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "locking a profit out of a book whose implied probabilities sum below one" },

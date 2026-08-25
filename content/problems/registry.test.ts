@@ -89,7 +89,9 @@ describe("problem registry invariants", () => {
     const statistics = problemsFor("statistics/moments").length;
     const estimation = problemsFor("statistics/estimation").length;
     const inference = problemsFor("statistics/inference").length;
-    const finance = problemsFor("finance/pricing").length;
+    const options = problemsFor("finance/options").length;
+    const arbitrage = problemsFor("finance/arbitrage").length;
+    const fixedIncome = problemsFor("finance/fixed-income").length;
     const stochastic = problemsFor("pure-math/stochastic").length;
     const linearAlgebra = problemsFor("pure-math/linear-algebra").length;
     const numberTheory = problemsFor("pure-math/number-theory").length;
@@ -106,12 +108,14 @@ describe("problem registry invariants", () => {
     expect(statistics).toBe(17);
     expect(estimation).toBe(15);
     expect(inference).toBe(3);
-    expect(finance).toBe(26);
+    expect(options).toBe(14);
+    expect(arbitrage).toBe(7);
+    expect(fixedIncome).toBe(5);
     expect(stochastic).toBe(10);
     expect(linearAlgebra).toBe(6);
     expect(numberTheory).toBe(8);
     expect(solidGeometry).toBe(6);
-    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + finance + stochastic + linearAlgebra + numberTheory + solidGeometry).toBe(PROBLEMS.length);
+    expect(bayes + counting + ev + distributions + ruin + geometric + markov + symmetry + brainteasers + statistics + estimation + inference + options + arbitrage + fixedIncome + stochastic + linearAlgebra + numberTheory + solidGeometry).toBe(PROBLEMS.length);
     expect(problemsFor("probability/bayes", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(problemsFor("probability/counting", 1).every((t) => t.difficulty === 1)).toBe(true);
     expect(byId.get("bayes/base-rate-test")).toBeDefined();

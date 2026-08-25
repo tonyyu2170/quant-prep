@@ -8,7 +8,7 @@ import { fmtNum } from "../util";
 export const multiWinnerBookArbitrage: ProblemTemplate = {
   id: "finance/multi-winner-book-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "optiver", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "contracts on a group from which a fixed number advance, priced away from that number" },

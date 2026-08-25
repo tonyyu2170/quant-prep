@@ -9,7 +9,7 @@ import { exact4, fmtNum } from "../util";
 export const forwardMispricingArbitrage: ProblemTemplate = {
   id: "finance/forward-mispricing-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "optiver", weight: 0.2 }, { firm: "drw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "cash-and-carry against a forward quoted away from spot plus carry" },

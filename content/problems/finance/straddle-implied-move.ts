@@ -8,7 +8,7 @@ import { exact4, fmtNum } from "../util";
 export const straddleImpliedMove: ProblemTemplate = {
   id: "finance/straddle-implied-move",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 1,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "jane-street", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the at-the-money straddle's premium as the move the market is pricing" },

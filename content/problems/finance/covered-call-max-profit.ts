@@ -10,7 +10,7 @@ const maxProfitOf = (par: { strike: number; spot: number; call: number }) => par
 export const coveredCallMaxProfit: ProblemTemplate = {
   id: "finance/covered-call-max-profit",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "akuna", weight: 0.3 }, { firm: "flow", weight: 0.25 }, { firm: "drw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "payoff of a covered call (buy-write) at expiry" },

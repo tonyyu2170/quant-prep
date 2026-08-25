@@ -9,7 +9,7 @@ import { exact4, fmtNum } from "../util";
 export const durationPriceChange: ProblemTemplate = {
   id: "finance/duration-price-change",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/fixed-income",
   difficulty: 1,
   firms: [{ firm: "citadel", weight: 0.3 }, { firm: "millennium", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the first-order price change of a bond position from its modified duration" },

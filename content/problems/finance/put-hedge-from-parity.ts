@@ -12,7 +12,7 @@ import { fmtNum } from "../util";
 export const putHedgeFromParity: ProblemTemplate = {
   id: "finance/put-hedge-from-parity",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "sig", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "put delta from put-call parity, and the share hedge it implies" },

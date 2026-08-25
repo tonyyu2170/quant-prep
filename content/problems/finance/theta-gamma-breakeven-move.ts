@@ -10,7 +10,7 @@ import { exact4, fmtNum } from "../util";
 export const thetaGammaBreakevenMove: ProblemTemplate = {
   id: "finance/theta-gamma-breakeven-move",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "akuna", weight: 0.25 }, { firm: "sig", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the daily move at which a long-gamma book's convexity pays for its time decay" },

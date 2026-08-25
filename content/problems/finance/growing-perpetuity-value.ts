@@ -6,7 +6,7 @@ import { fmtNum } from "../util";
 export const growingPerpetuityValue: ProblemTemplate = {
   id: "finance/growing-perpetuity-value",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/fixed-income",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.25 }, { firm: "millennium", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "value of a perpetual cash flow growing at a constant rate" },

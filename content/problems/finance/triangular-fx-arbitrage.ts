@@ -11,7 +11,7 @@ const factorOf = (par: { r1: number; r2: number; r3: number }) => par.r1 * par.r
 export const triangularFxArbitrage: ProblemTemplate = {
   id: "finance/triangular-fx-arbitrage",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "flow", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "triangular arbitrage around three quoted exchange rates" },

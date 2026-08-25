@@ -16,7 +16,7 @@ import { fmtNum } from "../util";
 export const paymentStreamPresentValue: ProblemTemplate = {
   id: "finance/payment-stream-present-value",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/fixed-income",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.3 }, { firm: "millennium", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "present value of a level payment stream off quoted zero-coupon bond prices" },

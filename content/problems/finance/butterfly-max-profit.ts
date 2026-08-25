@@ -10,7 +10,7 @@ const debitOf = (par: { cLow: number; cMid: number; cHigh: number }) => par.cLow
 export const butterflyMaxProfit: ProblemTemplate = {
   id: "finance/butterfly-max-profit",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "jump", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "payoff of a long call butterfly at expiry" },

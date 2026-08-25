@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const bookDeltaCallsAndPuts: ProblemTemplate = {
   id: "finance/book-delta-calls-and-puts",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "imc", weight: 0.25 }, { firm: "sig", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the net delta of a mixed book, with the put's delta from parity" },

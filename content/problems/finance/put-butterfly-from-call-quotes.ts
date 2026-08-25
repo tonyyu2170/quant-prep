@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const putButterflyFromCallQuotes: ProblemTemplate = {
   id: "finance/put-butterfly-from-call-quotes",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "imc", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "a put butterfly priced off call quotes — the spot and the bond drop out" },

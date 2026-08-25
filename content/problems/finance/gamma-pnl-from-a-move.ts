@@ -9,7 +9,7 @@ import { exact4, fmtNum } from "../util";
 export const gammaPnlFromAMove: ProblemTemplate = {
   id: "finance/gamma-pnl-from-a-move",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/options",
   difficulty: 1,
   firms: [{ firm: "optiver", weight: 0.3 }, { firm: "sig", weight: 0.25 }, { firm: "imc", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the gamma P&L of a delta-hedged option book over one move" },

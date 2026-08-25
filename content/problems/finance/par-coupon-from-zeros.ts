@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const parCouponFromZeros: ProblemTemplate = {
   id: "finance/par-coupon-from-zeros",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/fixed-income",
   difficulty: 3,
   firms: [{ firm: "citadel", weight: 0.3 }, { firm: "millennium", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "the coupon that prices a bond at par off a zero curve — the swap-rate formula" },

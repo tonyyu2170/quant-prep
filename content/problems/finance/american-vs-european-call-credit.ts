@@ -9,7 +9,7 @@ import { fmtNum } from "../util";
 export const americanVsEuropeanCallCredit: ProblemTemplate = {
   id: "finance/american-vs-european-call-credit",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/arbitrage",
   difficulty: 1,
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "optiver", weight: 0.25 }, { firm: "hrt", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "an American call quoted below its European twin on a non-dividend stock" },

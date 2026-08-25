@@ -10,7 +10,7 @@ import { fmtNum } from "../util";
 export const bondPremiumFromZeros: ProblemTemplate = {
   id: "finance/bond-premium-from-zeros",
   version: 1,
-  topic: "finance/pricing",
+  topic: "finance/fixed-income",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.3 }, { firm: "de-shaw", weight: 0.2 }, { firm: "millennium", weight: 0.2 }],
   source: { kind: "textbook", inspiration: "a coupon bond priced as a strip of zeros, read as a premium or discount to par" },

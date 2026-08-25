@@ -10,7 +10,7 @@ import { type ChainAudit, auditChains } from "./printed-precision";
 // Scope is every shipped topic, each audited on its own so a collapse to zero chains in one
 // cannot hide under another's volume.
 
-const TOPICS = ["probability/bayes", "probability/counting", "probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing", "pure-math/stochastic", "pure-math/linear-algebra", "pure-math/number-theory", "pure-math/solid-geometry"];
+const TOPICS = ["probability/bayes", "probability/counting", "probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/options", "finance/arbitrage", "finance/fixed-income", "pure-math/stochastic", "pure-math/linear-algebra", "pure-math/number-theory", "pure-math/solid-geometry"];
 const SEEDS = 200;
 const MIN_CHECKED_PER_TOPIC = 1000; // a silent drop to zero chains in ONE topic must not pass
 
