@@ -18,7 +18,10 @@ export const multiplesInARange: ProblemTemplate = {
     by: { choices: [3, 4, 6, 7, 8, 9, 11, 12] },
     notBy: { choices: [5, 6, 8, 10, 13, 14, 15, 20] },
   },
-  constraint: (p) => p.by !== p.notBy && Math.floor(p.upto / p.by) - Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 5,
+  // The last conjunct guarantees the overlap is non-empty. Without it one draw in 610 has no
+  // number divisible by both, so nothing is struck out and the whole lesson is vacuous — and
+  // the prose's "removing the overlap leaves fewer" becomes false on the page.
+  constraint: (p) => p.by !== p.notBy && Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 1 && Math.floor(p.upto / p.by) - Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 5,
   derived: (p) => {
     const shared = gcdOf(p.by, p.notBy);
     const both = lcmOf(p.by, p.notBy);

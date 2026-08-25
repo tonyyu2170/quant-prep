@@ -3054,6 +3054,215 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => Math.abs(d.diagEntry * d.invDiag + (p.n - 1) * d.recovered * d.invOff - 1) < 1e-6,
       breaks: (_p, d) => ({ ...d, invDiag: d.invDiag * 2 }) },
   ],
+  // ---- pure-math/number-theory (B15) ----
+  "number-theory/multiples-in-a-range": [
+    { says: "Solve: the count recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.answer === Math.floor(p.upto / p.by) - Math.floor(p.upto / d.both),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 3 }) },
+    { says: "Removing an overlap can only shrink the count, never grow it",
+      holds: (_p, d) => P(d.answer) < P(d.hitsBy) && d.hitsBoth > 0,
+      breaks: (_p, d) => ({ ...d, answer: d.hitsBy + 1 }) },
+    { says: "Numbers in both lists are the multiples of the least common multiple, not of the product",
+      holds: (p, d) => d.both * d.shared === p.by * p.notBy && d.both <= p.by * p.notBy,
+      breaks: (p, d) => ({ ...d, both: p.by * p.notBy * 2 }) },
+  ],
+  "number-theory/coprime-count-two-primes": [
+    { says: "Solve: the survivor count recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.answer === p.mult * (p.pr - 1) * (p.qr - 1),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 2 }) },
+    { says: "Survivors are fewer than the whole range but still most of it",
+      holds: (_p, d) => P(d.answer) < P(d.span) && d.answer * 2 > d.span,
+      breaks: (_p, d) => ({ ...d, answer: d.span + 1 }) },
+    { says: "Both strike-out counts come out whole, because the range is a whole number of blocks",
+      holds: (p, d) => d.dropP * p.pr === d.span && d.dropQ * p.qr === d.span,
+      breaks: (_p, d) => ({ ...d, dropP: d.dropP + 1 }) },
+  ],
+  "number-theory/gcd-lcm-product": [
+    { says: "Solve: the least common multiple recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.answer === p.g * p.m * p.n,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 2 }) },
+    { says: "A common multiple is at least as large as either number, and divides their product",
+      holds: (_p, d) => P(d.answer) > P(d.second) && d.product % d.answer === 0,
+      breaks: (_p, d) => ({ ...d, answer: d.second - 1 }) },
+    { says: "The stated divisor really does divide both numbers, and the identity closes",
+      holds: (p, d) => d.first % p.g === 0 && d.second % p.g === 0 && p.g * d.answer === d.product,
+      breaks: (_p, d) => ({ ...d, product: d.product + 1 }) },
+  ],
+  "number-theory/frobenius-largest-unpayable": [
+    { says: "Solve: the largest unreachable total recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.answer === p.coinA * p.coinB - p.coinA - p.coinB,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The answer itself cannot be assembled, but every total above it can",
+      holds: (p, d) => {
+        const reach = (t: number) => { for (let x = 0; x * p.coinA <= t; x++) if ((t - x * p.coinA) % p.coinB === 0) return true; return false; };
+        if (reach(d.answer)) return false;
+        for (let t = d.answer + 1; t <= d.answer + p.coinA + p.coinB; t++) if (!reach(t)) return false;
+        return true;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The third token is redundant: it is a whole number of the smallest ones",
+      holds: (p, d) => d.redundant % p.coinA === 0 && d.redundant > 0,
+      breaks: (_p, d) => ({ ...d, redundant: d.redundant + 1 }) },
+    { says: "The largest gap sits below the product of the two working denominations",
+      holds: (_p, d) => P(d.answer) < P(d.product),
+      breaks: (_p, d) => ({ ...d, answer: d.product + 1 }) },
+  ],
+  "number-theory/crt-two-congruences": [
+    { says: "Solve: the smallest count really does satisfy both remainder conditions",
+      holds: (p, d) => d.answer % p.m1 === p.r1 && d.answer % p.m2 === p.r2,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "It is the SMALLEST such count, and it lies below the product of the two row sizes",
+      holds: (p, d) => {
+        if (P(d.answer) >= P(d.modulus)) return false;
+        for (let n = 1; n < d.answer; n++) if (n % p.m1 === p.r1 && n % p.m2 === p.r2) return false;
+        return true;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + d.modulus }) },
+    { says: "The walk steps by the first row size, so it never disturbs the first condition",
+      holds: (p, d) => d.answer === p.r1 + d.steps * p.m1 && d.steps >= 0,
+      breaks: (_p, d) => ({ ...d, steps: d.steps + 1 }) },
+  ],
+  "number-theory/diophantine-count-solutions": [
+    { says: "Solve: the count recomputed fresh from params matches the printed answer",
+      holds: (p, d) => {
+        let n = 0;
+        for (let x = 0; x * p.a <= p.c; x++) if ((p.c - x * p.a) % p.b === 0) n++;
+        return d.answer === n;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "At least one combination works, and no more than the candidate counts do",
+      holds: (_p, d) => d.answer >= 1 && P(d.answer) < P(d.maxFirst),
+      breaks: (_p, d) => ({ ...d, answer: d.maxFirst + 1 }) },
+    { says: "Roughly one candidate in the large crate size works, which is what the stride predicts",
+      holds: (p, d) => d.answer * p.b >= d.maxFirst - p.b && d.answer * p.b <= d.maxFirst + p.b + p.a,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 5 + 20 }) },
+  ],
+  "number-theory/linear-congruence-solve": [
+    { says: "Solve: the answer really does leave the wanted remainder when multiplied up",
+      holds: (p, d) => (p.a * d.answer) % p.m === p.r,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The inverse really inverts: multiplier times inverse leaves a remainder of one",
+      holds: (p, d) => d.product === p.a * d.inverse && d.product % p.m === 1,
+      breaks: (_p, d) => ({ ...d, inverse: d.inverse + 1 }) },
+    { says: "The answer is a genuine remainder, strictly below the divisor and never zero",
+      holds: (p, d) => P(d.answer) < P(p.m) && d.answer >= 1,
+      breaks: (p, d) => ({ ...d, answer: p.m }) },
+    { says: "There is exactly one solution in range, which is what sharing no factor buys",
+      holds: (p, d) => {
+        let hits = 0;
+        for (let x = 1; x < p.m; x++) if ((p.a * x) % p.m === p.r) hits++;
+        return hits === 1 && d.answer >= 1;
+      },
+      breaks: (_p, d) => ({ ...d, answer: -1 }) },
+  ],
+  "number-theory/frobenius-fit-then-count": [
+    { says: "Solve: the recovered denomination reproduces the quoted largest gap",
+      holds: (p, d) => p.coinA * d.recovered - p.coinA - d.recovered === d.largest,
+      breaks: (_p, d) => ({ ...d, recovered: d.recovered + 1 }) },
+    { says: "The gaps really do number half of the totals up to the largest one",
+      holds: (p, d) => d.unpayable === ((p.coinA - 1) * (d.recovered - 1)) / 2 && Number.isInteger(d.unpayable),
+      breaks: (_p, d) => ({ ...d, unpayable: d.unpayable + 0.5 }) },
+    { says: "There are fewer gaps than the largest gap, but not far fewer — they are about half",
+      holds: (_p, d) => P(d.unpayable) < P(d.largest) && d.unpayable * 2 >= d.largest - 2,
+      breaks: (_p, d) => ({ ...d, unpayable: d.largest + 1 }) },
+    { says: "The printed answer is the gap count or the recovered denomination, according to what was asked",
+      holds: (p, d) => d.answer === (p.wanted === 1 ? d.unpayable : d.recovered),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Counting the gaps directly agrees with the pairing formula",
+      holds: (p, d) => {
+        const b = d.recovered;
+        let n = 0;
+        for (let t = 1; t <= d.largest; t++) {
+          let ok = false;
+          for (let x = 0; x * p.coinA <= t && !ok; x++) if ((t - x * p.coinA) % b === 0) ok = true;
+          if (!ok) n++;
+        }
+        return n === d.unpayable;
+      },
+      breaks: (_p, d) => ({ ...d, unpayable: d.unpayable + 1 }) },
+  ],
+  // ---- pure-math/solid-geometry (B15) ----
+  "solid-geometry/volume-scaling-under-similarity": [
+    { says: "Solve: the scaled capacity recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.scaledVol === p.vol * Math.pow(p.factor, 3) && (p.wanted === 1 ? d.answer === d.scaledVol : d.answer === d.volFactor),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 2 }) },
+    { says: "Volume scales by the cube and surface by the square, so the volume factor is the larger",
+      holds: (p, d) => d.volFactor === Math.pow(p.factor, 3) && d.areaFactor === p.factor * p.factor && P(d.volFactor) > P(d.areaFactor),
+      breaks: (_p, d) => ({ ...d, volFactor: d.areaFactor }) },
+    { says: "The real tank holds strictly more than the model",
+      holds: (p, d) => P(d.scaledVol) > p.vol,
+      breaks: (p, d) => ({ ...d, scaledVol: p.vol - 1 }) },
+  ],
+  "solid-geometry/triangular-prism-volume": [
+    { says: "Solve: the volume recomputed fresh from params matches the printed answer",
+      holds: (p, d) => d.answer === ((p.legA * p.legB) / 2) * p.length,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The channel holds exactly half the solid bar it was cut from",
+      holds: (_p, d) => d.solidBar === d.answer * 2 && P(d.answer) < P(d.solidBar),
+      breaks: (_p, d) => ({ ...d, solidBar: d.answer }) },
+    { says: "The half-rectangle comes out whole, so nothing is rounded on the page",
+      holds: (p, d) => d.crossSection === (p.legA * p.legB) / 2 && Number.isInteger(d.crossSection),
+      breaks: (_p, d) => ({ ...d, crossSection: d.crossSection + 0.5 }) },
+  ],
+  "solid-geometry/spherical-cap-fraction": [
+    { says: "Solve: the filled fraction recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.capFraction, r9((p.depth * p.depth * (3 * p.radius - p.depth)) / (4 * Math.pow(p.radius, 3)))),
+      breaks: (_p, d) => ({ ...d, capFraction: d.capFraction * 1.02, answer: d.answer * 1.02 }) },
+    { says: "A fraction of a capacity, so strictly between empty and full",
+      holds: (_p, d) => P(d.capFraction) > 0 && P(d.capFraction) < 1,
+      breaks: (_p, d) => ({ ...d, capFraction: 1.5 }) },
+    { says: "A sphere is narrow at the bottom, so a shallow fill holds LESS than its share of the diameter",
+      holds: (p, d) => d.capFraction < p.depth / (2 * p.radius),
+      breaks: (p, d) => ({ ...d, capFraction: p.depth / p.radius }) },
+    { says: "The printed answer is the filled fraction or its complement, according to what was asked",
+      // The first version of this claim added capFraction to (1 - capFraction) and checked it
+      // came to 1 — true for every draw whatever the answer, so no mutation could falsify it.
+      // Reading d.answer itself is what makes it a claim about the answer at all.
+      holds: (p, d) => (p.wanted === 1 ? same(d.answer, d.capFraction) : same(r9(d.answer + d.capFraction), 1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+  "solid-geometry/cone-frustum-fraction": [
+    { says: "Solve: the remaining fraction recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.frustumFraction, r9((Math.pow(p.bigR, 3) - Math.pow(p.smallR, 3)) / Math.pow(p.bigR, 3))),
+      breaks: (_p, d) => ({ ...d, frustumFraction: d.frustumFraction * 1.02, answer: d.answer * 1.02 }) },
+    { says: "The discarded tip is a CUBED ratio, so it is far smaller than the radius ratio suggests",
+      holds: (p, d) => r9(1 - d.frustumFraction) < p.smallR / p.bigR,
+      breaks: (p, d) => ({ ...d, frustumFraction: r9(1 - p.smallR / p.bigR) }) },
+    { says: "The printed answer is the surviving fraction or the discarded one, according to what was asked",
+      holds: (p, d) => (p.wanted === 1 ? same(d.answer, d.frustumFraction) : same(r9(d.answer + d.frustumFraction), 1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Most of the cone survives the cut, and the fraction stays inside zero and one",
+      holds: (_p, d) => P(d.frustumFraction) > 0 && P(d.frustumFraction) < 1 && d.difference > 0,
+      breaks: (_p, d) => ({ ...d, difference: 0, frustumFraction: 0 }) },
+  ],
+  "solid-geometry/displacement-water-level-rise": [
+    { says: "Solve: the rise recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(Math.pow(p.cube, 3) / (p.tankA * p.tankB))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The rise is below the cube's own height, since the floor is wider than the cube",
+      holds: (p, d) => P(d.answer) < p.cube,
+      breaks: (p, d) => ({ ...d, answer: p.cube + 1 }) },
+    { says: "Volume is conserved: the rise spread over the floor is exactly the cube's volume",
+      holds: (_p, d) => Math.abs(d.answer * d.base - d.displaced) < 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 2 }) },
+  ],
+  "solid-geometry/box-fit-then-diagonal": [
+    { says: "Solve: the fitted height and the diagonal both recompute from params",
+      holds: (p, d) => d.volume / d.faceArea === p.edgeC && same(d.diagonal, r9(Math.sqrt(p.edgeA ** 2 + p.edgeB ** 2 + p.edgeC ** 2))),
+      breaks: (_p, d) => ({ ...d, diagonal: d.diagonal * 1.02, answer: d.answer * 1.02 }) },
+    { says: "The rod is longer than any single edge, since it adds all three squares",
+      holds: (p, d) => P(d.diagonal) > p.edgeC && P(d.diagonal) > p.edgeB,
+      breaks: (p, d) => ({ ...d, diagonal: p.edgeA }) },
+    { says: "It is shorter than the three edges laid end to end — a straight line beats a path",
+      holds: (p, d) => P(d.diagonal) < p.edgeA + p.edgeB + p.edgeC,
+      breaks: (p, d) => ({ ...d, diagonal: p.edgeA + p.edgeB + p.edgeC + 1 }) },
+    { says: "The printed answer is the rod or the height, according to what was asked",
+      holds: (p, d) => (p.wanted === 1 ? same(d.answer, d.diagonal) : d.answer === p.edgeC),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The three squares really do add to the printed total",
+      holds: (_p, d) => d.squareA + d.squareB + d.squareC === d.sumSquares,
+      breaks: (_p, d) => ({ ...d, sumSquares: d.sumSquares + 1 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -3121,7 +3330,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing", "pure-math/stochastic", "pure-math/linear-algebra"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "finance/pricing", "pure-math/stochastic", "pure-math/linear-algebra", "pure-math/number-theory", "pure-math/solid-geometry"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))
