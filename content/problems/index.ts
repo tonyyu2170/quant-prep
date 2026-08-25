@@ -247,6 +247,8 @@ import { thetaGammaBreakevenMove } from "./finance/theta-gamma-breakeven-move";
 import { oneStepBinomialCallPrice } from "./finance/one-step-binomial-call-price";
 import { atmStraddleFromDollarVol } from "./finance/atm-straddle-from-dollar-vol";
 import { putButterflyFromCallQuotes } from "./finance/put-butterfly-from-call-quotes";
+import { twoStepBinomialCallPrice } from "./finance/two-step-binomial-call-price";
+import { putCallParityWithDividend } from "./finance/put-call-parity-with-dividend";
 import { expectedSquareOfAWalk } from "./stochastic/expected-square-of-a-walk";
 import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff";
 import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
@@ -543,6 +545,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   oneStepBinomialCallPrice,
   atmStraddleFromDollarVol,
   putButterflyFromCallQuotes,
+  twoStepBinomialCallPrice,
+  putCallParityWithDividend,
   adjustedRSquaredFromSums,
   duplicatedSampleSlopeVariance,
   overlappingWindowSums,
