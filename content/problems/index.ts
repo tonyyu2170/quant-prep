@@ -252,6 +252,9 @@ import { putCallParityWithDividend } from "./finance/put-call-parity-with-divide
 import { americanVsEuropeanCallCredit } from "./finance/american-vs-european-call-credit";
 import { multiWinnerBookArbitrage } from "./finance/multi-winner-book-arbitrage";
 import { forwardMispricingArbitrage } from "./finance/forward-mispricing-arbitrage";
+import { durationPriceChange } from "./finance/duration-price-change";
+import { bondPremiumFromZeros } from "./finance/bond-premium-from-zeros";
+import { parCouponFromZeros } from "./finance/par-coupon-from-zeros";
 import { expectedSquareOfAWalk } from "./stochastic/expected-square-of-a-walk";
 import { martingaleMissingPayoff } from "./stochastic/martingale-missing-payoff";
 import { riskNeutralUpProbability } from "./stochastic/risk-neutral-up-probability";
@@ -553,6 +556,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   americanVsEuropeanCallCredit,
   multiWinnerBookArbitrage,
   forwardMispricingArbitrage,
+  durationPriceChange,
+  bondPremiumFromZeros,
+  parCouponFromZeros,
   adjustedRSquaredFromSums,
   duplicatedSampleSlopeVariance,
   overlappingWindowSums,
