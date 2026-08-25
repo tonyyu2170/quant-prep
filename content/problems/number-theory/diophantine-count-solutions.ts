@@ -41,7 +41,7 @@ export const diophantineCountSolutions: ProblemTemplate = {
     `${fmtNum(p.b)} units, with every crate filled completely and no partial crates. The load ` +
     `is exactly ${fmtNum(p.c)} units. In how many different ways can the two crate sizes be combined?`,
   solution: (p, d) => [
-    { title: "Fix one count and the other is forced", body: `Choose how many small crates to use. What remains must be filled by large crates alone, so it must divide evenly by the large size — there is no freedom left. Every solution is therefore named by its small-crate count, and the question is how many of those counts work.` },
+    { title: "Fix one count and the other is forced", body: `Choose how many small crates to use. What remains must be filled by large crates alone, so it must divide evenly by the large size — there is no freedom left. Every solution is therefore named by its small-crate count, and the question is how many of those counts work. In symbols the load reads $ax+by=c$, with $x$ and $y$ the two crate counts.` },
     { title: "Solutions come at a regular spacing", body: `Once one solution is found, trading ${fmtNum(p.b)} small crates for ${fmtNum(p.a)} large ones moves the load by nothing at all and gives another. So the working counts sit ${fmtNum(p.b)} apart, and because the two sizes share no factor above one, nothing closer than that ever works.` },
     { title: "How many fit in range", body: `The small-crate count runs from none upward, and cannot pass $\\dfrac{${fmtNum(p.c)}}{${fmtNum(p.a)}}=${fmtNum(d.exactQuotient)}$ — so at most ${fmtNum(d.maxFirst)} whole crates. Solutions ${fmtNum(p.b)} apart inside that range number ${fmtNum(d.answer)}.` },
     { title: "Answer", body: `There are ${fmtNum(d.answer)} ways.` },

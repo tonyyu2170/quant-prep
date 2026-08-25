@@ -30,7 +30,7 @@ export const gcdLcmProduct: ProblemTemplate = {
     `Two whole numbers are ${fmtNum(d.first)} and ${fmtNum(d.second)}. Their greatest common ` +
     `divisor is ${fmtNum(p.g)}. What is their least common multiple?`,
   solution: (p, d) => [
-    { title: "Every prime is split between the two", body: `For any prime, one of the two numbers carries at least as many copies as the other. The greatest common divisor takes the smaller count each time and the least common multiple takes the larger — so between them they take every copy exactly once, which is to say their product is the product of the two numbers.` },
+    { title: "Every prime is split between the two", body: `For any prime, one of the two numbers carries at least as many copies as the other. The greatest common divisor takes the smaller count each time and the least common multiple takes the larger — so between them they take every copy exactly once. Writing $g$ for the divisor and $L$ for the multiple, that says $g\\times L=a\\times b$.` },
     { title: "Multiply the numbers together", body: `That gives $${fmtNum(d.first)}\\times${fmtNum(d.second)}=${fmtNum(d.product)}$.` },
     { title: "Divide out the part they share", body: `The common divisor is ${fmtNum(p.g)}, so the least common multiple is $\\dfrac{${fmtNum(d.product)}}{${fmtNum(p.g)}}=${fmtNum(d.answer)}$. Note this needs no factorisation of either number — the identity does all the work.` },
     { title: "Answer", body: `The least common multiple is ${fmtNum(d.answer)}.` },

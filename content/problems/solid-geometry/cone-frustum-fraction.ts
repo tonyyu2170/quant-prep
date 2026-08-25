@@ -35,7 +35,7 @@ export const coneFrustumFraction: ProblemTemplate = {
     `${fmtNum(p.smallR)} centimetres. ` +
     `${p.wanted === 1 ? `What FRACTION of the original cone remains?` : `What fraction was discarded?`}`,
   solution: (p, d) => [
-    { title: "The tip is a smaller copy of the whole", body: `A horizontal cut through a cone leaves a tip that is the same shape as the original, just smaller — every length scaled by the ratio of the two radii. So the tip's volume is the whole cone's, scaled by the CUBE of that ratio, and asking for a fraction cancels the constant entirely.` },
+    { title: "The tip is a smaller copy of the whole", body: `A horizontal cut through a cone leaves a tip that is the same shape as the original, just smaller — every length scaled by the ratio of the two radii. So the tip's volume is the whole cone's, scaled by the CUBE of that ratio, and asking for a fraction cancels the constant entirely: $\\text{share}=\\dfrac{R^3-r^3}{R^3}$.` },
     { title: "Cube each radius", body: `The full mouth gives $${fmtNum(p.bigR)}\\times${fmtNum(p.bigR)}\\times${fmtNum(p.bigR)}=${fmtNum(d.bigCube)}$ and the cut radius gives $${fmtNum(p.smallR)}\\times${fmtNum(p.smallR)}\\times${fmtNum(p.smallR)}=${fmtNum(d.smallCube)}$.` },
     { title: "Answer", body: `What remains is the difference over the whole: $\\dfrac{${fmtNum(d.bigCube)}-${fmtNum(d.smallCube)}}{${fmtNum(d.bigCube)}}=\\dfrac{${fmtNum(d.difference)}}{${fmtNum(d.bigCube)}}=${fmtNum(d.frustumFraction)}$${p.wanted === 1 ? "" : `, so the discarded share is ${fmtNum(d.answer)}`}.` },
     { title: "Sanity check", body: `Cutting at ${fmtNum(p.smallR)} out of ${fmtNum(p.bigR)} removes a tip whose share is that ratio CUBED, so the discarded piece is far smaller than the cut looks: the remaining fraction ${fmtNum(d.frustumFraction)} sits well above zero. Most of a cone's volume lives near its wide end, which is why the tip is worth so little.` },
@@ -44,5 +44,6 @@ export const coneFrustumFraction: ProblemTemplate = {
   commonTrap: "Taking the discarded share as the ratio of the radii, or of their squares, rather than of their cubes — both wildly overstate the tip. The other slip is treating the frustum as a cylinder of some average radius.",
   expectedPaceS: 110,
   verify: { method: "brute-force" },
-  constants: [],
+  // 3 is structural: the symbolic share is written with cubed radii.
+  constants: [3],
 };

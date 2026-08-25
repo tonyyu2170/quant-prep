@@ -26,7 +26,7 @@ export const displacementWaterLevelRise: ProblemTemplate = {
     `and holds enough water to cover its floor. A solid metal cube of side ${fmtNum(p.cube)} ` +
     `centimetres is lowered in and sinks completely. By how many centimetres does the water level rise?`,
   solution: (p, d) => [
-    { title: "The water has to go somewhere", body: `A submerged solid takes up room the water previously occupied, so the water is pushed upward by exactly the solid's own volume. The tank's walls are vertical, so that displaced volume spreads over an unchanging floor area — which makes the rise a single division.` },
+    { title: "The water has to go somewhere", body: `A submerged solid takes up room the water previously occupied, so the water is pushed upward by exactly the solid's own volume. The tank's walls are vertical, so that displaced volume spreads over an unchanging floor area — which makes the rise a single division: $\\text{rise}=\\dfrac{V}{A}$, with $V$ the solid's volume and $A$ the floor area.` },
     { title: "How much room the cube takes", body: `Its volume is $${fmtNum(p.cube)}\\times${fmtNum(p.cube)}\\times${fmtNum(p.cube)}=${fmtNum(d.displaced)}$ cubic centimetres. Note that nothing about the cube's shape matters here beyond its volume — a sphere of the same volume would raise the level identically.` },
     { title: "Spread over the floor", body: `The floor covers $${fmtNum(p.tankA)}\\times${fmtNum(p.tankB)}=${fmtNum(d.base)}$ square centimetres, so the rise is $\\dfrac{${fmtNum(d.displaced)}}{${fmtNum(d.base)}}=${fmtNum(d.answer)}$ centimetres.` },
     { title: "Answer", body: `The level rises by ${fmtNum(d.answer)} centimetres.` },

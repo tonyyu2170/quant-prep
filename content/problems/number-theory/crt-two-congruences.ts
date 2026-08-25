@@ -35,7 +35,7 @@ export const crtTwoCongruences: ProblemTemplate = {
     `${fmtNum(p.r1)} over; grouped into rows of ${fmtNum(p.m2)} it leaves ${fmtNum(p.r2)} over. ` +
     `What is the SMALLEST number of parts the crate could hold?`,
   solution: (p, d) => [
-    { title: "Satisfy one condition, then walk", body: `Any count leaving ${fmtNum(p.r1)} over in rows of ${fmtNum(p.m1)} looks like ${fmtNum(p.r1)} plus some whole number of ${fmtNum(p.m1)}s. Stepping by ${fmtNum(p.m1)} preserves the first condition exactly, so the search only ever has to check the second.` },
+    { title: "Satisfy one condition, then walk", body: `Any count leaving ${fmtNum(p.r1)} over in rows of ${fmtNum(p.m1)} looks like ${fmtNum(p.r1)} plus some whole number of ${fmtNum(p.m1)}s. Every such count has the form $n=r+km$, with $m$ the first row size — so stepping by $m$ preserves the first condition exactly and the search only ever has to check the second.` },
     { title: "Why the walk must succeed", body: `The two row sizes share no factor above one. Stepping by ${fmtNum(p.m1)} therefore cycles through EVERY remainder against ${fmtNum(p.m2)} before repeating any, so the wanted remainder is certain to appear — and to appear exactly once within a stretch of ${fmtNum(d.modulus)}.` },
     { title: "Where it lands", body: `Taking ${fmtNum(d.steps)} steps from ${fmtNum(p.r1)} gives $${fmtNum(p.r1)}+${fmtNum(d.steps)}\\times${fmtNum(p.m1)}=${fmtNum(d.answer)}$.` },
     { title: "Answer", body: `The smallest possible count is ${fmtNum(d.answer)}.` },
