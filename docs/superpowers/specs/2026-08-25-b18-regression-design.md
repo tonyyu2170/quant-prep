@@ -55,6 +55,17 @@ All twelve measured with `tools/probe.ts` against the live gate counters. Floors
 `distinct@band ≥ 12`, `texts/100 ≥ 70`, `maxRepeat ≤ 4` (`content/problems/draw-space.test.ts:93`,
 `:123-124`).
 
+**These are the STUB numbers, and the shipped ones are smaller.** Implementation added constraints
+the stubs did not have, in every case to make a template's own `commonTrap` punishable — a draw
+where the trap's arithmetic returns the correct answer teaches the wrong lesson and no gate detects
+it. Tasks 1 and 2 shed 19, 12, 9, 242 and 16 draws that way, with `distinct@band` holding in every
+case. Task 7 records the shipped figures; this table stays as the pre-prose measurement it was.
+
+**#4's direction, corrected:** both variables move to SMALLER units — one old unit of the response
+becomes `c` new ones and one old unit of the predictor becomes `k` new ones, giving `b' = cb/k`.
+The first draft of this table's row and of the plan's Step 1 said "larger" for the response, which
+contradicts the formula the roster was measured against.
+
 | # | id | d | the fact it tests | tuples | texts/100 | maxRep | distinct@band |
 |---|---|---|---|---|---|---|---|
 | 1 | `fitted-value-and-residual` | 1 | a residual is `y − ŷ`, not the unobservable error | 1742 | 96 | 3 | 52 |
