@@ -224,6 +224,8 @@ import { weightedLeastSquaresSingleMean } from "./statistics/weighted-least-squa
 import { twoSidedZTestStatistic } from "./statistics/two-sided-z-test-statistic";
 import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-half-width";
 import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
+import { oneProportionZStatistic } from "./statistics/one-proportion-z-statistic";
+import { chiSquareStatisticForADie } from "./statistics/chi-square-statistic-for-a-die";
 import { sampleSizeForAProportion } from "./statistics/sample-size-for-a-proportion";
 import { expectedMaximumOfUniforms } from "./statistics/expected-maximum-of-uniforms";
 import { expectedRangeOfUniforms } from "./statistics/expected-range-of-uniforms";
@@ -521,6 +523,8 @@ export const PROBLEMS: ProblemTemplate[] = [
   twoSidedZTestStatistic,
   confidenceIntervalHalfWidth,
   typeTwoErrorAndPower,
+  oneProportionZStatistic,
+  chiSquareStatisticForADie,
   sampleSizeForAProportion,
   expectedMaximumOfUniforms,
   expectedRangeOfUniforms,
