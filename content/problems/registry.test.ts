@@ -18,7 +18,7 @@ describe("problem registry invariants", () => {
     // one to come here and say so. That is the same discipline the per-topic counts above use
     // (toBe, not a floor). A loose floor detects nothing, which is what the last one did.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
-    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(298);
+    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(302);
   });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
@@ -107,7 +107,7 @@ describe("problem registry invariants", () => {
     expect(brainteasers).toBe(23);
     expect(statistics).toBe(17);
     expect(estimation).toBe(15);
-    expect(inference).toBe(11);
+    expect(inference).toBe(15);
     expect(options).toBe(14);
     expect(arbitrage).toBe(7);
     expect(fixedIncome).toBe(5);
@@ -208,7 +208,7 @@ describe("problem registry invariants", () => {
     // straight off the template, so pin it against real templates rather than a
     // synthetic tolerance: one off the true count must fail.
     const exact = PROBLEMS.filter((t) => t.accepted.tolerance.abs === 0);
-    expect(exact.length).toBe(41);   // 17 counting exact counts, 5 choice templates, 7 exact brainteaser answers, 2 statistics sample sizes, 8 number-theory exact integers, 2 whole-number solid-geometry volumes
+    expect(exact.length).toBe(42);   // 17 counting exact counts, 5 choice templates, 7 exact brainteaser answers, 3 statistics sample sizes, 8 number-theory exact integers, 2 whole-number solid-geometry volumes
     for (const t of exact) {
       for (let seed = 0; seed < 5; seed++) {
         const answer = answerOf(t, t.derived(drawParams(t, seed)));

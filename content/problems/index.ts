@@ -232,6 +232,10 @@ import { yearsToASignificantSharpe } from "./statistics/years-to-a-significant-s
 import { falsePositiveAmongManyBacktests } from "./statistics/false-positive-among-many-backtests";
 import { correlationSignificanceTStatistic } from "./statistics/correlation-significance-t-statistic";
 import { powerOfATwoSidedTest } from "./statistics/power-of-a-two-sided-test";
+import { sampleSizeForTargetPower } from "./statistics/sample-size-for-target-power";
+import { pairedTestStatisticWithCorrelation } from "./statistics/paired-test-statistic-with-correlation";
+import { likelihoodRatioForABiasedCoin } from "./statistics/likelihood-ratio-for-a-biased-coin";
+import { standardErrorOfASharpeRatio } from "./statistics/standard-error-of-a-sharpe-ratio";
 import { sampleSizeForAProportion } from "./statistics/sample-size-for-a-proportion";
 import { expectedMaximumOfUniforms } from "./statistics/expected-maximum-of-uniforms";
 import { expectedRangeOfUniforms } from "./statistics/expected-range-of-uniforms";
@@ -537,6 +541,10 @@ export const PROBLEMS: ProblemTemplate[] = [
   falsePositiveAmongManyBacktests,
   correlationSignificanceTStatistic,
   powerOfATwoSidedTest,
+  sampleSizeForTargetPower,
+  pairedTestStatisticWithCorrelation,
+  likelihoodRatioForABiasedCoin,
+  standardErrorOfASharpeRatio,
   sampleSizeForAProportion,
   expectedMaximumOfUniforms,
   expectedRangeOfUniforms,
