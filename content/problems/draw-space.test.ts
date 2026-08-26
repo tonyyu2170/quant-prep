@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ProblemTemplate } from "@qp/engine";
+import { drawParams, type Params, type ProblemTemplate } from "@qp/engine";
 import { PROBLEMS } from "./index";
-import { distinctAtBand, emittedSpread, legalAnswers, neighbourDensity, printedOnesInContext } from "./draw-space";
+import { acceptance, distinctAtBand, emittedSpread, legalAnswers, neighbourDensity, printedOnesInContext } from "./draw-space";
 
 // The mechanical half of what constraint 8 orders an author to measure, promoted out of
 // Task 3's throwaway harness so that no task has to re-derive it. Task 3 proved the cost of
@@ -69,6 +69,31 @@ describe("the draw-space counters fail when they should", () => {
     const many = emittedSpread(stub(Array.from({ length: 500 }, (_, i) => i + 1)), 10);
     expect(many.texts).toBeGreaterThan(8);
   });
+  it("acceptance prices the throw, and a template at rate 0 really does make drawParams throw", () => {
+    const stub = (constraint?: (p: Params) => boolean): ProblemTemplate => ({
+      id: "stub/acc", version: 1, topic: "t", difficulty: 1, firms: [],
+      source: { kind: "original", inspiration: "" },
+      params: { a: { range: { min: 1, max: 100, step: 1 } } }, constraint, derived: (p) => ({ v: p.a }),
+      statement: () => "", answerKey: "v", accepted: { tolerance: { rel: 0.005 } },
+      solution: () => [], keyInsight: "", commonTrap: "", expectedPaceS: 1,
+      verify: { method: "brute-force" },
+    });
+    expect(acceptance(stub())).toMatchObject({ legal: 100, total: 100, rate: 1, pThrow: 0 });
+    expect(acceptance(stub((p) => p.a <= 50)).rate).toBe(0.5);
+
+    // The gradient the other counters cannot see: one legal tuple in a hundred still yields a
+    // legal space, so every floor above passes on it while this one does not.
+    const tight = acceptance(stub((p) => p.a === 1));
+    expect(tight).toMatchObject({ legal: 1, total: 100 });
+    expect(tight.pThrow).toBeGreaterThan(1e-9);
+
+    // And the counter is measuring the real thing: at rate 0 the retries are certain to run
+    // out, and what comes back is a throw during render, not a fallback tuple.
+    const dead = stub(() => false);
+    expect(acceptance(dead)).toMatchObject({ legal: 0, rate: 0, pThrow: 1 });
+    expect(() => drawParams(dead, 12345)).toThrow(/unsatisfiable/);
+  });
+
   it("printedOnesInContext finds a pronoun-following 1, and is honest about false positives", () => {
     expect(printedOnesInContext(["stands on 3 faces; on the other 1 it is thrown out"]))
       .toContain("it is");
@@ -122,6 +147,24 @@ describe("distribution-batch draw spaces clear constraint 8", () => {
       const { texts, maxRepeat } = emittedSpread(t);
       expect(texts, `${t.id} distinct texts per 100`).toBeGreaterThanOrEqual(70);
       expect(maxRepeat, `${t.id} most-repeated tuple`).toBeLessThanOrEqual(4);
+    }
+  });
+});
+
+// Scope here is the WHOLE corpus, not TOPICS. Everything else in this file is constraint 8, a
+// content rule that the 55 bayes and counting problems predate. This one is not a content rule:
+// it is whether the page renders at all, and a template that predates the rule crashes exactly
+// as hard as one that does not.
+describe("no constraint is tight enough to blank the page", () => {
+  it("P(drawParams throws) stays under 1e-9 on every template", () => {
+    for (const t of PROBLEMS) {
+      const { legal, total, rate, pThrow } = acceptance(t);
+      expect(
+        pThrow,
+        `${t.id}: constraint keeps ${legal}/${total} = ${(rate * 100).toFixed(2)}% of its draws, ` +
+          `so one render in ${Math.round(1 / pThrow).toLocaleString()} throws into an uncaught useMemo. ` +
+          `Widen the constraint or the param ranges — do not raise DRAW_ATTEMPTS to hide it.`,
+      ).toBeLessThan(1e-9);
     }
   });
 });

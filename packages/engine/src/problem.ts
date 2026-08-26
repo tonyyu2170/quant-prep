@@ -41,9 +41,24 @@ export interface ProblemTemplate {
   constants?: readonly number[];               // structural numbers allowed in text (e.g. 0.5)
 }
 
+/**
+ * How many rejected tuples `drawParams` re-rolls before it gives up and throws.
+ *
+ * This is a crash budget, not a tuning knob. The throw lands inside ProblemRunner's `useMemo`
+ * during render, and the app has no error boundary — so exhausting it is a blank page for
+ * whoever happened to draw that seed, not a caught error. Raising a rejected tuple's re-roll
+ * count changes nothing about which tuples are drawn: the rng sequence is identical and only
+ * the give-up point moves, so no emitted instance changes.
+ *
+ * It was 100, which put the tightest shipped template (`distributions/normal-between`, whose
+ * constraint accepts 9.25% of its space) at a throw every ~16k draws. At 1000 the same
+ * template is at 8e-43, and the floor in draw-space.test.ts pins the whole corpus under 1e-9.
+ */
+export const DRAW_ATTEMPTS = 1000;
+
 export function drawParams(t: ProblemTemplate, seed: number): Params {
   const rng = makeRng(seed);
-  for (let attempt = 0; attempt < 100; attempt++) {
+  for (let attempt = 0; attempt < DRAW_ATTEMPTS; attempt++) {
     const p: Params = {};
     // Sorted keys: adding/removing a param reshuffles every other param's draw — bump template version when the param set changes.
     for (const key of Object.keys(t.params).sort()) {

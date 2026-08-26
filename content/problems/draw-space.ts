@@ -8,12 +8,13 @@
 // eleven times apart on identical data; a probe that carried its own copy of `distinctAtBand`
 // would recreate exactly that, and a comment saying "keep in step with the gate" is not a
 // mechanism. The assertions that run these counters as corpus floors stay in the test file.
-import { drawParams, type Params, type ProblemTemplate } from "@qp/engine";
+import { DRAW_ATTEMPTS, drawParams, type Params, type ProblemTemplate } from "@qp/engine";
 
-/** Walk the full cartesian product of a template's param specs, legal draws only. */
-export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): void {
-  const keys = Object.keys(t.params).sort();
-  const axes = keys.map((k) => {
+/** Every value each param can take, in `drawParams`' key order. Shared so that the acceptance
+ *  rate below is counted over exactly the space the enumeration walks — computing the product
+ *  size from a second copy of this is how the two would drift apart. */
+function axesOf(t: ProblemTemplate): number[][] {
+  return Object.keys(t.params).sort().map((k) => {
     const spec = t.params[k];
     if (spec.choices) return [...spec.choices];
     const { min, max, step } = spec.range!;
@@ -21,6 +22,12 @@ export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): v
     for (let i = 0; i <= Math.round((max - min) / step); i++) out.push(Math.round((min + step * i) * 1e10) / 1e10);
     return out;
   });
+}
+
+/** Walk the full cartesian product of a template's param specs, legal draws only. */
+export function forEachLegalDraw(t: ProblemTemplate, cb: (p: Params) => void): void {
+  const keys = Object.keys(t.params).sort();
+  const axes = axesOf(t);
   const acc: Params = {};
   const rec = (i: number) => {
     if (i === keys.length) { if (!t.constraint || t.constraint(acc)) cb({ ...acc }); return; }
@@ -56,6 +63,27 @@ export function distinctAtBand(answers: number[], rel = 0.005): number {
     if (!(b - a <= rel * (Math.abs(a) + Math.abs(b)))) runs++;
   }
   return runs;
+}
+
+/**
+ * How often `drawParams` gets a tuple past the constraint — and what that costs the student.
+ *
+ * B18 shipped a constraint tight enough that `drawParams` exhausted its retries and threw,
+ * and no gate in this file could see it: every counter here reads the LEGAL space and says
+ * nothing about how much of the product had to be thrown away to reach it. A template can
+ * clear all three floors above on a space its constraint rejects 999 times in 1000.
+ *
+ * Every param draws uniformly and independently over its own axis, so the acceptance rate is
+ * exactly legal/total over the cartesian product, and the retries are independent Bernoulli
+ * trials: P(throw) on one call is (1 - rate)^DRAW_ATTEMPTS. That is a real page, not a caught
+ * error — see DRAW_ATTEMPTS.
+ */
+export function acceptance(t: ProblemTemplate) {
+  const total = axesOf(t).reduce((n, axis) => n * axis.length, 1);
+  let legal = 0;
+  forEachLegalDraw(t, () => legal++);
+  const rate = legal / total;
+  return { legal, total, rate, pThrow: Math.pow(1 - rate, DRAW_ATTEMPTS) };
 }
 
 /**
