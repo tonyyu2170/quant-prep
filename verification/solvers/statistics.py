@@ -2128,3 +2128,156 @@ SOLVERS.update({
     "statistics/pooled-rate-standard-error": {"exact": pooled_rate_standard_error_exact, "brute": pooled_rate_standard_error_brute},
     "statistics/bias-corrected-uniform-endpoint": {"exact": bias_corrected_uniform_endpoint_exact, "brute": bias_corrected_uniform_endpoint_brute},
 })
+
+
+# --- B20: time series ----------------------------------------------------------------------
+#
+# Each brute() reconstructs the answer from the process itself — the moving-average expansion
+# summed term by term, the covariance matrix built and contracted, the recursion iterated, a
+# horizon root-found — never from the closed form the template collects. Every geometric series
+# here is summed to convergence rather than folded, which is the whole point: the fold is what
+# is being checked.
+
+_MA_TERMS = 4000          # phi^2 <= 0.81, so this is far past double precision
+
+
+def ar1_stationary_spread_exact(p):
+    phi, sigma = float(p["phi"]), float(p["sigmaEps"])
+    phi_sq = _round9(phi * phi)
+    return {
+        "phiSq": phi_sq,
+        "oneMinus": _round9(1.0 - phi_sq),
+        "answer": _round9(sigma / math.sqrt(1.0 - phi * phi)),
+        "inflation": _round9(1.0 / math.sqrt(1.0 - phi * phi)),
+    }
+
+
+def ar1_stationary_spread_brute(p):
+    """Sum the moving-average expansion: the process is the weighted sum of all past shocks,
+    so its variance is the shock variance times the sum of the squared weights."""
+    phi, sigma = float(p["phi"]), float(p["sigmaEps"])
+    weights = phi ** np.arange(_MA_TERMS)
+    variance = float(sigma * sigma * np.sum(weights * weights))
+    assert weights[-1] < 1e-15, "the expansion was truncated before it converged"
+    return math.sqrt(variance)
+
+
+def ar1_lag_covariance_exact(p):
+    phi, k, sd = float(p["phi"]), int(p["k"]), float(p["sd"])
+    return {
+        "phiPow": _round9(phi ** k),
+        "variance": _round9(sd * sd),
+        "answer": _round9((phi ** k) * sd * sd),
+        "nextLag": _round9((phi ** (k + 1)) * sd * sd),
+        "kPlusOne": float(k + 1),
+    }
+
+
+def ar1_lag_covariance_brute(p):
+    """Cross-multiply the two moving-average expansions term by term. Shocks are independent,
+    so only shocks common to both dates survive, and the lag shows up as an offset."""
+    phi, k, sd = float(p["phi"]), int(p["k"]), float(p["sd"])
+    shock_var = sd * sd * (1.0 - phi * phi)          # what the stationary width implies
+    j = np.arange(_MA_TERMS)
+    return float(shock_var * np.sum(phi ** j * phi ** (j + k)))
+
+
+def ar1_forecast_level_exact(p):
+    phi, mu, xt, h = float(p["phi"]), float(p["mu"]), float(p["xt"]), int(p["h"])
+    dev = xt - mu
+    return {
+        "deviation": _round9(abs(dev)),
+        "phiPow": _round9(phi ** h),
+        "decayed": _round9(abs((phi ** h) * dev)),
+        "answer": _round9(mu + (phi ** h) * dev),
+        "oneStep": _round9(mu + phi * dev),
+    }
+
+
+def ar1_forecast_level_brute(p):
+    """Iterate the conditional expectation one day at a time — no power is ever taken."""
+    phi, mu, xt, h = float(p["phi"]), float(p["mu"]), float(p["xt"]), int(p["h"])
+    level = xt
+    for _ in range(h):
+        level = mu + phi * (level - mu)
+    return level
+
+
+def mean_reversion_decay_time_exact(p):
+    phi, frm, to = float(p["phi"]), float(p["from"]), float(p["to"])
+    return {
+        "ratio": _round9(to / frm),
+        "answer": _round9(math.log(to / frm) / math.log(phi)),
+        "halfLife": _round9(math.log(0.5) / math.log(phi)),
+    }
+
+
+def mean_reversion_decay_time_brute(p):
+    """Root-find the horizon at which the decayed gap meets the target. No logarithm is taken:
+    the template's answer IS a ratio of logs, so using one here would check nothing."""
+    phi, frm, to = float(p["phi"]), float(p["from"]), float(p["to"])
+    gap = lambda t: frm * phi ** t - to
+    root = optimize.brentq(gap, 0.0, 1e4, xtol=1e-14, rtol=8.9e-16)
+    assert gap(root * 0.99) > 0 > gap(root * 1.01 + 1e-9), "the gap does not cross the target here"
+    return root
+
+
+def ar1_multiday_variance_exact(p):
+    phi, sd, q = float(p["phi"]), float(p["sd"]), int(p["q"])
+    variance = _round9(sd * sd)
+    inflation = _round9(2 + 2 * phi if q == 2 else 3 + 4 * phi + 2 * phi * phi)
+    return {
+        "variance": variance,
+        "inflation": inflation,
+        "independent": _round9(q * variance),
+        "answer": _round9(sd * sd * (2 + 2 * phi if q == 2 else 3 + 4 * phi + 2 * phi * phi)),
+        "phiSq": _round9(phi * phi),
+    }
+
+
+def ar1_multiday_variance_brute(p):
+    """Build the q-by-q covariance matrix and contract it with a vector of ones — the sum of
+    every entry IS the variance of the total, with no pair counted or missed by hand."""
+    phi, sd, q = float(p["phi"]), float(p["sd"]), int(p["q"])
+    idx = np.arange(q)
+    cov = sd * sd * phi ** np.abs(idx[:, None] - idx[None, :])
+    assert np.allclose(np.diag(cov), sd * sd), "the diagonal is not the daily variance"
+    ones = np.ones(q)
+    return float(ones @ cov @ ones)
+
+
+def standard_error_under_autocorrelation_exact(p):
+    phi, sd, n = float(p["phi"]), float(p["sd"]), int(p["n"])
+    ratio = (1.0 + phi) / (1.0 - phi)
+    cross = sum((n - k) * phi ** k for k in range(1, n))
+    return {
+        "root": _round9(math.sqrt(n)),
+        "ratio": _round9(ratio),
+        "onePlus": _round9(1.0 + phi),
+        "oneMinus": _round9(1.0 - phi),
+        "naiveSe": _round9(sd / math.sqrt(n)),
+        "answer": _round9((sd / math.sqrt(n)) * math.sqrt(ratio)),
+        "effectiveN": _round9(n / ratio),
+        "exactSe": _round9((sd / n) * math.sqrt(n + 2 * cross)),
+    }
+
+
+def standard_error_under_autocorrelation_brute(p):
+    """Sum the autocorrelation function to convergence rather than folding the geometric series.
+    This reproduces the LONG-RUN figure the template asks for by name; the exact finite-sample
+    standard error is a different and smaller number, and is checked as `exactSe` above."""
+    phi, sd, n = float(p["phi"]), float(p["sd"]), int(p["n"])
+    k = np.arange(1, _MA_TERMS)
+    inflation = 1.0 + 2.0 * float(np.sum(phi ** k))
+    assert phi ** _MA_TERMS < 1e-15, "the autocorrelation sum was truncated before it converged"
+    return (sd / math.sqrt(n)) * math.sqrt(inflation)
+
+
+SOLVERS.update({
+    "statistics/ar1-stationary-spread": {"exact": ar1_stationary_spread_exact, "brute": ar1_stationary_spread_brute},
+    "statistics/ar1-lag-covariance": {"exact": ar1_lag_covariance_exact, "brute": ar1_lag_covariance_brute},
+    "statistics/ar1-forecast-level": {"exact": ar1_forecast_level_exact, "brute": ar1_forecast_level_brute},
+    "statistics/mean-reversion-decay-time": {"exact": mean_reversion_decay_time_exact, "brute": mean_reversion_decay_time_brute},
+    "statistics/ar1-multiday-variance": {"exact": ar1_multiday_variance_exact, "brute": ar1_multiday_variance_brute},
+    "statistics/standard-error-under-autocorrelation": {"exact": standard_error_under_autocorrelation_exact, "brute": standard_error_under_autocorrelation_brute},
+})

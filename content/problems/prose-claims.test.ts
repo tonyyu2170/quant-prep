@@ -3944,6 +3944,84 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => same(d.bias, p.maxObs / p.n),
       breaks: (_p, d) => ({ ...d, bias: d.bias + 1 }) },
   ],
+
+  "statistics/ar1-stationary-spread": [
+    { says: "keyInsight: the stationary variance is the one that reproduces itself",
+      holds: (p, d) => Math.abs(d.answer ** 2 - (p.phi ** 2 * d.answer ** 2 + p.sigmaEps ** 2)) <= 1e-6 * d.answer ** 2,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the shock's own spread understates it, and dividing by one minus the carry-over rather than its square overstates it",
+      holds: (p, d) => P(d.answer) > P(p.sigmaEps) && !same(d.answer, p.sigmaEps / (1 - p.phi)),
+      breaks: (p, d) => ({ ...d, answer: p.sigmaEps }) },
+    { says: "Sanity: the printed inflation is what turns one shock into the settled spread",
+      holds: (p, d) => same(d.answer, p.sigmaEps * d.inflation),
+      breaks: (_p, d) => ({ ...d, inflation: d.inflation * 2 }) },
+  ],
+
+  "statistics/ar1-lag-covariance": [
+    { says: "keyInsight: one more day of separation costs exactly one more factor of the carry-over",
+      holds: (p, d) => Math.abs(d.nextLag - d.answer * p.phi) <= 1e-6 * Math.abs(d.nextLag),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: one factor is not the same as one per day, and the correlation is not the covariance",
+      holds: (p, d) => !same(d.answer, p.phi * d.variance) && !same(d.answer, d.phiPow),
+      breaks: (p, d) => ({ ...d, answer: p.phi * d.variance }) },
+    { says: "Combine: the answer is the lag-zero variance scaled by the decayed factor",
+      holds: (_p, d) => Math.abs(d.answer - d.phiPow * d.variance) <= 1e-6 * d.answer,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "statistics/ar1-forecast-level": [
+    { says: "keyInsight: the forecast decays toward the long-run level and never crosses it",
+      holds: (p, d) => P(d.answer) > Math.min(P(p.mu), P(p.xt)) && P(d.answer) < Math.max(P(p.mu), P(p.xt)),
+      breaks: (p, d) => ({ ...d, answer: 2 * p.mu - p.xt }) },
+    { says: "commonTrap: decaying the level rather than the deviation pulls toward zero instead of toward the mean",
+      holds: (p, d) => !same(d.answer, d.phiPow * p.xt),
+      breaks: (p, d) => ({ ...d, answer: d.phiPow * p.xt }) },
+    { says: "Combine: the answer is the mean plus the decayed departure from it",
+      holds: (p, d) => Math.abs(d.answer - (p.mu + d.phiPow * (p.xt - p.mu))) <= 1e-6 * Math.abs(d.answer),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "statistics/mean-reversion-decay-time": [
+    { says: "keyInsight: the horizon is the exponent that produces the required shrinkage",
+      holds: (p, d) => Math.abs(Math.pow(p.phi, d.answer) - d.ratio) <= 1e-6 * d.ratio,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: reading the retention as the fraction LOST inverts the speed of reversion",
+      // The straight-line half of that trap is deliberately NOT the predicate here: it lands
+      // early only for targets more than a day out, and flips below that — the prose says so.
+      holds: (p, d) => p.phi === 0.5 || !same(d.answer, Math.log(d.ratio) / Math.log(1 - p.phi)),
+      nonVacuous: (p) => p.phi !== 0.5,
+      breaks: (p, d) => ({ ...d, answer: Math.log(d.ratio) / Math.log(1 - p.phi) }) },
+    { says: "Sanity: the half-life really does halve, and depends on the retention alone",
+      holds: (p, d) => Math.abs(Math.pow(p.phi, d.halfLife) - 0.5) < 1e-6,
+      breaks: (_p, d) => ({ ...d, halfLife: d.halfLife + 1 }) },
+  ],
+
+  "statistics/ar1-multiday-variance": [
+    { says: "keyInsight: positive persistence makes the multi-day total riskier than adding the daily variances",
+      holds: (_p, d) => P(d.answer) > P(d.independent),
+      breaks: (_p, d) => ({ ...d, answer: d.independent }) },
+    { says: "commonTrap: counting each pair once instead of twice halves the whole correction",
+      holds: (p, d) => !same(d.answer, d.variance * (p.q === 2 ? 2 + p.phi : 3 + 2 * p.phi + p.phi * p.phi)),
+      breaks: (p, d) => ({ ...d, answer: d.variance * (p.q === 2 ? 2 + p.phi : 3 + 2 * p.phi + p.phi * p.phi) }) },
+    { says: "Combine: the answer is the daily variance times the collected multiplier",
+      holds: (_p, d) => Math.abs(d.answer - d.variance * d.inflation) <= 1e-6 * d.answer,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "statistics/standard-error-under-autocorrelation": [
+    { says: "keyInsight: the dependence converts into an effective sample size smaller than the count",
+      holds: (p, d) => Math.abs(d.answer - p.sd / Math.sqrt(d.effectiveN)) <= 1e-6 * d.answer,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the independent-sampling standard error is strictly too small on a persistent series",
+      holds: (_p, d) => P(d.answer) > P(d.naiveSe),
+      breaks: (_p, d) => ({ ...d, answer: d.naiveSe }) },
+    { says: "Sanity: the inflation is derived for the variance, so applying it to the standard error would square the correction",
+      holds: (_p, d) => !same(d.answer, d.naiveSe * d.ratio),
+      breaks: (_p, d) => ({ ...d, answer: d.naiveSe * d.ratio }) },
+    { says: "Sanity: the asymptotic figure sits above the exact finite-sample one, and above the independent-sampling one",
+      holds: (_p, d) => P(d.exactSe) < P(d.answer) && P(d.exactSe) > P(d.naiveSe),
+      breaks: (_p, d) => ({ ...d, exactSe: d.answer * 2 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
@@ -4011,7 +4089,7 @@ describe("the prose-claim predicates fail when they should", () => {
   });
 
   it("covers every ev-variance/distributions template, with no claim left unstated", () => {
-    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "statistics/regression", "finance/options", "finance/arbitrage", "finance/fixed-income", "pure-math/stochastic", "pure-math/linear-algebra", "pure-math/number-theory", "pure-math/solid-geometry"];
+    const CLAIMED_TOPICS = ["probability/ev-variance", "probability/distributions", "probability/ruin", "probability/geometric", "probability/markov", "probability/symmetry", "brainteasers/logic", "statistics/moments", "statistics/estimation", "statistics/inference", "statistics/regression", "statistics/time-series", "finance/options", "finance/arbitrage", "finance/fixed-income", "pure-math/stochastic", "pure-math/linear-algebra", "pure-math/number-theory", "pure-math/solid-geometry"];
     const shipped = PROBLEMS.filter((t) => CLAIMED_TOPICS.includes(t.topic)).map((t) => t.id).sort();
     expect(Object.keys(CLAIMS).sort()).toEqual(shipped);
     for (const [slug, claims] of Object.entries(CLAIMS))

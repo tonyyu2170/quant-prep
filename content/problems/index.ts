@@ -239,6 +239,12 @@ import { standardErrorOfAFittedRate } from "./statistics/standard-error-of-a-fit
 import { mleOfATailProbability } from "./statistics/mle-of-a-tail-probability";
 import { pooledRateStandardError } from "./statistics/pooled-rate-standard-error";
 import { biasCorrectedUniformEndpoint } from "./statistics/bias-corrected-uniform-endpoint";
+import { ar1StationarySpread } from "./statistics/ar1-stationary-spread";
+import { ar1LagCovariance } from "./statistics/ar1-lag-covariance";
+import { ar1ForecastLevel } from "./statistics/ar1-forecast-level";
+import { meanReversionDecayTime } from "./statistics/mean-reversion-decay-time";
+import { ar1MultidayVariance } from "./statistics/ar1-multiday-variance";
+import { standardErrorUnderAutocorrelation } from "./statistics/standard-error-under-autocorrelation";
 import { twoSidedZTestStatistic } from "./statistics/two-sided-z-test-statistic";
 import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-half-width";
 import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
@@ -566,6 +572,12 @@ export const PROBLEMS: ProblemTemplate[] = [
   mleOfATailProbability,
   pooledRateStandardError,
   biasCorrectedUniformEndpoint,
+  ar1StationarySpread,
+  ar1LagCovariance,
+  ar1ForecastLevel,
+  meanReversionDecayTime,
+  ar1MultidayVariance,
+  standardErrorUnderAutocorrelation,
   twoSidedZTestStatistic,
   confidenceIntervalHalfWidth,
   typeTwoErrorAndPower,
@@ -687,6 +699,7 @@ export const TOPIC_LABELS: Record<string, string> = {
   "statistics/estimation": "estimation",
   "statistics/inference": "inference",
   "statistics/regression": "regression",
+  "statistics/time-series": "time series",
   "finance/options": "options",
   "finance/arbitrage": "arbitrage",
   "finance/fixed-income": "fixed income",
