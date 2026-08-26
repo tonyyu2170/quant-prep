@@ -2573,7 +2573,7 @@ const CLAIMS: Record<string, Claim[]> = {
       // 5e-10 of ninth-decimal rounding carried through a sum of squares as large as 600.
       holds: (p, d) => Math.abs(d.answer * p.sumX2 - p.sumXY) < 1e-6,
       breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
-    { says: "Answer: the hedge ratio sits inside the plausible band the constraint pins",
+    { says: "Sanity: the hedge ratio sits inside the plausible band the constraint pins",
       holds: (_p, d) => P(d.answer) >= 0.4 && P(d.answer) <= 5,
       breaks: (_p, d) => ({ ...d, answer: 100 }) },
   ],

@@ -55,7 +55,7 @@ export const slopeAfterRescalingX: ProblemTemplate = {
     { title: "Answer", body: `Every size is now ${fmtNum(p.k)} times the number it was, so the same move is credited to ${fmtNum(p.k)} times as many lots: $\\dfrac{${fmtNum(d.numer)}}{${fmtNum(p.k)}}=${fmtNum(d.answer)}$ new ticks per new lot.` },
     { title: "Sanity check", body: `Nothing about the strength of the relationship has changed. The correlation between size and price move is the same number before and after the re-spec, and so is the share of the variation the line explains — both are ratios in which the units cancel. Only the slope moved, which is the reason a slope on its own never says how good a fit is.` },
   ],
-  keyInsight: "A regression slope is the one summary of a fit that carries units, so it is the one summary a change of units moves — multiplied by whatever multiplies the response, divided by whatever multiplies the predictor. Correlation and the explained share are pure ratios and sit still through the same relabelling.",
+  keyInsight: "Units live in the slope and nowhere else in a fit, so relabelling either axis moves it and moves nothing else — multiplied by whatever multiplies the response, divided by whatever multiplies the predictor. Correlation and the explained share are pure ratios and sit still through the same relabelling.",
   commonTrap: "Rescaling the predictor and forgetting the response: dividing by the lot factor and stopping, which is out by the tick factor on every draw. The other slip is multiplying by the lot factor rather than dividing — a predictor whose numbers get bigger makes the slope smaller, because each unit of it now buys less.",
   expectedPaceS: 75,
   verify: { method: "brute-force" },

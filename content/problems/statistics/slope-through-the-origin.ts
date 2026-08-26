@@ -3,8 +3,9 @@ import { fmtNum } from "../util";
 
 // The slope of a line fitted with the intercept forced to zero. `constraint` needs the answer
 // twice over: the band keeps the hedge ratio plausible, and `sumXY !== sumX2` removes the two
-// draws — (240, 240) and (480, 480) — where the ratio is exactly 1 and this template's own
-// commonTrap, inverting it, grades as CORRECT. Nothing wider is needed: the nearest
+// (sumXY, sumX2) pairs — (240, 240) and (480, 480), ten draws once `n` is counted — where the
+// ratio is exactly 1 and this template's own commonTrap, inverting it, grades as CORRECT.
+// Nothing wider is needed: the nearest
 // off-diagonal ratio to 1 is 420/400, whose inverse sits nine percent away, three orders
 // outside the grading tolerance.
 //
