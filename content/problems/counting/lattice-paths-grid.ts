@@ -1,10 +1,47 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Monotone lattice paths through a marked junction. The Sanity check recounts the
 // routes reaching the junction by splitting on the direction of the last block —
 // two different binomials that must add back to the first factor, which is exactly
 // where an off-by-one in the arguments shows up.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const choose = (m: number, j: number) => {
+    let num = 1;
+    for (let i = 0; i < j; i++) num *= m - i;
+    let den = 1;
+    for (let i = 2; i <= j; i++) den *= i;
+    return num / den;
+  };
+  const steps = p.across + p.up;
+  const total = choose(steps, p.across);
+  const cornerSteps = p.cornerAcross + p.cornerUp;
+  const toCorner = choose(cornerSteps, p.cornerAcross);
+  const restAcross = p.across - p.cornerAcross;
+  const restUp = p.up - p.cornerUp;
+  const fromCorner = choose(restAcross + restUp, restAcross);
+  const through = toCorner * fromCorner;
+  const viaWest = choose(cornerSteps - 1, p.cornerAcross - 1);
+  const viaSouth = choose(cornerSteps - 1, p.cornerAcross);
+  return {
+    steps,
+    total,
+    cornerSteps,
+    toCorner,
+    restAcross,
+    restUp,
+    restSteps: restAcross + restUp,
+    fromCorner,
+    through,
+    prob: through / total,
+    viaWest,
+    viaSouth,
+    entrySum: viaWest + viaSouth,
+  };
+};
+
 export const latticePathsGrid: ProblemTemplate = {
   id: "counting/lattice-paths-grid",
   version: 1,
@@ -20,41 +57,8 @@ export const latticePathsGrid: ProblemTemplate = {
   },
   // The junction must sit strictly inside the grid: on an edge every route would
   // pass it or the last-block split would lose one of its two cases.
-  constraint: (p) => p.cornerAcross <= p.across - 1 && p.cornerUp <= p.up - 1,
-  derived: (p) => {
-    const choose = (m: number, j: number) => {
-      let num = 1;
-      for (let i = 0; i < j; i++) num *= m - i;
-      let den = 1;
-      for (let i = 2; i <= j; i++) den *= i;
-      return num / den;
-    };
-    const steps = p.across + p.up;
-    const total = choose(steps, p.across);
-    const cornerSteps = p.cornerAcross + p.cornerUp;
-    const toCorner = choose(cornerSteps, p.cornerAcross);
-    const restAcross = p.across - p.cornerAcross;
-    const restUp = p.up - p.cornerUp;
-    const fromCorner = choose(restAcross + restUp, restAcross);
-    const through = toCorner * fromCorner;
-    const viaWest = choose(cornerSteps - 1, p.cornerAcross - 1);
-    const viaSouth = choose(cornerSteps - 1, p.cornerAcross);
-    return {
-      steps,
-      total,
-      cornerSteps,
-      toCorner,
-      restAcross,
-      restUp,
-      restSteps: restAcross + restUp,
-      fromCorner,
-      through,
-      prob: through / total,
-      viaWest,
-      viaSouth,
-      entrySum: viaWest + viaSouth,
-    };
-  },
+  constraint: (p) => p.cornerAcross <= p.across - 1 && p.cornerUp <= p.up - 1 && !complementGrades(derive(p).prob),
+  derived: derive,
   statement: (p, d) =>
     `A courier rides from the depot to a client ${fmtNum(p.across)} blocks east and ${fmtNum(p.up)} blocks north across a regular street grid. Every shortest route is ${fmtNum(d.steps)} blocks long and uses only eastward and northward blocks, ` +
     `and the courier picks one shortest route at random, each equally likely. What is the probability the route passes the junction ${fmtNum(p.cornerAcross)} blocks east and ${fmtNum(p.cornerUp)} blocks north of the depot?`,

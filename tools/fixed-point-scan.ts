@@ -7,28 +7,31 @@
  * rows for. Everything before B18 has never had its `commonTrap` machine-checked at all.
  *
  * This scan is the part that needs no authoring. It ignores what the template is about and
- * asks only: over the full legal space, does the ANSWER ever land on a value where a generic
- * corruption of it still grades as correct? Those are the draws on which a student who
- * negated, inverted, squared or complemented their result gets marked right.
+ * asks only: over the full legal space, does the ANSWER ever land where a generic corruption
+ * of it still grades as correct?
  *
  *   npx tsx tools/fixed-point-scan.ts
  *
- * It is a diagnostic, not a gate, and it does not set an exit code — a hit is not automatically
- * a defect. An answer that is legitimately 0.5 makes the complement invisible whether or not
- * the template teaches anything about complements. Read a hit against that template's
- * `commonTrap`: the hit matters when the named trap is the corruption listed here, and the fix
- * is a constraint that keeps the answer off the fixed point, never softened prose.
+ * WHAT IT DOES NOT TELL YOU. A hit says a GENERIC corruption is invisible on that draw. It
+ * does NOT say the template's own `commonTrap` is live — `standard-error-of-a-slope` lands on
+ * 0.5 while its named trap is n versus n-2, which no corruption of the answer expresses. Only
+ * a row in `trap-audit.ts` can make that claim. Read a hit as a place to look, never as a
+ * defect count, and never as coverage: any wrong method that recomputes the chain rather than
+ * corrupting its result is invisible here.
  *
- * What it CANNOT see, so do not read a clean run as coverage: any wrong method that recomputes
- * the chain rather than corrupting its result — "forgot to square the off-diagonal", "dropped
- * beta from the bound", "powered the start vector as a lump". Those need a row in
- * `trap-audit.ts`.
+ * WHY THE TWO SECTIONS. An EXACT hit is a real fixed point: the answer IS 0.5, so `1 - v` is
+ * arithmetically the same number and no tolerance anywhere would separate them. A PROXIMATE
+ * hit is a different animal wearing the same clothes — the answer is 0.9926, `v*v` is 0.9852,
+ * and the two are only indistinguishable because a relative tolerance near 1 is wide enough to
+ * swallow the gap. That is tolerance width, which `trap-audit.ts` already reports as minMiss,
+ * and mixing the two makes every rate column meaningless. They are counted apart for that
+ * reason; the exact section is the one that carries a finding.
  */
 import { grade } from "@qp/engine";
 import { PROBLEMS } from "../content/problems";
 import { forEachLegalDraw } from "../content/problems/draw-space";
 
-/** Each corruption with the answer values at which it becomes invisible. */
+/** Each corruption with the answer values at which it becomes arithmetically invisible. */
 const CORRUPTIONS: [string, (v: number) => number][] = [
   ["negated            (fixed at 0)", (v) => -v],
   ["reciprocal         (fixed at +/-1)", (v) => 1 / v],
@@ -39,7 +42,11 @@ const CORRUPTIONS: [string, (v: number) => number][] = [
   ["halved             (fixed at 0)", (v) => v / 2],
 ];
 
-type Hit = { id: string; n: number; trap: string; rows: [string, number][]; at: number[] };
+/** The union of the fixed points above: an answer here is invisible to some corruption at any
+ *  tolerance, including an exact one. Anything else that grades equal did so on band width. */
+const FIXED = [0, 1, -1, 0.5];
+
+type Hit = { id: string; n: number; trap: string; exact: number; near: number; at: number[]; rows: [string, number][] };
 const hits: Hit[] = [];
 let scanned = 0;
 
@@ -49,29 +56,41 @@ for (const t of PROBLEMS) {
   if (t.choices) continue;
   scanned++;
   const wins = CORRUPTIONS.map(() => 0);
-  // The answers a hit actually landed on: 0 and 1 read as a degenerate instance, 0.5 as a
-  // coin flip the complement cannot be told apart from. Without them every row is a rate
-  // with nothing to check it against.
   const at = new Set<number>();
-  let n = 0;
+  let n = 0, exact = 0, near = 0;
   forEachLegalDraw(t, (p) => {
     n++;
     const v = t.derived(p)[t.answerKey] as number;
+    let any = false;
     CORRUPTIONS.forEach(([, f], i) => {
-      if (grade(f(v), v, t.accepted.tolerance)) { wins[i]++; at.add(v); }
+      if (grade(f(v), v, t.accepted.tolerance)) { wins[i]++; any = true; }
     });
+    if (!any) return;
+    if (FIXED.includes(v)) { exact++; at.add(v); } else near++;
   });
   const rows = CORRUPTIONS.map(([name], i) => [name, wins[i]] as [string, number]).filter(([, w]) => w > 0);
-  if (rows.length) hits.push({ id: t.id, n, trap: t.commonTrap, rows, at: [...at].sort((a, b) => a - b) });
+  if (rows.length) hits.push({ id: t.id, n, trap: t.commonTrap, exact, near, at: [...at].sort((a, b) => a - b), rows });
 }
 
-hits.sort((a, b) => Math.max(...b.rows.map(([, w]) => w / b.n)) - Math.max(...a.rows.map(([, w]) => w / a.n)));
-for (const h of hits) {
-  console.log(`\n${h.id}  (${h.n} legal draws)`);
-  console.log(`  lands on: ${h.at.slice(0, 6).map((v) => v.toFixed(4)).join(", ")}${h.at.length > 6 ? ` (+${h.at.length - 6} more)` : ""}`);
-  console.log(`  trap: ${h.trap}`);
-  for (const [name, w] of h.rows) {
-    console.log(`  ${name.padEnd(38)} wins=${String(w).padStart(7)}  ${((100 * w) / h.n).toFixed(2)}%`);
-  }
+function show(h: Hit, count: number) {
+  const where = h.at.length ? `  lands on ${h.at.join(", ")}` : "";
+  console.log(`\n${((100 * count) / h.n).toFixed(2).padStart(6)}%  ${h.id}  (${count} of ${h.n} legal draws)${where}`);
+  for (const [name, w] of h.rows) console.log(`          ${name.padEnd(38)} wins=${String(w).padStart(7)}`);
+  console.log(`          trap: ${h.trap}`);
 }
-console.log(`\n${hits.length} of ${scanned} non-choice templates have an answer that lands on a fixed point.`);
+
+const exactHits = hits.filter((h) => h.exact > 0).sort((a, b) => b.exact / b.n - a.exact / a.n);
+const nearOnly = hits.filter((h) => h.exact === 0);
+
+console.log("=".repeat(100));
+console.log("EXACT — the answer IS the fixed point, and no tolerance would ever separate the two");
+console.log("=".repeat(100));
+for (const h of exactHits) show(h, h.exact);
+
+console.log(`\n${"=".repeat(100)}`);
+console.log("PROXIMATE ONLY — the answer never lands on a fixed point; these grade equal on band width alone,");
+console.log("which is tolerance width already reported as minMiss by trap-audit.ts, not a fixed point");
+console.log("=".repeat(100));
+for (const h of nearOnly) console.log(`  ${((100 * h.near) / h.n).toFixed(2).padStart(6)}%  ${h.id}  (${h.near} of ${h.n})`);
+
+console.log(`\n${exactHits.length} templates land on a fixed point exactly; ${nearOnly.length} grade equal on band width only; ${scanned} non-choice templates scanned.`);

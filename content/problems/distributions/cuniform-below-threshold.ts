@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 const answerOf = (par: Params) => (par.t - par.a) / (par.b - par.a);
 
@@ -17,7 +17,7 @@ export const cuniformBelowThreshold: ProblemTemplate = {
   },
   // a=0 is excluded: there (t-a)/(b-a) and t/b (the raw-distance-from-zero commonTrap) coincide
   // exactly, since a itself vanishes from both the numerator and denominator.
-  constraint: (p) => p.a !== 0 && p.a < p.t && p.t < p.b && answerOf(p) >= 0.1 && answerOf(p) <= 0.9,
+  constraint: (p) => p.a !== 0 && p.a < p.t && p.t < p.b && answerOf(p) >= 0.1 && answerOf(p) <= 0.9 && !complementGrades(answerOf(p)),
   derived: (p) => {
     const range = p.b - p.a;
     const answer = (p.t - p.a) / range;

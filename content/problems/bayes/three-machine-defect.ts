@@ -1,8 +1,20 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Three-source variant: three machines with different output shares and defect rates,
 // posterior on source given a defect.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const shareC = 1 - p.shareA - p.shareB;
+  const massA = p.shareA * p.defA;
+  const massB = p.shareB * p.defB;
+  const massC = shareC * p.defC;
+  const totalDef = massA + massB + massC;
+  const postC = massC / totalDef;
+  return { shareC, massA, massB, massC, totalDef, postC };
+};
+
 export const threeMachineDefect: ProblemTemplate = {
   id: "bayes/three-machine-defect",
   version: 1,
@@ -17,15 +29,8 @@ export const threeMachineDefect: ProblemTemplate = {
     defB: { choices: [0.02, 0.03, 0.04] },
     defC: { choices: [0.1, 0.12, 0.15] },
   },
-  derived: (p) => {
-    const shareC = 1 - p.shareA - p.shareB;
-    const massA = p.shareA * p.defA;
-    const massB = p.shareB * p.defB;
-    const massC = shareC * p.defC;
-    const totalDef = massA + massB + massC;
-    const postC = massC / totalDef;
-    return { shareC, massA, massB, massC, totalDef, postC };
-  },
+  constraint: (p) => !complementGrades(derive(p).postC),
+  derived: derive,
   statement: (p) =>
     `Three assembly lines feed a single output bin. Line A supplies ${pc(p.shareA)}% of units and has a ${pc(p.defA)}% defect rate; ` +
     `Line B supplies ${pc(p.shareB)}% of units and has a ${pc(p.defB)}% defect rate; Line C supplies the rest and has a ${pc(p.defC)}% defect rate. ` +

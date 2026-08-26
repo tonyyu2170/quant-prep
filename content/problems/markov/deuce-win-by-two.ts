@@ -1,9 +1,20 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // From deuce the game is a two-state loop: a won pair ends it, a lost pair ends it, a split
 // returns to deuce. Conditioning on the deciding pair collapses the whole chain to p^2/(p^2+q^2),
 // and with p = w/n that is w^2/(w^2+(n-w)^2) — printed over integers so the chain stays exact.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const lost = p.pointsPlayed - p.pointsWon;
+  const prob = p.pointsWon / p.pointsPlayed;
+  const winSq = p.pointsWon * p.pointsWon;
+  const lostSq = lost * lost;
+  const decided = winSq + lostSq;
+  return { lost, prob, lossProb: 1 - prob, winSq, lostSq, decided, answer: winSq / decided, decidedProb: decided / (p.pointsPlayed * p.pointsPlayed), splitProb: (2 * p.pointsWon * lost) / (p.pointsPlayed * p.pointsPlayed) };
+};
+
 export const deuceWinByTwo: ProblemTemplate = {
   id: "markov/deuce-win-by-two",
   version: 1,
@@ -15,15 +26,8 @@ export const deuceWinByTwo: ProblemTemplate = {
     pointsWon: { range: { min: 24, max: 38, step: 1 } },
     pointsPlayed: { range: { min: 55, max: 75, step: 1 } },
   },
-  constraint: (p) => p.pointsWon / p.pointsPlayed >= 0.35 && p.pointsWon / p.pointsPlayed <= 0.66,
-  derived: (p) => {
-    const lost = p.pointsPlayed - p.pointsWon;
-    const prob = p.pointsWon / p.pointsPlayed;
-    const winSq = p.pointsWon * p.pointsWon;
-    const lostSq = lost * lost;
-    const decided = winSq + lostSq;
-    return { lost, prob, lossProb: 1 - prob, winSq, lostSq, decided, answer: winSq / decided, decidedProb: decided / (p.pointsPlayed * p.pointsPlayed), splitProb: (2 * p.pointsWon * lost) / (p.pointsPlayed * p.pointsPlayed) };
-  },
+  constraint: (p) => p.pointsWon / p.pointsPlayed >= 0.35 && p.pointsWon / p.pointsPlayed <= 0.66 && !complementGrades(derive(p).answer),
+  derived: derive,
   statement: (p) =>
     `Across a long practice set, Ana won ${fmtNum(p.pointsWon)} of ${fmtNum(p.pointsPlayed)} points against the same opponent, and points are independent. They reach deuce: the game now goes to whoever first leads by two points. What is the probability Ana takes the game?`,
   answerKey: "answer",

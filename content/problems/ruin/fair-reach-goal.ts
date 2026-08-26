@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // P(reach goal before bust | fair game) = start/goal — the martingale argument.
 // `constraint` never sees `derived` (packages/engine/src/problem.ts:24), so the answer band
@@ -17,7 +17,7 @@ export const fairReachGoal: ProblemTemplate = {
     startChips: { range: { min: 20, max: 280, step: 20 } },
     goalChips: { range: { min: 320, max: 700, step: 20 } },
   },
-  constraint: (p) => successOf(p) >= 0.01 && successOf(p) <= 0.99,
+  constraint: (p) => successOf(p) >= 0.01 && successOf(p) <= 0.99 && !complementGrades(successOf(p)),
   derived: (p) => {
     const frac = p.startChips / p.goalChips;
     const ruinProb = 1 - frac;

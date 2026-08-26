@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Two points land independently and uniformly on a circle's circumference; the minor
 // central angle between them is uniform on [0, pi], so P(angle < a) = a/pi. The cap is
@@ -19,7 +19,7 @@ export const chordAngleCap: ProblemTemplate = {
     // Scale never touches a ratio answer; it varies the surface only.
     pondR: { range: { min: 10, max: 120, step: 5 } },
   },
-  constraint: (p) => angleOf(p) >= 0.1 && angleOf(p) <= 0.99,
+  constraint: (p) => angleOf(p) >= 0.1 && angleOf(p) <= 0.99 && !complementGrades(angleOf(p)),
   derived: (p) => {
     const answer = p.capPct / 100;
     const complement = 1 - answer;

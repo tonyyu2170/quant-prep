@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Uniform point on [0, L]: probability of landing in [start, end] is the length ratio.
 // `constraint` cannot see `derived` (packages/engine/src/problem.ts:24), so the Monte Carlo
@@ -17,7 +17,7 @@ export const segmentSubinterval: ProblemTemplate = {
     trailLength: { range: { min: 60, max: 150, step: 10 } },
     endMark: { range: { min: 12, max: 135, step: 3 } },
   },
-  constraint: (p) => p.endMark < p.trailLength && afterOf(p) >= 0.1 && afterOf(p) <= 0.99,
+  constraint: (p) => p.endMark < p.trailLength && afterOf(p) >= 0.1 && afterOf(p) <= 0.99 && !complementGrades(afterOf(p)),
   derived: (p) => {
     const frac = p.endMark / p.trailLength;
     const complement = 1 - frac;

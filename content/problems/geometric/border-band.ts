@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Uniform point in a w x h rectangle: P(within eps of the boundary) = 1 - (w-2e)(h-2e)/(wh).
 // Band and geometry guards asked through this helper (constraint cannot see `derived`,
@@ -21,7 +21,7 @@ export const borderBand: ProblemTemplate = {
     boardH: { range: { min: 40, max: 100, step: 10 } },
     bandWidth: { range: { min: 3, max: 14, step: 1 } },
   },
-  constraint: (p) => 2 * p.bandWidth < Math.min(p.boardW, p.boardH) && bandOf(p) >= 0.1 && bandOf(p) <= 0.99,
+  constraint: (p) => 2 * p.bandWidth < Math.min(p.boardW, p.boardH) && bandOf(p) >= 0.1 && bandOf(p) <= 0.99 && !complementGrades(bandOf(p)),
   derived: (p) => {
     const boardArea = p.boardW * p.boardH;
     const innerW = p.boardW - 2 * p.bandWidth;

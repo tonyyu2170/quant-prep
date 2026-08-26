@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Fair-only two-stage: from a stated reach share, infer the stake; then price the climb
 // toward a DIFFERENT goal. The unfair version would need a forbidden root-finder (spec §2,
@@ -18,7 +18,7 @@ export const inferCapitalThenNewGoal: ProblemTemplate = {
     firstGoal: { range: { min: 200, max: 600, step: 50 } },
     secondGoalPct: { choices: [120, 140, 150, 160, 180, 200] },
   },
-  constraint: (p) => impliedStake(p) >= 2 && impliedStake(p) === Math.round(impliedStake(p)) && impliedStake(p) < Math.round((p.secondGoalPct / 100) * p.firstGoal),
+  constraint: (p) => impliedStake(p) >= 2 && impliedStake(p) === Math.round(impliedStake(p)) && impliedStake(p) < Math.round((p.secondGoalPct / 100) * p.firstGoal) && !complementGrades(impliedStake(p) / Math.round((p.secondGoalPct / 100) * p.firstGoal)),
   derived: (p) => {
     const stake = Math.round(impliedStake(p));
     const secondGoal = Math.round((p.secondGoalPct / 100) * p.firstGoal);

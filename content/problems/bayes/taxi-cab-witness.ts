@@ -1,8 +1,22 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Witness reliability / taxi-cab structure with asymmetric accuracy and a fleet-count base
 // rate hop — layered reasoning (L3).
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const total = p.blueCount + p.greenCount;
+  const pBlue = p.blueCount / total;
+  const pGreen = p.greenCount / total;
+  const missBlue = 1 - p.accGreen;
+  const numBlue = pBlue * p.accBlue;
+  const numGreenAsBlue = pGreen * missBlue;
+  const denom = numBlue + numGreenAsBlue;
+  const postBlue = numBlue / denom;
+  return { total, pBlue, pGreen, missBlue, numBlue, numGreenAsBlue, denom, postBlue };
+};
+
 export const taxiCabWitness: ProblemTemplate = {
   id: "bayes/taxi-cab-witness",
   version: 1,
@@ -16,17 +30,8 @@ export const taxiCabWitness: ProblemTemplate = {
     accBlue: { choices: [0.7, 0.75, 0.8, 0.85] },
     accGreen: { choices: [0.65, 0.7, 0.75, 0.8] },
   },
-  derived: (p) => {
-    const total = p.blueCount + p.greenCount;
-    const pBlue = p.blueCount / total;
-    const pGreen = p.greenCount / total;
-    const missBlue = 1 - p.accGreen;
-    const numBlue = pBlue * p.accBlue;
-    const numGreenAsBlue = pGreen * missBlue;
-    const denom = numBlue + numGreenAsBlue;
-    const postBlue = numBlue / denom;
-    return { total, pBlue, pGreen, missBlue, numBlue, numGreenAsBlue, denom, postBlue };
-  },
+  constraint: (p) => !complementGrades(derive(p).postBlue),
+  derived: derive,
   statement: (p) =>
     `A city's cab fleet has ${p.blueCount} Blue cabs and ${p.greenCount} Green cabs. A witness to a hit-and-run says the cab was Blue; the witness always names one of the two colors. ` +
     `Tested under similar conditions, the witness correctly calls a Blue cab "Blue" ${pc(p.accBlue)}% of the time, and correctly calls a Green cab "Green" ${pc(p.accGreen)}% of the time. ` +

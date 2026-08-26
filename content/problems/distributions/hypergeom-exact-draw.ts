@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 function comb(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
@@ -36,7 +36,7 @@ export const hypergeomExactDraw: ProblemTemplate = {
     n: { range: { min: 2, max: 6, step: 1 } },
     k: { range: { min: 0, max: 6, step: 1 } },
   },
-  constraint: (p) => p.K <= p.N && p.n <= p.N && p.k <= p.K && p.k <= p.n && p.n - p.k <= p.N - p.K && pmfOf(p) >= 0.01 && pmfOf(p) <= 0.95,
+  constraint: (p) => p.K <= p.N && p.n <= p.N && p.k <= p.K && p.k <= p.n && p.n - p.k <= p.N - p.K && pmfOf(p) >= 0.01 && pmfOf(p) <= 0.95 && !complementGrades(pmfOf(p)),
   derived: (p) => {
     const nMinusK = p.n - p.k;
     const NMinusK = p.N - p.K;

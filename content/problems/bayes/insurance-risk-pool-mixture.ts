@@ -1,9 +1,24 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Mixture prior: the population base rate isn't given directly — it's a stated mix of two risk
 // pools with different condition rates, so total probability has to build it first, before a
 // single positive test result updates it further. That mixture step is the L2 move here.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const lowShare = 1 - p.mixShare;
+  const basePrior = p.mixShare * p.rateHigh + lowShare * p.rateLow;
+  const distLow = basePrior - p.rateLow;
+  const distHigh = p.rateHigh - basePrior;
+  const healthy = 1 - basePrior;
+  const tp = basePrior * p.sens;
+  const fp = healthy * p.fpr;
+  const posTotal = tp + fp;
+  const posterior = tp / posTotal;
+  return { lowShare, basePrior, distLow, distHigh, healthy, tp, fp, posTotal, posterior };
+};
+
 export const insuranceRiskPoolMixture: ProblemTemplate = {
   id: "bayes/insurance-risk-pool-mixture",
   version: 1,
@@ -20,19 +35,8 @@ export const insuranceRiskPoolMixture: ProblemTemplate = {
   },
   // rateHigh always exceeds rateLow (min 0.15 > max 0.08) so the mixture step is never vacuous,
   // and mixShare never hits 0.5, so the naive "just average the two rates" trap never coincides.
-  constraint: (p) => p.rateHigh > p.rateLow && p.mixShare !== 0.5 && p.sens < 1 && p.fpr > 0,
-  derived: (p) => {
-    const lowShare = 1 - p.mixShare;
-    const basePrior = p.mixShare * p.rateHigh + lowShare * p.rateLow;
-    const distLow = basePrior - p.rateLow;
-    const distHigh = p.rateHigh - basePrior;
-    const healthy = 1 - basePrior;
-    const tp = basePrior * p.sens;
-    const fp = healthy * p.fpr;
-    const posTotal = tp + fp;
-    const posterior = tp / posTotal;
-    return { lowShare, basePrior, distLow, distHigh, healthy, tp, fp, posTotal, posterior };
-  },
+  constraint: (p) => p.rateHigh > p.rateLow && p.mixShare !== 0.5 && p.sens < 1 && p.fpr > 0 && !complementGrades(derive(p).posterior),
+  derived: derive,
   statement: (p) =>
     `An insurer's book of business is a mix of two risk pools: ${pc(p.mixShare)}% of policyholders are in the high-risk pool, where ${pc(p.rateHigh)}% develop a costly claim within the year, and the rest are in the low-risk pool, where only ${pc(p.rateLow)}% do. ` +
     `A screening indicator flags ${pc(p.sens)}% of policyholders who will actually develop a costly claim, and also flags ${pc(p.fpr)}% of those who won't. A policyholder is flagged by the indicator. What is the probability they will actually develop a costly claim?`,

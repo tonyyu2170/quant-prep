@@ -1,7 +1,15 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Simple two-event conditional: P(A|B) from a joint count and a marginal count, no table.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const total = p.countB + p.nonMorning;
+  const pAgivenB = p.countAB / p.countB;
+  return { total, pAgivenB };
+};
+
 export const surveyOverlapConditional: ProblemTemplate = {
   id: "bayes/survey-overlap-conditional",
   version: 1,
@@ -14,12 +22,8 @@ export const surveyOverlapConditional: ProblemTemplate = {
     countAB: { choices: [15, 20, 25, 30] },
     nonMorning: { choices: [40, 60, 80, 100] },
   },
-  constraint: (p) => p.countAB < p.countB && p.countB + p.nonMorning >= p.countB,
-  derived: (p) => {
-    const total = p.countB + p.nonMorning;
-    const pAgivenB = p.countAB / p.countB;
-    return { total, pAgivenB };
-  },
+  constraint: (p) => p.countAB < p.countB && p.countB + p.nonMorning >= p.countB && !complementGrades(derive(p).pAgivenB),
+  derived: derive,
   statement: (p, d) =>
     `A survey of ${fmtNum(d.total)} respondents found that ${p.countB} identify as morning people. Of all respondents surveyed, ${p.countAB} are both morning people and daily coffee drinkers. ` +
     `Picking a morning-person respondent at random, what is the probability they are also a daily coffee drinker?`,

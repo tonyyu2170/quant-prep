@@ -1,9 +1,17 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Absorption on a structure that is NOT a line: two rooms, each with one absorbing exit and the
 // rest of its doors leading to the other room. Solving the pair of equations collapses to
 // d2/(d1+d2-1), which is far from obvious from the picture.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const denom = p.doorsA + p.doorsB - 1;
+  const answer = p.doorsB / denom;
+  return { denom, answer, equalDoorCase: p.doorsA / (2 * p.doorsA - 1), equalDenom: 2 * p.doorsA - 1, fromB: ((p.doorsB - 1) * p.doorsB) / (p.doorsB * denom), backA: p.doorsA - 1, backB: p.doorsB - 1 };
+};
+
 export const mazeFoodBeforeTrap: ProblemTemplate = {
   id: "markov/maze-food-before-trap",
   version: 1,
@@ -15,12 +23,8 @@ export const mazeFoodBeforeTrap: ProblemTemplate = {
     doorsA: { range: { min: 3, max: 26, step: 1 } },
     doorsB: { range: { min: 3, max: 26, step: 1 } },
   },
-  constraint: (p) => p.doorsA !== p.doorsB,
-  derived: (p) => {
-    const denom = p.doorsA + p.doorsB - 1;
-    const answer = p.doorsB / denom;
-    return { denom, answer, equalDoorCase: p.doorsA / (2 * p.doorsA - 1), equalDenom: 2 * p.doorsA - 1, fromB: ((p.doorsB - 1) * p.doorsB) / (p.doorsB * denom), backA: p.doorsA - 1, backB: p.doorsB - 1 };
-  },
+  constraint: (p) => p.doorsA !== p.doorsB && !complementGrades(derive(p).answer),
+  derived: derive,
   statement: (p) =>
     `A mouse is in room A of a two-room maze. Room A has ${fmtNum(p.doorsA)} doors: one opens onto food, the rest lead to room B. Room B has ${fmtNum(p.doorsB)} doors: one opens onto a trap, the rest lead back to room A. The mouse picks a door uniformly at random each time it is in a room. What is the probability it reaches the food before the trap?`,
   answerKey: "answer",

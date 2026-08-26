@@ -1,5 +1,5 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // The weight that minimises a two-asset variance. `constraint` needs the answer itself — an
 // exterior optimum is a short position and a different question, and a weight near zero would
@@ -19,7 +19,7 @@ export const minVarianceWeight: ProblemTemplate = {
     varB: { choices: [100, 225, 400, 625, 900, 1225, 1600, 2025, 2500] },
     cov: { choices: Array.from({ length: 36 }, (_, i) => (i < 18 ? -900 + 50 * i : 50 + 50 * (i - 18))) },
   },
-  constraint: (p) => p.cov * p.cov < p.varA * p.varB && weightOf(p as { varA: number; varB: number; cov: number }) >= 0.1 && weightOf(p as { varA: number; varB: number; cov: number }) <= 0.9,
+  constraint: (p) => p.cov * p.cov < p.varA * p.varB && weightOf(p as { varA: number; varB: number; cov: number }) >= 0.1 && weightOf(p as { varA: number; varB: number; cov: number }) <= 0.9 && !complementGrades(weightOf(p as { varA: number; varB: number; cov: number })),
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
     const num = p.varB - p.cov;

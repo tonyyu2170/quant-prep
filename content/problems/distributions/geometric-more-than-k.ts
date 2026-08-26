@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 const tailOf = (par: Params) => (1 - par.succPct / 100) ** par.k;
 
@@ -14,7 +14,7 @@ export const geometricMoreThanK: ProblemTemplate = {
     succPct: { range: { min: 10, max: 60, step: 2 } },
     k: { range: { min: 1, max: 20, step: 1 } },
   },
-  constraint: (p) => tailOf(p) >= 0.01 && tailOf(p) <= 0.99,
+  constraint: (p) => tailOf(p) >= 0.01 && tailOf(p) <= 0.99 && !complementGrades(tailOf(p)),
   derived: (p) => {
     const prob = p.succPct / 100;
     const q = 1 - prob;

@@ -1,8 +1,19 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Rain/alarm base-rate problem framed operationally, using only one complement
 // (spec §6 source kind: textbook classic, new prose + new parameters + our own solution).
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const pNoRain = 1 - p.pRain;
+  const tp = p.pRain * p.pAlarmGivenRain;
+  const fp = pNoRain * p.pAlarmGivenNoRain;
+  const pAlarm = tp + fp;
+  const postRain = tp / pAlarm;
+  return { pNoRain, tp, fp, pAlarm, postRain };
+};
+
 export const weatherAlarmComplement: ProblemTemplate = {
   id: "bayes/weather-alarm-complement",
   version: 1,
@@ -15,14 +26,8 @@ export const weatherAlarmComplement: ProblemTemplate = {
     pAlarmGivenRain: { choices: [0.8, 0.85, 0.9] },
     pAlarmGivenNoRain: { choices: [0.1, 0.15, 0.2] },
   },
-  derived: (p) => {
-    const pNoRain = 1 - p.pRain;
-    const tp = p.pRain * p.pAlarmGivenRain;
-    const fp = pNoRain * p.pAlarmGivenNoRain;
-    const pAlarm = tp + fp;
-    const postRain = tp / pAlarm;
-    return { pNoRain, tp, fp, pAlarm, postRain };
-  },
+  constraint: (p) => !complementGrades(derive(p).postRain),
+  derived: derive,
   statement: (p) =>
     `A weather station's automated alarm is designed to sound when rain is likely. On any given day, rain occurs ${pc(p.pRain)}% of the time. ` +
     `The alarm sounds on ${pc(p.pAlarmGivenRain)}% of rainy days and on ${pc(p.pAlarmGivenNoRain)}% of dry days. ` +

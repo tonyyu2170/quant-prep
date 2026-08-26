@@ -1,9 +1,20 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Natural-frequencies technique: the statement gives POPULATION COUNTS directly (not rates),
 // and the whole solution works in whole counts — the posterior is just a count ratio over the
 // flagged pool. No probability notation is needed anywhere in the derivation.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const nonD = p.N - p.D;
+  const correctFlags = p.D - p.missedD;
+  const totalFlagged = correctFlags + p.fpFlags;
+  const posterior = correctFlags / totalFlagged;
+  const catchRate = correctFlags / p.D;
+  return { nonD, correctFlags, totalFlagged, posterior, catchRate };
+};
+
 export const loanDefaultNaturalFrequency: ProblemTemplate = {
   id: "bayes/loan-default-natural-frequency",
   version: 1,
@@ -19,15 +30,8 @@ export const loanDefaultNaturalFrequency: ProblemTemplate = {
   },
   // fpFlags always exceeds missedD by choice range (min 25 > max 15), which alone guarantees
   // totalFlagged > D on every draw — the base-rate lesson (posterior < catch rate) below.
-  constraint: (p) => p.missedD < p.D && p.fpFlags > p.missedD,
-  derived: (p) => {
-    const nonD = p.N - p.D;
-    const correctFlags = p.D - p.missedD;
-    const totalFlagged = correctFlags + p.fpFlags;
-    const posterior = correctFlags / totalFlagged;
-    const catchRate = correctFlags / p.D;
-    return { nonD, correctFlags, totalFlagged, posterior, catchRate };
-  },
+  constraint: (p) => p.missedD < p.D && p.fpFlags > p.missedD && !complementGrades(derive(p).posterior),
+  derived: derive,
   statement: (p, d) =>
     `A loan platform reviewed ${fmtNum(p.N)} applicants last quarter. ${fmtNum(p.D)} of them defaulted on their loan; the remaining ${fmtNum(d.nonD)} repaid in full. ` +
     `The platform's risk model flagged ${fmtNum(d.correctFlags)} of the ${fmtNum(p.D)} defaulters as high-risk, and separately flagged ${fmtNum(p.fpFlags)} of the ${fmtNum(d.nonD)} on-time repayers as high-risk too. ` +

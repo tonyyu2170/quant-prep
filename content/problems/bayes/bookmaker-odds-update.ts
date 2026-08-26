@@ -1,8 +1,21 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Odds-to-probability conversion, then a single likelihood-ratio update — all in odds space,
 // converting back to a probability only at the end.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const denomOdds = p.againstOdds + 1;
+  const priorProb = 1 / denomOdds;
+  const complement = p.againstOdds / denomOdds;
+  const priorOdds = priorProb / complement;
+  const postOdds = priorOdds * p.likelihoodRatio;
+  const onePlusPostOdds = postOdds + 1;
+  const postProb = postOdds / onePlusPostOdds;
+  return { denomOdds, priorProb, complement, priorOdds, postOdds, onePlusPostOdds, postProb };
+};
+
 export const bookmakerOddsUpdate: ProblemTemplate = {
   id: "bayes/bookmaker-odds-update",
   version: 1,
@@ -14,16 +27,8 @@ export const bookmakerOddsUpdate: ProblemTemplate = {
     againstOdds: { choices: [2, 3, 4, 5, 6, 7, 8, 9] },
     likelihoodRatio: { choices: [1.2, 1.5, 1.8, 2, 2.5, 3] },
   },
-  derived: (p) => {
-    const denomOdds = p.againstOdds + 1;
-    const priorProb = 1 / denomOdds;
-    const complement = p.againstOdds / denomOdds;
-    const priorOdds = priorProb / complement;
-    const postOdds = priorOdds * p.likelihoodRatio;
-    const onePlusPostOdds = postOdds + 1;
-    const postProb = postOdds / onePlusPostOdds;
-    return { denomOdds, priorProb, complement, priorOdds, postOdds, onePlusPostOdds, postProb };
-  },
+  constraint: (p) => !complementGrades(derive(p).postProb),
+  derived: derive,
   statement: (p) =>
     `A bookmaker quotes odds of ${p.againstOdds} to 1 against a horse winning its race — this quote is already a probability statement in disguise. ` +
     `Then news breaks that the horse's jockey has recovered from injury, a signal that is ${p.likelihoodRatio} times more likely to be reported if the horse wins than if it does not. ` +

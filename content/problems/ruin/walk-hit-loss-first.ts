@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Mirror of the upper-first walk: P(touch -b before +a) = a/(a+b). Same helper discipline:
 // `constraint` asks through this function because it cannot see `derived`.
@@ -16,7 +16,7 @@ export const walkHitLossFirst: ProblemTemplate = {
     dropLimit: { range: { min: 2, max: 16, step: 1 } },
     reboundTarget: { range: { min: 2, max: 16, step: 1 } },
   },
-  constraint: (p) => lossFirstOf(p) >= 0.01 && lossFirstOf(p) <= 0.99,
+  constraint: (p) => lossFirstOf(p) >= 0.01 && lossFirstOf(p) <= 0.99 && !complementGrades(lossFirstOf(p)),
   derived: (p) => {
     const total = p.dropLimit + p.reboundTarget;
     const frac = p.reboundTarget / total;

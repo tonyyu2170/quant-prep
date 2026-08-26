@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Unit conversion leaves a fair-game absorption probability unchanged: success(k*i, k*N) =
 // i/N. `constraint` cannot see `derived` (packages/engine/src/problem.ts:24), so the band is
@@ -18,7 +18,7 @@ export const stakeRescale: ProblemTemplate = {
     goalChips: { range: { min: 320, max: 700, step: 20 } },
     scalePct: { choices: [200, 250, 300, 400, 500] },
   },
-  constraint: (p) => shareOf(p) >= 0.01 && shareOf(p) <= 0.99,
+  constraint: (p) => shareOf(p) >= 0.01 && shareOf(p) <= 0.99 && !complementGrades(shareOf(p)),
   derived: (p) => {
     const scale = p.scalePct / 100;
     const bigStart = Math.round(p.startChips * scale);

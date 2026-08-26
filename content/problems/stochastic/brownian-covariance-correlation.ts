@@ -1,5 +1,15 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
+
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const round = (x: number) => Math.round(x * 1e9) / 1e9;
+  return {
+    ratio: round(p.early / p.late),
+    answer: round(Math.sqrt(p.early / p.late)),
+  };
+};
 
 export const brownianCovarianceCorrelation: ProblemTemplate = {
   id: "stochastic/brownian-covariance-correlation",
@@ -16,14 +26,8 @@ export const brownianCovarianceCorrelation: ProblemTemplate = {
   // The ratio floor is a VERIFICATION constraint, not a pedagogical one: the Monte Carlo
   // counterpart's standard error scales as (1 - r*r)/sqrt(n), so a small correlation needs
   // quadratically more draws to clear verify.py's noise bar.
-  constraint: (p) => p.early < p.late && p.early / p.late >= 0.2,
-  derived: (p) => {
-    const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    return {
-      ratio: round(p.early / p.late),
-      answer: round(Math.sqrt(p.early / p.late)),
-    };
-  },
+  constraint: (p) => p.early < p.late && p.early / p.late >= 0.2 && !complementGrades(derive(p).answer),
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
   statement: (p) =>

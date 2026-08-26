@@ -1,7 +1,21 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Dice conditional: P(at least one die shows a target face | sum equals s) — enumerable event.
+const countsOf = (p: Params) => {
+  let total = 0;
+  let favorable = 0;
+  for (let d1 = 1; d1 <= 6; d1++) {
+    for (let d2 = 1; d2 <= 6; d2++) {
+      if (d1 + d2 === p.s) {
+        total++;
+        if (d1 === p.face || d2 === p.face) favorable++;
+      }
+    }
+  }
+  return { total, favorable, probFace: favorable / total };
+};
+
 export const diceFaceGivenSum: ProblemTemplate = {
   id: "bayes/dice-face-given-sum",
   version: 1,
@@ -13,33 +27,8 @@ export const diceFaceGivenSum: ProblemTemplate = {
     face: { choices: [4, 5, 6] },
     s: { choices: [5, 6, 7, 8, 9, 10, 11] },
   },
-  constraint: (p) => {
-    let total = 0;
-    let favorable = 0;
-    for (let d1 = 1; d1 <= 6; d1++) {
-      for (let d2 = 1; d2 <= 6; d2++) {
-        if (d1 + d2 === p.s) {
-          total++;
-          if (d1 === p.face || d2 === p.face) favorable++;
-        }
-      }
-    }
-    return total > 0 && favorable > 0 && favorable < total;
-  },
-  derived: (p) => {
-    let total = 0;
-    let favorable = 0;
-    for (let d1 = 1; d1 <= 6; d1++) {
-      for (let d2 = 1; d2 <= 6; d2++) {
-        if (d1 + d2 === p.s) {
-          total++;
-          if (d1 === p.face || d2 === p.face) favorable++;
-        }
-      }
-    }
-    const probFace = favorable / total;
-    return { total, favorable, probFace };
-  },
+  constraint: (p) => countsOf(p).total > 0 && countsOf(p).favorable > 0 && countsOf(p).favorable < countsOf(p).total && !complementGrades(countsOf(p).probFace),
+  derived: countsOf,
   statement: (p) =>
     `Two fair six-sided dice are rolled and their sum is ${p.s}. Given this, what is the probability that at least one of the two dice shows a ${p.face}?`,
   answerKey: "probFace",

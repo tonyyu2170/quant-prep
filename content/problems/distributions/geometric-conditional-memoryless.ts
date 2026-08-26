@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 const answerOf = (par: Params) => (1 - par.succPct / 100) ** par.k;
 
@@ -15,7 +15,7 @@ export const geometricConditionalMemoryless: ProblemTemplate = {
     j: { range: { min: 1, max: 10, step: 1 } },
     k: { range: { min: 1, max: 15, step: 1 } },
   },
-  constraint: (p) => answerOf(p) >= 0.01 && answerOf(p) <= 0.99,
+  constraint: (p) => answerOf(p) >= 0.01 && answerOf(p) <= 0.99 && !complementGrades(answerOf(p)),
   derived: (p) => {
     const prob = p.succPct / 100;
     const q = 1 - prob;

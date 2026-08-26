@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 function comb(n: number, k: number): number {
   if (k < 0 || k > n) return 0;
@@ -37,7 +37,7 @@ export const binomialAtMost: ProblemTemplate = {
     failPct: { range: { min: 10, max: 60, step: 2 } },
     k: { range: { min: 0, max: 10, step: 1 } },
   },
-  constraint: (p) => p.k < p.n && cdfAt(p) >= 0.01 && cdfAt(p) <= 0.95,
+  constraint: (p) => p.k < p.n && cdfAt(p) >= 0.01 && cdfAt(p) <= 0.95 && !complementGrades(cdfAt(p)),
   derived: (p) => {
     const prob = p.failPct / 100;
     const q = 1 - prob;

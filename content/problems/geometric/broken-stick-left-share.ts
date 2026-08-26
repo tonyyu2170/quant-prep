@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // One uniform break on a stick of length L: P(left piece longer than cL) = 1 - c.
 // Parameterized form of the classic — the answer varies with the drawn share.
@@ -16,7 +16,7 @@ export const brokenStickLeftShare: ProblemTemplate = {
     stickCm: { range: { min: 30, max: 90, step: 5 } },
     sharePct: { range: { min: 10, max: 90, step: 5 } },
   },
-  constraint: (p) => leftOf(p) >= 0.1 && leftOf(p) <= 0.99,
+  constraint: (p) => leftOf(p) >= 0.1 && leftOf(p) <= 0.99 && !complementGrades(leftOf(p)),
   derived: (p) => {
     const threshold = (p.sharePct / 100) * p.stickCm;
     const answer = 1 - p.sharePct / 100;

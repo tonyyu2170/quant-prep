@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // P(r-th success exactly on trial r) means the first r trials are ALL successes: p^r=c, so
 // p=c^(1/r) — a direct closed-form inverse, matching the plan's k=r pin. No root-finder needed.
@@ -16,7 +16,7 @@ export const negbinomFitP: ProblemTemplate = {
     r: { range: { min: 2, max: 6, step: 1 } },
     c: { range: { min: 0.05, max: 0.85, step: 0.02 } },
   },
-  constraint: (p) => fittedPOf(p) > 0 && fittedPOf(p) < 1,
+  constraint: (p) => fittedPOf(p) > 0 && fittedPOf(p) < 1 && !complementGrades(fittedPOf(p)),
   derived: (p) => {
     const fittedP = fittedPOf(p);
     return { fittedP };

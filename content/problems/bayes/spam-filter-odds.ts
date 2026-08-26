@@ -1,8 +1,20 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Posterior odds / likelihood-ratio framing: answer is a probability, steps work through odds
 // (spec §6 source kind: free-resource classic, new prose + new parameters + our own solution).
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const priorHam = 1 - p.priorSpam;
+  const priorOdds = p.priorSpam / priorHam;
+  const likelihoodRatio = p.pPhraseSpam / p.pPhraseHam;
+  const posteriorOdds = priorOdds * likelihoodRatio;
+  const onePlusOdds = posteriorOdds + 1;
+  const posterior = posteriorOdds / onePlusOdds;
+  return { priorHam, priorOdds, likelihoodRatio, posteriorOdds, onePlusOdds, posterior };
+};
+
 export const spamFilterOdds: ProblemTemplate = {
   id: "bayes/spam-filter-odds",
   version: 1,
@@ -15,15 +27,8 @@ export const spamFilterOdds: ProblemTemplate = {
     pPhraseSpam: { choices: [0.6, 0.7, 0.8] },
     pPhraseHam: { choices: [0.05, 0.1, 0.15] },
   },
-  derived: (p) => {
-    const priorHam = 1 - p.priorSpam;
-    const priorOdds = p.priorSpam / priorHam;
-    const likelihoodRatio = p.pPhraseSpam / p.pPhraseHam;
-    const posteriorOdds = priorOdds * likelihoodRatio;
-    const onePlusOdds = posteriorOdds + 1;
-    const posterior = posteriorOdds / onePlusOdds;
-    return { priorHam, priorOdds, likelihoodRatio, posteriorOdds, onePlusOdds, posterior };
-  },
+  constraint: (p) => !complementGrades(derive(p).posterior),
+  derived: derive,
   statement: (p) =>
     `A spam filter sees that ${pc(p.priorSpam)}% of incoming email is spam. The phrase "act now" appears in ${pc(p.pPhraseSpam)}% of spam emails ` +
     `but only ${pc(p.pPhraseHam)}% of legitimate (ham) emails. A new email contains the phrase "act now". What is the probability it is spam?`,

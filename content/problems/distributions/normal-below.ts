@@ -1,6 +1,6 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
 import { normalCdf } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 const answerOf = (par: Params) => normalCdf(par.x, par.mu, par.sigma);
 
@@ -16,7 +16,7 @@ export const normalBelow: ProblemTemplate = {
     sigma: { range: { min: 5, max: 30, step: 1 } },
     x: { range: { min: 0, max: 200, step: 2 } },
   },
-  constraint: (p) => Math.abs((p.x - p.mu) / p.sigma) <= 4 && answerOf(p) >= 0.1 && answerOf(p) <= 0.9,
+  constraint: (p) => Math.abs((p.x - p.mu) / p.sigma) <= 4 && answerOf(p) >= 0.1 && answerOf(p) <= 0.9 && !complementGrades(answerOf(p)),
   derived: (p) => {
     const z = (p.x - p.mu) / p.sigma;
     const answer = normalCdf(p.x, p.mu, p.sigma);

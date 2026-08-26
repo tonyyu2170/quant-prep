@@ -1,5 +1,17 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
+
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const round = (x: number) => Math.round(x * 1e9) / 1e9;
+  return {
+    upPrice: p.spot + p.up,
+    downPrice: p.spot - p.down,
+    span: p.up + p.down,
+    answer: round(p.down / (p.up + p.down)),
+  };
+};
 
 export const riskNeutralUpProbability: ProblemTemplate = {
   id: "stochastic/risk-neutral-up-probability",
@@ -13,16 +25,8 @@ export const riskNeutralUpProbability: ProblemTemplate = {
     up: { choices: [4, 5, 6, 8, 10, 12, 15, 20, 25, 30] },
     down: { choices: [3, 4, 5, 6, 8, 10, 12, 16, 20] },
   },
-  constraint: (p) => p.down < p.spot && p.up + p.down <= p.spot,
-  derived: (p) => {
-    const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    return {
-      upPrice: p.spot + p.up,
-      downPrice: p.spot - p.down,
-      span: p.up + p.down,
-      answer: round(p.down / (p.up + p.down)),
-    };
-  },
+  constraint: (p) => p.down < p.spot && p.up + p.down <= p.spot && !complementGrades(derive(p).answer),
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
   statement: (p, d) =>

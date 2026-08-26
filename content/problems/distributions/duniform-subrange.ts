@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 const answerOf = (par: Params) => (par.d - par.c + 1) / par.N;
 
@@ -15,7 +15,7 @@ export const duniformSubrange: ProblemTemplate = {
     c: { range: { min: 1, max: 50, step: 1 } },
     d: { range: { min: 1, max: 50, step: 1 } },
   },
-  constraint: (p) => p.c <= p.d && p.d <= p.N && answerOf(p) >= 0.01 && answerOf(p) <= 0.9,
+  constraint: (p) => p.c <= p.d && p.d <= p.N && answerOf(p) >= 0.01 && answerOf(p) <= 0.9 && !complementGrades(answerOf(p)),
   derived: (p) => {
     const subrangeSize = p.d - p.c + 1;
     const answer = subrangeSize / p.N;

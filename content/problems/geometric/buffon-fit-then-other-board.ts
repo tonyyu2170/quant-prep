@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // Two-stage Buffon: stage one sizes the needle from a stated crossing chance on the wide
 // board; stage two reprices that needle on a narrower ruling (still short-needle).
@@ -17,7 +17,7 @@ export const buffonFitThenOtherBoard: ProblemTemplate = {
     firstBoardCm: { range: { min: 40, max: 100, step: 10 } },
     secondBoardPct: { choices: [40, 50, 60, 70, 80] },
   },
-  constraint: (p) => impliedNeedle(p) >= 0.1 && impliedNeedle(p) <= Math.round((p.secondBoardPct / 100) * p.firstBoardCm) && (2 * impliedNeedle(p)) / (Math.PI * Math.round((p.secondBoardPct / 100) * p.firstBoardCm)) >= 0.1 && (2 * impliedNeedle(p)) / (Math.PI * Math.round((p.secondBoardPct / 100) * p.firstBoardCm)) <= 0.99,
+  constraint: (p) => impliedNeedle(p) >= 0.1 && impliedNeedle(p) <= Math.round((p.secondBoardPct / 100) * p.firstBoardCm) && (2 * impliedNeedle(p)) / (Math.PI * Math.round((p.secondBoardPct / 100) * p.firstBoardCm)) >= 0.1 && (2 * impliedNeedle(p)) / (Math.PI * Math.round((p.secondBoardPct / 100) * p.firstBoardCm)) <= 0.99 && !complementGrades((2 * impliedNeedle(p)) / (Math.PI * Math.round((p.secondBoardPct / 100) * p.firstBoardCm))),
   derived: (p) => {
     const needle = impliedNeedle(p);
     const secondBoard = Math.round((p.secondBoardPct / 100) * p.firstBoardCm);

@@ -1,5 +1,5 @@
 import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // "At least k of n exceed the threshold" is the same event as "the k-th largest exceeds it", and
 // the binomial tail is what makes it computable. `constraint` needs the count relation, and the
@@ -22,7 +22,7 @@ export const probabilityAGivenOrderStatisticExceeds: ProblemTemplate = {
     qPct: { choices: [20, 25, 30, 40, 50, 60, 70, 75] },
     top: { choices: [20, 50, 100, 200] },
   },
-  constraint: (p) => p.k < p.n && tailOf(p as { n: number; k: number; qPct: number }) >= 0.01,
+  constraint: (p) => p.k < p.n && tailOf(p as { n: number; k: number; qPct: number }) >= 0.01 && !complementGrades(tailOf(p as { n: number; k: number; qPct: number })),
   derived: (p) => {
     const round = (x: number) => Math.round(x * 1e9) / 1e9;
     const q = round(p.qPct / 100);

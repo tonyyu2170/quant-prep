@@ -1,5 +1,5 @@
 import type { Params, ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import { fmtNum, complementGrades } from "../util";
 
 // A walk from 0 with barriers at -b and +a is the standard ruin chain shifted by b: capital
 // starts at b out of a+b total, so P(touch +a first) = b/(a+b). `constraint` never sees
@@ -14,10 +14,10 @@ export const walkHitUpperFirst: ProblemTemplate = {
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "jump", weight: 0.3 }],
   source: { kind: "original", inspiration: "symmetric random walk hitting which barrier first" },
   params: {
-    upBarrier: { range: { min: 2, max: 12, step: 1 } },
-    downBarrier: { range: { min: 2, max: 12, step: 1 } },
+    upBarrier: { range: { min: 2, max: 14, step: 1 } },
+    downBarrier: { range: { min: 2, max: 14, step: 1 } },
   },
-  constraint: (p) => upperFirstOf(p) >= 0.01 && upperFirstOf(p) <= 0.99,
+  constraint: (p) => upperFirstOf(p) >= 0.01 && upperFirstOf(p) <= 0.99 && !complementGrades(upperFirstOf(p)),
   derived: (p) => {
     const total = p.upBarrier + p.downBarrier;
     const frac = p.downBarrier / total;

@@ -1,11 +1,26 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // R-squared from the sums of squares, then the degrees-of-freedom correction that makes adding
 // a regressor cost something. Both printed chains are built from the ORIGINAL integers rather
 // than from the ratios they produce: the unexplained share is 60/180 on some draws, which
 // prints 0.3333, and multiplying that rounded third by the penalty no longer reconciles with
 // the answer. \dfrac keeps the integers in the expression where the audit can re-evaluate them.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const round = (x: number) => Math.round(x * 1e9) / 1e9;
+  const sst = p.ssr + p.sse;
+  return {
+    sst,
+    r2: round(p.ssr / sst),
+    unexplained: round(p.sse / sst),
+    dfRes: p.n - p.k - 1,
+    dfTot: p.n - 1,
+    answer: round(1 - (p.sse / sst) * ((p.n - 1) / (p.n - p.k - 1))),
+  };
+};
+
 export const adjustedRSquaredFromSums: ProblemTemplate = {
   id: "statistics/adjusted-r-squared-from-sums",
   version: 1,
@@ -19,18 +34,8 @@ export const adjustedRSquaredFromSums: ProblemTemplate = {
     n: { choices: [12, 16, 20, 25, 30, 40, 50, 80] },
     k: { choices: [1, 2, 3] },
   },
-  derived: (p) => {
-    const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    const sst = p.ssr + p.sse;
-    return {
-      sst,
-      r2: round(p.ssr / sst),
-      unexplained: round(p.sse / sst),
-      dfRes: p.n - p.k - 1,
-      dfTot: p.n - 1,
-      answer: round(1 - (p.sse / sst) * ((p.n - 1) / (p.n - p.k - 1))),
-    };
-  },
+  constraint: (p) => !complementGrades(derive(p).answer),
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
   statement: (p) =>

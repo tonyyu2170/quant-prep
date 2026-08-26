@@ -1,8 +1,16 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Bertrand's ballot problem. The reflection argument pairs every bad path with a path that
 // starts the other way, and the survivors are exactly the (a-b)/(a+b) share.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const total = p.votesA + p.votesB;
+  const margin = p.votesA - p.votesB;
+  return { total, margin, answer: margin / total, tieAtSomePoint: 1 - margin / total, finalShare: p.votesA / total };
+};
+
 export const ballotAlwaysAhead: ProblemTemplate = {
   id: "symmetry/ballot-always-ahead",
   version: 1,
@@ -14,12 +22,8 @@ export const ballotAlwaysAhead: ProblemTemplate = {
     votesA: { range: { min: 12, max: 44, step: 1 } },
     votesB: { range: { min: 5, max: 38, step: 1 } },
   },
-  constraint: (p) => p.votesA > p.votesB,
-  derived: (p) => {
-    const total = p.votesA + p.votesB;
-    const margin = p.votesA - p.votesB;
-    return { total, margin, answer: margin / total, tieAtSomePoint: 1 - margin / total, finalShare: p.votesA / total };
-  },
+  constraint: (p) => p.votesA > p.votesB && !complementGrades(derive(p).answer),
+  derived: derive,
   statement: (p) =>
     `Two candidates finish a count with ${fmtNum(p.votesA)} votes for Alba and ${fmtNum(p.votesB)} for Bruna. The ballots are counted one at a time in a uniformly random order. What is the probability that Alba is strictly ahead of Bruna at every single point of the count?`,
   answerKey: "answer",

@@ -1,8 +1,22 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // The k-step transition, not the stationary one: P_k = pi + (1-pi)*lambda^k. Over integer
 // percents the whole thing is (B*100^k + A*(100-A-B)^k) / ((A+B)*100^k).
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  // local, not module-level: `constraint` never needs it (registry.test.ts)
+  const ipow = (b: number, e: number) => { let r = 1; for (let i = 0; i < e; i++) r *= b; return r; };
+  const total = p.leavePct + p.returnPct;
+  const persist = 100 - total;
+  const pk = ipow(100, p.days);
+  const lk = ipow(persist, p.days);
+  const numer = p.returnPct * pk + p.leavePct * lk;
+  const denom = total * pk;
+  return { total, persist, pk, lk, numer, denom, answer: numer / denom, stationary: p.returnPct / total, decay: lk / pk, leaveRate: p.leavePct / 100, returnRate: p.returnPct / 100, persistRate: persist / 100 };
+};
+
 export const twoStateAfterKDays: ProblemTemplate = {
   id: "markov/two-state-after-k-days",
   version: 1,
@@ -15,18 +29,8 @@ export const twoStateAfterKDays: ProblemTemplate = {
     returnPct: { range: { min: 10, max: 45, step: 5 } },
     days: { range: { min: 2, max: 4, step: 1 } },
   },
-  constraint: (p) => p.leavePct + p.returnPct <= 80 && p.leavePct !== p.returnPct,
-  derived: (p) => {
-    // local, not module-level: `constraint` never needs it (registry.test.ts)
-    const ipow = (b: number, e: number) => { let r = 1; for (let i = 0; i < e; i++) r *= b; return r; };
-    const total = p.leavePct + p.returnPct;
-    const persist = 100 - total;
-    const pk = ipow(100, p.days);
-    const lk = ipow(persist, p.days);
-    const numer = p.returnPct * pk + p.leavePct * lk;
-    const denom = total * pk;
-    return { total, persist, pk, lk, numer, denom, answer: numer / denom, stationary: p.returnPct / total, decay: lk / pk, leaveRate: p.leavePct / 100, returnRate: p.returnPct / 100, persistRate: persist / 100 };
-  },
+  constraint: (p) => p.leavePct + p.returnPct <= 80 && p.leavePct !== p.returnPct && !complementGrades(derive(p).answer),
+  derived: derive,
   statement: (p, d) =>
     `A market is calm or choppy each day. A calm day is followed by a choppy one with probability ${fmtNum(d.leaveRate)}; a choppy day is followed by a calm one with probability ${fmtNum(d.returnRate)}. Today is calm. What is the probability that the day ${fmtNum(p.days)} days from now is also calm?`,
   answerKey: "answer",

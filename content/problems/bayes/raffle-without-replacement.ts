@@ -1,7 +1,29 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, complementGrades } from "../util";
 
 // Drawing without replacement: P(first was X | second is Y).
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const total = p.W + p.L;
+  const remaining = total - 1;
+  const pFirstWin = p.W / total;
+  const pFirstLoss = p.L / total;
+  const remainingLosersAfterWin = p.L;
+  const remainingLosersAfterLoss = p.L - 1;
+  const pSecondLossGivenFirstWin = remainingLosersAfterWin / remaining;
+  const pSecondLossGivenFirstLoss = remainingLosersAfterLoss / remaining;
+  const jointWinThenLoss = pFirstWin * pSecondLossGivenFirstWin;
+  const jointLossThenLoss = pFirstLoss * pSecondLossGivenFirstLoss;
+  const pSecondLoss = jointWinThenLoss + jointLossThenLoss;
+  const postFirstWin = jointWinThenLoss / pSecondLoss;
+  return {
+    total, remaining, pFirstWin, pFirstLoss, remainingLosersAfterWin, remainingLosersAfterLoss,
+    pSecondLossGivenFirstWin, pSecondLossGivenFirstLoss, jointWinThenLoss, jointLossThenLoss,
+    pSecondLoss, postFirstWin,
+  };
+};
+
 export const raffleWithoutReplacement: ProblemTemplate = {
   id: "bayes/raffle-without-replacement",
   version: 1,
@@ -13,25 +35,8 @@ export const raffleWithoutReplacement: ProblemTemplate = {
     W: { choices: [3, 4, 5, 6] },
     L: { choices: [7, 8, 9, 10] },
   },
-  derived: (p) => {
-    const total = p.W + p.L;
-    const remaining = total - 1;
-    const pFirstWin = p.W / total;
-    const pFirstLoss = p.L / total;
-    const remainingLosersAfterWin = p.L;
-    const remainingLosersAfterLoss = p.L - 1;
-    const pSecondLossGivenFirstWin = remainingLosersAfterWin / remaining;
-    const pSecondLossGivenFirstLoss = remainingLosersAfterLoss / remaining;
-    const jointWinThenLoss = pFirstWin * pSecondLossGivenFirstWin;
-    const jointLossThenLoss = pFirstLoss * pSecondLossGivenFirstLoss;
-    const pSecondLoss = jointWinThenLoss + jointLossThenLoss;
-    const postFirstWin = jointWinThenLoss / pSecondLoss;
-    return {
-      total, remaining, pFirstWin, pFirstLoss, remainingLosersAfterWin, remainingLosersAfterLoss,
-      pSecondLossGivenFirstWin, pSecondLossGivenFirstLoss, jointWinThenLoss, jointLossThenLoss,
-      pSecondLoss, postFirstWin,
-    };
-  },
+  constraint: (p) => !complementGrades(derive(p).postFirstWin),
+  derived: derive,
   statement: (p) =>
     `A raffle box holds ${p.W} winning tickets and ${p.L} losing tickets. Two tickets are drawn one after another, without putting the first back. ` +
     `The second ticket drawn is a loser. What is the probability the first ticket drawn was a winner?`,

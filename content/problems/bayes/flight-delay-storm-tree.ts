@@ -1,9 +1,25 @@
-import type { ProblemTemplate } from "@qp/engine";
-import { fmtNum, pc } from "../util";
+import type { Params, ProblemTemplate } from "@qp/engine";
+import { fmtNum, pc, complementGrades } from "../util";
 
 // Two-stage chain framed explicitly as a probability tree: all FOUR leaf masses (storm/clear
 // crossed with delayed/on-time) are computed and shown, not just the two the evidence matches —
 // a mini single Bayes update, but the pedagogy is drawing out the whole tree before pruning it.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const noStorm = 1 - p.prior;
+  const onTimeStorm = 1 - p.pDelayStorm;
+  const onTimeNoStorm = 1 - p.pDelayNoStorm;
+  const massStormDelay = p.prior * p.pDelayStorm;
+  const massStormOnTime = p.prior * onTimeStorm;
+  const massNoStormDelay = noStorm * p.pDelayNoStorm;
+  const massNoStormOnTime = noStorm * onTimeNoStorm;
+  const pDelay = massStormDelay + massNoStormDelay;
+  const postStorm = massStormDelay / pDelay;
+  const leafSum = massStormDelay + massStormOnTime + massNoStormDelay + massNoStormOnTime;
+  return { noStorm, onTimeStorm, onTimeNoStorm, massStormDelay, massStormOnTime, massNoStormDelay, massNoStormOnTime, pDelay, postStorm, leafSum };
+};
+
 export const flightDelayStormTree: ProblemTemplate = {
   id: "bayes/flight-delay-storm-tree",
   version: 1,
@@ -18,20 +34,8 @@ export const flightDelayStormTree: ProblemTemplate = {
   },
   // pDelayStorm's minimum (0.7) exceeds pDelayNoStorm's maximum (0.25), so the two rates are
   // always distinct and storms are always the stronger delay-driver — guaranteed on every draw.
-  constraint: (p) => p.pDelayStorm > p.pDelayNoStorm,
-  derived: (p) => {
-    const noStorm = 1 - p.prior;
-    const onTimeStorm = 1 - p.pDelayStorm;
-    const onTimeNoStorm = 1 - p.pDelayNoStorm;
-    const massStormDelay = p.prior * p.pDelayStorm;
-    const massStormOnTime = p.prior * onTimeStorm;
-    const massNoStormDelay = noStorm * p.pDelayNoStorm;
-    const massNoStormOnTime = noStorm * onTimeNoStorm;
-    const pDelay = massStormDelay + massNoStormDelay;
-    const postStorm = massStormDelay / pDelay;
-    const leafSum = massStormDelay + massStormOnTime + massNoStormDelay + massNoStormOnTime;
-    return { noStorm, onTimeStorm, onTimeNoStorm, massStormDelay, massStormOnTime, massNoStormDelay, massNoStormOnTime, pDelay, postStorm, leafSum };
-  },
+  constraint: (p) => p.pDelayStorm > p.pDelayNoStorm && !complementGrades(derive(p).postStorm),
+  derived: derive,
   statement: (p) =>
     `An airline's flight-ops model assigns a ${pc(p.prior)}% chance that a storm will affect a given route today. Historically, ${pc(p.pDelayStorm)}% of flights on stormy days get delayed, ` +
     `versus only ${pc(p.pDelayNoStorm)}% of flights on clear days. Today's flight on this route is delayed. What is the probability a storm affected the route?`,
