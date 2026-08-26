@@ -1635,3 +1635,337 @@ SOLVERS.update({
     "statistics/likelihood-ratio-for-a-biased-coin": {"exact": likelihood_ratio_for_a_biased_coin_exact, "brute": likelihood_ratio_for_a_biased_coin_brute},
     "statistics/standard-error-of-a-sharpe-ratio": {"exact": standard_error_of_a_sharpe_ratio_exact, "brute": standard_error_of_a_sharpe_ratio_brute},
 })
+
+
+# ---------------------------------------------------------------------------------------------
+# B18 — regression. Every ANSWER below is reached by FITTING A CONSTRUCTED DATA SET, not by
+# re-evaluating the closed form the template teaches. A solver that transcribes the template's
+# own expression agrees with a wrong template perfectly, which is the one thing this file exists
+# to prevent. Each brute() first ASSERTS that its construction carries the statement's givens —
+# a construction that does not match the statement is how a brute comes to agree with a wrong
+# template. Routes, and where the independence actually lives:
+#
+# - fitted value and residual: five points CONSTRUCTED with residuals orthogonal to both the
+#   constant and the predictor, the line REFITTED by linregress, and the day's miss taken from
+#   what that fit predicts. a + b*x0 is never evaluated.
+# - intercept from means: the same construction at the quoted sample means; the INTERCEPT is
+#   read straight off the fit rather than as ybar - b*xbar.
+# - R-squared: a sample CONSTRUCTED with exactly the two quoted integer sums of squares, the
+#   regression actually run, and scipy's squared correlation returned; the exact rational
+#   (T-U)/T is asserted against it, and 1 - U/T is never evaluated.
+# - rescaling: the slope is carried by a fitted sample, BOTH axes are relabelled by multiplying
+#   every number through, and the sample is refitted. The direction the two factors act in is
+#   settled by the fit — the one thing about this template that has already been wrong once.
+# - shifting: the predictor is re-expressed as degrees above the reference and REFITTED; the new
+#   intercept is the second fit's own.
+# - through the origin: numpy's lstsq on a design matrix with NO intercept column, over a sample
+#   built to the two quoted sums; the exact Fraction is asserted against what LAPACK returns.
+# - omitted variable: the LONG regression and the SHORT regression are both fitted on the same
+#   constructed stocks. This is the one where an independent route matters most — b1 + b2*delta
+#   is exactly what the template asserts, so transcribing it would prove nothing. The long fit
+#   is asserted to recover both quoted coefficients, and the short fit's slope is RETURNED.
+# - slope standard error: scipy's linregress exposes `stderr` off the residuals it measures
+#   itself, over a sample built to the quoted Sxx and residual sum of squares. s/sqrt(Sxx)
+#   never appears.
+# - regression to the mean: two years CONSTRUCTED with the quoted spread and correlation, this
+#   year REGRESSED on last year, and the fitted line evaluated at the desk. The shrinkage factor
+#   is whatever slope the fit reports, never applied by hand.
+# - fitted-value standard error: the quadratic form sigma * sqrt(x0' (X'X)^-1 x0) solved out of
+#   the design matrix, with the predictor at a NONZERO mean so X'X carries a real off-diagonal —
+#   centring it would collapse the form back onto the template's 1/n + d^2/Sxx.
+# - adding a point: the n weeks are built, the new week APPENDED, and all n+1 points refitted
+#   from scratch. The rank-one update is never evaluated; the exact Fraction is asserted.
+# - orthogonal regressors: the two settings are the orthonormal pair, so the sample correlation
+#   is EXACTLY zero by construction; each single-setting slope is asserted, and the JOINT fit is
+#   evaluated at the day.
+# ---------------------------------------------------------------------------------------------
+
+
+def _centred_grid(n, ss):
+    """n mean-zero predictor deviations whose sum of squares is exactly `ss`: an evenly spaced
+    symmetric grid, rescaled. The symmetry makes the mean exactly zero in floating point."""
+    d = np.arange(n, dtype=float) - (n - 1) / 2
+    return d * math.sqrt(ss / float(d @ d))
+
+
+def _orthogonal_residuals(d, ss):
+    """A residual vector over the symmetric grid `d`, orthogonal to both the constant and `d` —
+    the grid's odd moments vanish, so d^2 less its own mean is orthogonal to both — rescaled to
+    sum of squares `ss`."""
+    e = d * d
+    e = e - e.mean()
+    e = e * math.sqrt(ss / float(e @ e))
+    scale = max(1.0, float(ss))
+    assert abs(float(e.sum())) < 1e-9 * scale and abs(float(d @ e)) < 1e-9 * scale, \
+        "residual vector is not orthogonal to the design"
+    return e
+
+
+_SMALL_GRID = np.array([-2.0, -1.0, 0.0, 1.0, 2.0])
+_SMALL_RESID = np.array([1.0, -1.0, 0.0, -1.0, 1.0])   # sums to zero, orthogonal to _SMALL_GRID
+
+
+def fitted_value_and_residual_exact(p):
+    a, b, x0, y0 = float(p["a"]), float(p["b"]), float(p["x0"]), float(p["y0"])
+    return {
+        "slopeTerm": _round9(b * x0),
+        "fitted": _round9(a + b * x0),
+        "answer": _round9(y0 - (a + b * x0)),
+    }
+
+
+def fitted_value_and_residual_brute(p):
+    a, b, x0, y0 = float(p["a"]), float(p["b"]), float(p["x0"]), float(p["y0"])
+    x = x0 + _SMALL_GRID
+    fit = _linregress(x, a + b * x + _SMALL_RESID)
+    assert abs(fit.slope - b) < 1e-9 and abs(fit.intercept - a) < 1e-9, \
+        "constructed sample does not fit the quoted line"
+    return float(y0 - (fit.intercept + fit.slope * x0))
+
+
+def regression_intercept_from_means_exact(p):
+    xbar, ybar, b = float(p["xbar"]), float(p["ybar"]), float(p["b"])
+    return {"slopeTerm": _round9(b * xbar), "answer": _round9(ybar - b * xbar)}
+
+
+def regression_intercept_from_means_brute(p):
+    xbar, ybar, b = float(p["xbar"]), float(p["ybar"]), float(p["b"])
+    x, y = xbar + _SMALL_GRID, ybar + b * _SMALL_GRID + _SMALL_RESID
+    fit = _linregress(x, y)
+    assert abs(float(x.mean()) - xbar) < 1e-9 and abs(float(y.mean()) - ybar) < 1e-9, \
+        "constructed sample has the wrong means"
+    assert abs(fit.slope - b) < 1e-9, "constructed sample has the wrong slope"
+    return float(fit.intercept)
+
+
+def r_squared_from_sums_of_squares_exact(p):
+    tss, rss = float(p["tss"]), float(p["rss"])
+    ess = _round9(tss - rss)
+    return {"ess": ess, "corr": _round9(math.sqrt(ess / tss)), "answer": _round9(1 - rss / tss)}
+
+
+def r_squared_from_sums_of_squares_brute(p):
+    tss, rss = int(p["tss"]), int(p["rss"])
+    d = np.array([-1.5, -0.5, 0.5, 1.5])
+    e = np.array([1.0, -1.0, -1.0, 1.0]) * math.sqrt(rss / 4)
+    y = math.sqrt((tss - rss) / float(d @ d)) * d + e
+    assert abs(float(y @ y) - tss) < 1e-9 * tss, "constructed sample has the wrong total sum of squares"
+    fit = _linregress(d, y)
+    resid = y - (fit.intercept + fit.slope * d)
+    assert abs(float(resid @ resid) - rss) < 1e-9 * tss, \
+        "constructed sample has the wrong residual sum of squares"
+    assert abs(fit.rvalue ** 2 - float(_Fraction(tss - rss, tss))) < 1e-12, \
+        "the fitted R-squared is not the exact rational"
+    return float(fit.rvalue ** 2)
+
+
+def slope_after_rescaling_x_exact(p):
+    b, k, c = float(p["b"]), float(p["k"]), float(p["ybarScale"])
+    return {"numer": _round9(b * c), "answer": _round9((b * c) / k)}
+
+
+def slope_after_rescaling_x_brute(p):
+    b, k, c = float(p["b"]), float(p["k"]), float(p["ybarScale"])
+    x = 6.0 + _SMALL_GRID
+    y = b * x + _SMALL_RESID
+    assert abs(_linregress(x, y).slope - b) < 1e-9, "constructed sample does not carry the quoted slope"
+    # One old tick is c new ticks and one old lot is k new lots, so every number in both columns
+    # gets that much bigger. Which way each factor moves the slope is left to the refit.
+    return float(_linregress(k * x, c * y).slope)
+
+
+def intercept_after_shifting_x_exact(p):
+    a, b, c = float(p["a"]), float(p["b"]), float(p["c"])
+    return {"shiftTerm": _round9(b * c), "answer": _round9(a + b * c)}
+
+
+def intercept_after_shifting_x_brute(p):
+    a, b, c = float(p["a"]), float(p["b"]), float(p["c"])
+    x = c + _SMALL_GRID
+    y = a + b * x + _SMALL_RESID
+    first = _linregress(x, y)
+    assert abs(first.slope - b) < 1e-9 and abs(first.intercept - a) < 1e-9, \
+        "constructed sample does not fit the quoted line"
+    second = _linregress(x - c, y)
+    assert abs(second.slope - b) < 1e-9, "re-expressing the predictor moved the slope"
+    return float(second.intercept)
+
+
+def slope_through_the_origin_exact(p):
+    return {"answer": _round9(p["sumXY"] / p["sumX2"])}
+
+
+def slope_through_the_origin_brute(p):
+    n, sxy, sxx = int(p["n"]), int(p["sumXY"]), int(p["sumX2"])
+    v = np.arange(1.0, n + 1.0)
+    x = v * math.sqrt(sxx / float(v @ v))
+    y = np.full(n, sxy / float(x.sum()))
+    assert abs(float(x @ x) - sxx) < 1e-9 * sxx and abs(float(x @ y) - sxy) < 1e-9 * sxx, \
+        "constructed days do not carry the quoted sums"
+    beta, *_ = np.linalg.lstsq(x.reshape(-1, 1), y, rcond=None)
+    assert abs(float(beta[0]) - float(_Fraction(sxy, sxx))) < 1e-12, \
+        "the origin-forced fit is not the exact rational"
+    return float(beta[0])
+
+
+def omitted_variable_bias_exact(p):
+    b1, b2, delta = float(p["b1"]), float(p["b2"]), float(p["delta"])
+    return {"biasTerm": _round9(b2 * delta), "answer": _round9(b1 + b2 * delta)}
+
+
+def omitted_variable_bias_brute(p):
+    b1, b2, delta = float(p["b1"]), float(p["b2"]), float(p["delta"])
+    v1 = np.array([1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0])
+    v2 = np.array([1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0])
+    v3 = np.array([1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0])
+    value = 2.0 * v1
+    momentum = delta * value + 3.0 * v2
+    ret = b1 * value + b2 * momentum + 1.5 * v3
+    assert abs(_linregress(value, momentum).slope - delta) < 1e-9, \
+        "momentum does not regress on value with the quoted slope"
+    long_fit, *_ = np.linalg.lstsq(np.column_stack([np.ones(8), value, momentum]), ret, rcond=None)
+    assert abs(long_fit[1] - b1) < 1e-9 and abs(long_fit[2] - b2) < 1e-9, \
+        "the joint fit does not carry the two quoted coefficients"
+    return float(_linregress(value, ret).slope)
+
+
+def standard_error_of_a_slope_exact(p):
+    sVar, n, sxx = float(p["sVar"]), float(p["n"]), float(p["sxx"])
+    return {
+        "rss": sVar * (n - 2),      # the template does not round this: both operands are integers
+        "sSD": math.sqrt(sVar),     # nor this: exact4 pins the root to four figures
+        "answer": _round9(math.sqrt(sVar) / math.sqrt(sxx)),
+    }
+
+
+def standard_error_of_a_slope_brute(p):
+    sVar, n, sxx = float(p["sVar"]), int(p["n"]), float(p["sxx"])
+    rss = sVar * (n - 2)
+    d = _centred_grid(n, sxx)
+    y = 0.75 * d + _orthogonal_residuals(d, rss)
+    fit = _linregress(d, y)
+    resid = y - (fit.intercept + fit.slope * d)
+    assert abs(float(d @ d) - sxx) < 1e-9 * sxx, "constructed days have the wrong Sxx"
+    assert abs(float(resid @ resid) - rss) < 1e-9 * rss, \
+        "constructed days have the wrong residual sum of squares"
+    return float(fit.stderr)
+
+
+def regression_to_the_mean_prediction_exact(p):
+    mean, sd, r, z = float(p["mean"]), float(p["sd"]), float(p["r"]), float(p["z"])
+    return {
+        "dev": _round9(z * sd),
+        "shrunk": _round9(r * z * sd),
+        "answer": _round9(mean + r * z * sd),
+    }
+
+
+def regression_to_the_mean_prediction_brute(p):
+    mean, sd, r, z = float(p["mean"]), float(p["sd"]), float(p["r"]), float(p["z"])
+    e1, e2 = _orthonormal_pair(12)
+    last = mean + sd * e1
+    this = mean + sd * (r * e1 + math.sqrt(1 - r * r) * e2)
+    assert abs(float(last.std(ddof=0)) - sd) < 1e-9 and abs(float(this.std(ddof=0)) - sd) < 1e-9, \
+        "the two constructed years do not share the quoted spread"
+    assert abs(float(np.corrcoef(last, this)[0, 1]) - r) < 1e-9, \
+        "the two constructed years do not carry the quoted correlation"
+    fit = _linregress(last, this)
+    return float(fit.intercept + fit.slope * (mean + z * sd))
+
+
+def variance_of_a_fitted_value_exact(p):
+    sigma, n, dist, sxx = float(p["sigma"]), float(p["n"]), float(p["d"]), float(p["sxx"])
+    h = 1 / n + (dist * dist) / sxx
+    return {
+        "invN": _round9(1 / n),
+        "leverage": _round9((dist * dist) / sxx),
+        "h": _round9(h),
+        "root": _round9(math.sqrt(h)),
+        "centreSE": _round9(sigma / math.sqrt(n)),
+        "answer": _round9(sigma * math.sqrt(h)),
+    }
+
+
+def variance_of_a_fitted_value_brute(p):
+    sigma, n, dist, sxx = float(p["sigma"]), int(p["n"]), float(p["d"]), float(p["sxx"])
+    xbar = 7.0                      # nonzero on purpose: centring makes X'X diagonal and the
+    x = xbar + _centred_grid(n, sxx)   # quadratic form collapses onto the template's own form
+    assert abs(float(((x - x.mean()) ** 2).sum()) - sxx) < 1e-9 * sxx, \
+        "constructed months have the wrong Sxx"
+    design = np.column_stack([np.ones(n), x])
+    x0 = np.array([1.0, xbar + dist])
+    return float(sigma * math.sqrt(float(x0 @ np.linalg.solve(design.T @ design, x0))))
+
+
+def slope_after_adding_a_point_exact(p):
+    n, sxx, b = float(p["n"]), float(p["sxx"]), float(p["b"])
+    dx, dy = float(p["dx"]), float(p["dy"])
+    n_plus = n + 1
+    denom = n_plus * sxx + n * dx * dx
+    return {
+        "nPlus": n_plus,
+        "sxy": _round9(b * sxx),
+        "numer": _round9(n_plus * b * sxx + n * dx * dy),
+        "denom": denom,
+        "pointSlope": _round9(dy / dx),
+        "answer": _round9((n_plus * b * sxx + n * dx * dy) / denom),
+    }
+
+
+def slope_after_adding_a_point_brute(p):
+    n, sxx, b = int(p["n"]), float(p["sxx"]), float(p["b"])
+    dx, dy = float(p["dx"]), float(p["dy"])
+    d = _centred_grid(n, sxx)
+    y = b * d + _orthogonal_residuals(d, sxx)
+    first = _linregress(d, y)
+    assert abs(first.slope - b) < 1e-9, "constructed weeks do not carry the quoted slope"
+    assert abs(float(d @ d) - sxx) < 1e-9 * sxx, "constructed weeks have the wrong Sxx"
+    # The old means sit at the origin, so the new week is the point (dx, dy) itself.
+    refit = _linregress(np.append(d, dx), np.append(y, dy))
+    fb, fsxx, fx, fy = _Fraction(b), _Fraction(sxx), _Fraction(dx), _Fraction(dy)
+    exact = ((n + 1) * fb * fsxx + n * fx * fy) / ((n + 1) * fsxx + n * fx * fx)
+    assert abs(refit.slope - float(exact)) < 1e-11, "the refit is not the exact rational update"
+    return float(refit.slope)
+
+
+def prediction_with_orthogonal_regressors_exact(p):
+    ybar, b1, b2 = float(p["ybar"]), float(p["b1"]), float(p["b2"])
+    d1, d2 = float(p["d1"]), float(p["d2"])
+    return {
+        "t1": _round9(b1 * d1),
+        "t2": _round9(b2 * d2),
+        "answer": _round9(ybar + b1 * d1 + b2 * d2),
+    }
+
+
+def prediction_with_orthogonal_regressors_brute(p):
+    ybar, b1, b2 = float(p["ybar"]), float(p["b1"]), float(p["b2"])
+    d1, d2 = float(p["d1"]), float(p["d2"])
+    e1, e2 = _orthonormal_pair(12)
+    batching, band = 3.0 * e1, 2.0 * e2
+    resid = np.zeros(12)
+    resid[4], resid[5] = 1.0, -1.0     # orthogonal to the constant and to both settings
+    ratio = ybar + b1 * batching + b2 * band + resid
+    assert abs(float(batching @ band)) < 1e-9, "the two settings are not exactly uncorrelated"
+    assert abs(_linregress(batching, ratio).slope - b1) < 1e-9, \
+        "the fit on the batching interval alone misses its quoted slope"
+    assert abs(_linregress(band, ratio).slope - b2) < 1e-9, \
+        "the fit on the band width alone misses its quoted slope"
+    coef, *_ = np.linalg.lstsq(np.column_stack([np.ones(12), batching, band]), ratio, rcond=None)
+    return float(coef[0] + coef[1] * d1 + coef[2] * d2)
+
+
+SOLVERS.update({
+    "statistics/fitted-value-and-residual": {"exact": fitted_value_and_residual_exact, "brute": fitted_value_and_residual_brute},
+    "statistics/regression-intercept-from-means": {"exact": regression_intercept_from_means_exact, "brute": regression_intercept_from_means_brute},
+    "statistics/r-squared-from-sums-of-squares": {"exact": r_squared_from_sums_of_squares_exact, "brute": r_squared_from_sums_of_squares_brute},
+    "statistics/slope-after-rescaling-x": {"exact": slope_after_rescaling_x_exact, "brute": slope_after_rescaling_x_brute},
+    "statistics/intercept-after-shifting-x": {"exact": intercept_after_shifting_x_exact, "brute": intercept_after_shifting_x_brute},
+    "statistics/slope-through-the-origin": {"exact": slope_through_the_origin_exact, "brute": slope_through_the_origin_brute},
+    "statistics/omitted-variable-bias": {"exact": omitted_variable_bias_exact, "brute": omitted_variable_bias_brute},
+    "statistics/standard-error-of-a-slope": {"exact": standard_error_of_a_slope_exact, "brute": standard_error_of_a_slope_brute},
+    "statistics/regression-to-the-mean-prediction": {"exact": regression_to_the_mean_prediction_exact, "brute": regression_to_the_mean_prediction_brute},
+    "statistics/variance-of-a-fitted-value": {"exact": variance_of_a_fitted_value_exact, "brute": variance_of_a_fitted_value_brute},
+    "statistics/slope-after-adding-a-point": {"exact": slope_after_adding_a_point_exact, "brute": slope_after_adding_a_point_brute},
+    "statistics/prediction-with-orthogonal-regressors": {"exact": prediction_with_orthogonal_regressors_exact, "brute": prediction_with_orthogonal_regressors_brute},
+})
