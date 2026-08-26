@@ -111,9 +111,9 @@ describe("problem registry invariants", () => {
     expect(inference).toBe(15);
     expect(regression).toBe(16);
     expect(timeSeries).toBe(6);
-    expect(options).toBe(14);
+    expect(options).toBe(16);
     expect(arbitrage).toBe(7);
-    expect(fixedIncome).toBe(5);
+    expect(fixedIncome).toBe(8);
     expect(stochastic).toBe(10);
     expect(linearAlgebra).toBe(6);
     expect(numberTheory).toBe(8);

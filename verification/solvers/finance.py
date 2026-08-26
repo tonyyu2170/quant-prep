@@ -34,6 +34,8 @@ import itertools
 import math
 
 import numpy as np
+from scipy import integrate, optimize
+from scipy.stats import norm as _norm
 
 
 def _round9(x):
@@ -918,3 +920,158 @@ SOLVERS = {
         "brute": par_coupon_from_zeros_brute,
     },
 }
+
+
+# --- B21: forwards, bootstrapping, convexity and the at-the-money option --------------------
+
+def _round4(x):
+    return round(x * 1e4) / 1e4
+
+
+def forward_rate_from_zeros_exact(p):
+    z1, z2 = float(p["z1"]), float(p["z2"])
+    one_plus_one = _round9(1.0 + z1 / 100.0)
+    one_plus_two = _round9(1.0 + z2 / 100.0)
+    return {
+        "onePlusOne": one_plus_one,
+        "onePlusTwo": one_plus_two,
+        "twoYearGrowth": _round9(one_plus_two * one_plus_two),
+        "growthFactor": _round9((one_plus_two * one_plus_two) / one_plus_one),
+        "answer": _round9(((one_plus_two * one_plus_two) / one_plus_one - 1.0) * 100.0),
+    }
+
+
+def forward_rate_from_zeros_brute(p):
+    """Solve the no-arbitrage condition numerically: find the second-year rate at which rolling
+    a one-year deposit matches holding the two-year one. The division is never performed."""
+    z1, z2 = float(p["z1"]), float(p["z2"])
+    target = (1.0 + z2 / 100.0) ** 2
+    gap = lambda f: (1.0 + z1 / 100.0) * (1.0 + f / 100.0) - target
+    return optimize.brentq(gap, -50.0, 200.0, xtol=1e-14, rtol=8.9e-16)
+
+
+def bootstrap_two_year_zero_exact(p):
+    df1, c = float(p["df1"]), float(p["c"])
+    left = 100.0 - c * df1
+    return {
+        "firstCoupon": _round9(c * df1),
+        "finalFlow": 100.0 + c,
+        "df2": _round9(left / (100.0 + c)),
+        "leftToDiscount": _round9(left),
+        "growth": _round9(((100.0 + c) / left) ** 0.5),
+        "answer": _round9((((100.0 + c) / left) ** 0.5 - 1.0) * 100.0),
+    }
+
+
+def bootstrap_two_year_zero_brute(p):
+    """Root-find the two-year zero rate that prices the par bond back to 100, discounting the
+    far flow with that rate directly. Nothing is rearranged for the unknown factor."""
+    df1, c = float(p["df1"]), float(p["c"])
+    price = lambda z: c * df1 + (100.0 + c) / (1.0 + z / 100.0) ** 2 - 100.0
+    root = optimize.brentq(price, -50.0, 500.0, xtol=1e-14, rtol=8.9e-16)
+    assert abs(price(root)) < 1e-9, "the par bond is not priced at 100 by the located rate"
+    return root
+
+
+def convexity_adjusted_price_change_exact(p):
+    dur, cx, bp = float(p["modDur"]), float(p["convex"]), float(p["bp"])
+    dy = bp / 10000.0
+    drop = dur * dy * 100.0
+    gain = 0.5 * cx * dy * dy * 100.0
+    return {
+        "dy": _round9(dy), "durationDrop": _round9(drop), "convexityGain": _round9(gain),
+        "answer": _round9(gain - drop), "share": _round9((gain / drop) * 100.0),
+    }
+
+
+def convexity_adjusted_price_change_brute(p):
+    """Read the two terms off a Taylor expansion built by numerical differentiation of a price
+    function with exactly this duration and convexity, rather than writing the terms down."""
+    dur, cx, bp = float(p["modDur"]), float(p["convex"]), float(p["bp"])
+    dy = bp / 10000.0
+    price = lambda y: 1.0 - dur * y + 0.5 * cx * y * y
+    # A central difference is EXACT on a quadratic at any step, so the step is taken at a full
+    # unit: a tiny one would add nothing but the cancellation error of subtracting near-equals.
+    h = 1.0
+    first = (price(h) - price(-h)) / (2 * h)
+    second = (price(h) - 2 * price(0.0) + price(-h)) / (h * h)
+    assert abs(first + dur) < 1e-6 and abs(second - cx) < 1e-4, "the price function does not carry the quoted risk"
+    return (first * dy + 0.5 * second * dy * dy) * 100.0
+
+
+def atm_black_scholes_call_exact(p):
+    spot, vol, months, rate_pct = float(p["spot"]), float(p["volPct"]), float(p["months"]), float(p["ratePct"])
+    years = _round9(months / 12.0)
+    sigma = _round9(vol / 100.0)
+    rate = _round9(rate_pct / 100.0)
+    d1 = _round9((rate + sigma * sigma / 2.0) * math.sqrt(years) / sigma)
+    d2 = _round9(d1 - sigma * math.sqrt(years))
+    nd1, nd2 = _round4(_norm.cdf(d1)), _round4(_norm.cdf(d2))
+    disc = _round4(math.exp(-rate * years))
+    return {
+        "years": years, "sigma": sigma, "rate": rate, "rootT": _round9(math.sqrt(years)),
+        "d1": d1, "d2": d2, "nd1": nd1, "nd2": nd2, "disc": disc,
+        "discounted": _round9(disc * nd2),
+        "answer": _round9(spot * (nd1 - disc * nd2)),
+    }
+
+
+def atm_black_scholes_call_brute(p):
+    """Integrate the discounted payoff against the risk-neutral lognormal density instead of
+    quoting the closed form. The quoted four-decimal probabilities are what the desk works
+    from, so the same rounding is applied at the end — the INTEGRAL is what is independent."""
+    spot, vol, months, rate_pct = float(p["spot"]), float(p["volPct"]), float(p["months"]), float(p["ratePct"])
+    years, sigma, rate = months / 12.0, vol / 100.0, rate_pct / 100.0
+    d1 = (rate + sigma * sigma / 2.0) * math.sqrt(years) / sigma
+    d2 = d1 - sigma * math.sqrt(years)
+    # P(S_T > K) and the delta-measure probability, both by quadrature over the log return.
+    mu = (rate - sigma * sigma / 2.0) * years
+    sd = sigma * math.sqrt(years)
+    dens = lambda x: math.exp(-((x - mu) ** 2) / (2 * sd * sd)) / (sd * math.sqrt(2 * math.pi))
+    prob, err = integrate.quad(dens, 0.0, 40.0 * sd, epsabs=1e-13, epsrel=1e-13)
+    assert abs(prob - _norm.cdf(d2)) < 1e-9, "the quadrature disagrees with the strike-leg probability"
+    share, err2 = integrate.quad(lambda x: math.exp(x) * dens(x), 0.0, 40.0 * sd, epsabs=1e-13, epsrel=1e-13)
+    assert abs(share * math.exp(-rate * years) - _norm.cdf(d1)) < 1e-9, "the quadrature disagrees with the stock leg"
+    return _round9(spot * (_round4(_norm.cdf(d1)) - _round4(math.exp(-rate * years)) * _round4(prob)))
+
+
+def atm_vega_exact(p):
+    spot, months, vol, rate_pct = float(p["spot"]), float(p["months"]), float(p["volPct"]), float(p["ratePct"])
+    years = _round9(months / 12.0)
+    sigma = _round9(vol / 100.0)
+    rate = _round9(rate_pct / 100.0)
+    d1 = _round9((rate + sigma * sigma / 2.0) * math.sqrt(years) / sigma)
+    density = _round4(math.exp(-d1 * d1 / 2.0) / math.sqrt(2 * math.pi))
+    return {
+        "years": years, "sigma": sigma, "rate": rate, "d1": d1, "density": density,
+        "rootT": _round9(math.sqrt(years)),
+        "answer": _round9(spot * math.sqrt(years) * density / 100.0),
+        "twoPoints": _round9(2.0 * spot * math.sqrt(years) * density / 100.0),
+    }
+
+
+def atm_vega_brute(p):
+    """Differentiate the option price in volatility numerically — a central difference on the
+    Black-Scholes value — rather than quoting the vega formula the template derives."""
+    spot, months, vol, rate_pct = float(p["spot"]), float(p["months"]), float(p["volPct"]), float(p["ratePct"])
+    years, sigma, rate = months / 12.0, vol / 100.0, rate_pct / 100.0
+    def call(s):
+        d1 = (rate + s * s / 2.0) * math.sqrt(years) / s
+        d2 = d1 - s * math.sqrt(years)
+        return spot * _norm.cdf(d1) - spot * math.exp(-rate * years) * _norm.cdf(d2)
+    h = 1e-6
+    slope = (call(sigma + h) - call(sigma - h)) / (2 * h)
+    d1 = (rate + sigma * sigma / 2.0) * math.sqrt(years) / sigma
+    density = _round4(math.exp(-d1 * d1 / 2.0) / math.sqrt(2 * math.pi))
+    assert abs(slope - spot * math.sqrt(years) * math.exp(-d1 * d1 / 2) / math.sqrt(2 * math.pi)) < 1e-4, \
+        "the numerical slope does not match the analytic vega"
+    return _round9(spot * math.sqrt(years) * density / 100.0)
+
+
+SOLVERS.update({
+    "finance/forward-rate-from-zeros": {"exact": forward_rate_from_zeros_exact, "brute": forward_rate_from_zeros_brute},
+    "finance/bootstrap-two-year-zero": {"exact": bootstrap_two_year_zero_exact, "brute": bootstrap_two_year_zero_brute},
+    "finance/convexity-adjusted-price-change": {"exact": convexity_adjusted_price_change_exact, "brute": convexity_adjusted_price_change_brute},
+    "finance/atm-black-scholes-call": {"exact": atm_black_scholes_call_exact, "brute": atm_black_scholes_call_brute},
+    "finance/atm-vega": {"exact": atm_vega_exact, "brute": atm_vega_brute},
+})

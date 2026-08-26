@@ -4022,6 +4022,70 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.exactSe) < P(d.answer) && P(d.exactSe) > P(d.naiveSe),
       breaks: (_p, d) => ({ ...d, exactSe: d.answer * 2 }) },
   ],
+
+  "finance/forward-rate-from-zeros": [
+    { says: "keyInsight: the forward always lies beyond the spot it is read off, on whichever side the curve slopes",
+      holds: (p, d) => (p.z2 > p.z1) === (P(d.answer) > P(p.z2)),
+      nonVacuous: (p) => p.z2 < p.z1,
+      breaks: (p, d) => ({ ...d, answer: p.z2 }) },
+    { says: "commonTrap: doubling the far rate and subtracting the near one is the right shape in the wrong algebra",
+      holds: (p, d) => !same(d.answer, 2 * p.z2 - p.z1),
+      breaks: (p, d) => ({ ...d, answer: 2 * p.z2 - p.z1 }) },
+    { says: "Combine: rolling the one-year rate into the forward reproduces two years of compounding",
+      holds: (_p, d) => Math.abs(d.onePlusOne * (1 + d.answer / 100) - d.twoYearGrowth) <= 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "finance/bootstrap-two-year-zero": [
+    { says: "keyInsight: a par quote is the equation that the discounted flows sum to face",
+      holds: (p, d) => Math.abs(p.c * p.df1 + d.finalFlow * d.df2 - 100) <= 1e-6,
+      breaks: (_p, d) => ({ ...d, df2: d.df2 * 1.02 }) },
+    { says: "commonTrap: the par coupon is not the two-year zero rate except on a flat curve",
+      // Flatness is judged on a tolerance rather than on renderings: a curve a hair off flat
+      // still prints the par coupon and the zero rate as the same four figures.
+      holds: (p, d) => Math.abs(p.df1 * (1 + p.c / 100) - 1) < 5e-4 || !same(d.answer, p.c),
+      nonVacuous: (p) => Math.abs(p.df1 * (1 + p.c / 100) - 1) >= 5e-4,
+      breaks: (p, d) => ({ ...d, answer: p.c })},
+    { says: "Combine: two years of growth at the answer discounts the far dollar back to its factor",
+      holds: (_p, d) => Math.abs((1 + d.answer / 100) ** 2 * d.df2 - 1) <= 1e-6,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "finance/convexity-adjusted-price-change": [
+    { says: "keyInsight: curvature bends away from the tangent in the holder's favour, so the fall is smaller than duration alone predicts",
+      holds: (_p, d) => P(d.convexityGain) > 0 && P(d.answer) > P(-d.durationDrop),
+      breaks: (_p, d) => ({ ...d, answer: -d.durationDrop }) },
+    { says: "commonTrap: dropping the half in front of the convexity term doubles the correction",
+      holds: (_p, d) => !same(d.answer, 2 * d.convexityGain - d.durationDrop),
+      breaks: (_p, d) => ({ ...d, answer: 2 * d.convexityGain - d.durationDrop }) },
+    { says: "Combine: the answer is the curvature gain less the straight-line fall",
+      holds: (_p, d) => Math.abs(d.answer - (d.convexityGain - d.durationDrop)) <= 1e-6 * Math.abs(d.answer),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "finance/atm-black-scholes-call": [
+    { says: "keyInsight: the two terms differ by exactly volatility times the root of time",
+      holds: (_p, d) => Math.abs(d.d1 - d.d2 - d.sigma * d.rootT) <= 1e-6,
+      breaks: (_p, d) => ({ ...d, d2: d.d1 }) },
+    { says: "commonTrap: only the strike leg is paid later, so discounting the stock leg too understates the call",
+      holds: (p, d) => !same(d.answer, p.spot * d.disc * (d.nd1 - d.nd2)),
+      breaks: (p, d) => ({ ...d, answer: p.spot * d.disc * (d.nd1 - d.nd2) }) },
+    { says: "Combine: the call is the stock leg less the discounted strike leg, both scaled by the spot",
+      holds: (p, d) => Math.abs(d.answer - p.spot * (d.nd1 - d.disc * d.nd2)) <= 1e-6 * d.answer,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "finance/atm-vega": [
+    { says: "keyInsight: vega is the spot times the ROOT of the remaining life times the density",
+      holds: (p, d) => Math.abs(d.answer - (p.spot * d.rootT * d.density) / 100) <= 1e-6 * d.answer,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the raw derivative is per hundred volatility points, not per one",
+      holds: (p, d) => !same(d.answer, p.spot * d.rootT * d.density),
+      breaks: (p, d) => ({ ...d, answer: p.spot * d.rootT * d.density }) },
+    { says: "Sanity: two points are worth twice one, because a derivative is linear in the move",
+      holds: (_p, d) => same(d.twoPoints, 2 * d.answer),
+      breaks: (_p, d) => ({ ...d, twoPoints: d.answer }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

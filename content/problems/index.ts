@@ -245,6 +245,11 @@ import { ar1ForecastLevel } from "./statistics/ar1-forecast-level";
 import { meanReversionDecayTime } from "./statistics/mean-reversion-decay-time";
 import { ar1MultidayVariance } from "./statistics/ar1-multiday-variance";
 import { standardErrorUnderAutocorrelation } from "./statistics/standard-error-under-autocorrelation";
+import { forwardRateFromZeros } from "./finance/forward-rate-from-zeros";
+import { bootstrapTwoYearZero } from "./finance/bootstrap-two-year-zero";
+import { convexityAdjustedPriceChange } from "./finance/convexity-adjusted-price-change";
+import { atmBlackScholesCall } from "./finance/atm-black-scholes-call";
+import { atmVega } from "./finance/atm-vega";
 import { twoSidedZTestStatistic } from "./statistics/two-sided-z-test-statistic";
 import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-half-width";
 import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
@@ -578,6 +583,11 @@ export const PROBLEMS: ProblemTemplate[] = [
   meanReversionDecayTime,
   ar1MultidayVariance,
   standardErrorUnderAutocorrelation,
+  forwardRateFromZeros,
+  bootstrapTwoYearZero,
+  convexityAdjustedPriceChange,
+  atmBlackScholesCall,
+  atmVega,
   twoSidedZTestStatistic,
   confidenceIntervalHalfWidth,
   typeTwoErrorAndPower,
