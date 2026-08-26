@@ -233,6 +233,12 @@ import { sampleVarianceOfALinearCombination } from "./statistics/sample-variance
 import { cltProbabilityForASampleMean } from "./statistics/clt-probability-for-a-sample-mean";
 import { finitePopulationCorrection } from "./statistics/finite-population-correction";
 import { weightedLeastSquaresSingleMean } from "./statistics/weighted-least-squares-single-mean";
+import { mleOfAnExponentialRate } from "./statistics/mle-of-an-exponential-rate";
+import { cramerRaoBoundForAProportion } from "./statistics/cramer-rao-bound-for-a-proportion";
+import { standardErrorOfAFittedRate } from "./statistics/standard-error-of-a-fitted-rate";
+import { mleOfATailProbability } from "./statistics/mle-of-a-tail-probability";
+import { pooledRateStandardError } from "./statistics/pooled-rate-standard-error";
+import { biasCorrectedUniformEndpoint } from "./statistics/bias-corrected-uniform-endpoint";
 import { twoSidedZTestStatistic } from "./statistics/two-sided-z-test-statistic";
 import { confidenceIntervalHalfWidth } from "./statistics/confidence-interval-half-width";
 import { typeTwoErrorAndPower } from "./statistics/type-two-error-and-power";
@@ -554,6 +560,12 @@ export const PROBLEMS: ProblemTemplate[] = [
   cltProbabilityForASampleMean,
   finitePopulationCorrection,
   weightedLeastSquaresSingleMean,
+  mleOfAnExponentialRate,
+  cramerRaoBoundForAProportion,
+  standardErrorOfAFittedRate,
+  mleOfATailProbability,
+  pooledRateStandardError,
+  biasCorrectedUniformEndpoint,
   twoSidedZTestStatistic,
   confidenceIntervalHalfWidth,
   typeTwoErrorAndPower,

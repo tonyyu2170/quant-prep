@@ -1273,7 +1273,7 @@ SOLVERS.update({
 
 from fractions import Fraction as _Fraction
 
-from scipy.stats import binom as _binom, chi2_contingency as _chi2_contingency, chisquare as _chisquare, linregress as _linregress
+from scipy.stats import binom as _binom, poisson as _poisson, chi2_contingency as _chi2_contingency, chisquare as _chisquare, linregress as _linregress
 
 _POWER_POINT = {80: 0.842, 90: 1.282, 95: 1.645}
 
@@ -1968,4 +1968,163 @@ SOLVERS.update({
     "statistics/variance-of-a-fitted-value": {"exact": variance_of_a_fitted_value_exact, "brute": variance_of_a_fitted_value_brute},
     "statistics/slope-after-adding-a-point": {"exact": slope_after_adding_a_point_exact, "brute": slope_after_adding_a_point_brute},
     "statistics/prediction-with-orthogonal-regressors": {"exact": prediction_with_orthogonal_regressors_exact, "brute": prediction_with_orthogonal_regressors_brute},
+})
+
+
+# --- B19: maximum likelihood and Fisher information ----------------------------------------
+#
+# The brute() route for an MLE template is a NUMERICAL search for the maximiser, never the
+# closed form the template derives: the score equation is solved by brentq, or the sampling
+# distribution the bound describes is enumerated outright. That is what makes these checks
+# independent — an algebra slip in the template cannot reappear here, because no algebra is
+# reused.
+
+def mle_of_an_exponential_rate_exact(p):
+    gaps, hours = float(p["gaps"]), float(p["hours"])
+    return {
+        "answer": _round9(gaps / hours),
+        "meanGapMin": _round9((60.0 * hours) / gaps),
+        "twiceHours": 2.0 * hours,
+        "twiceGaps": 2.0 * gaps,
+    }
+
+
+def mle_of_an_exponential_rate_brute(p):
+    """Solve the score equation numerically instead of writing down count/exposure."""
+    gaps, hours = float(p["gaps"]), float(p["hours"])
+    score = lambda lam: gaps / lam - hours          # d/dlam of [gaps*log(lam) - lam*hours]
+    root = optimize.brentq(score, 1e-6, 1e6, xtol=1e-15, rtol=8.9e-16)
+    loglik = lambda lam: gaps * math.log(lam) - lam * hours
+    assert loglik(root) > loglik(root * 1.001) and loglik(root) > loglik(root * 0.999), \
+        "the located rate is not a maximum of the log-likelihood"
+    return root
+
+
+def cramer_rao_bound_for_a_proportion_exact(p):
+    n, pct = float(p["n"]), float(p["pct"])
+    q = _round9(pct / 100.0)
+    one_minus = _round9(1.0 - q)
+    product = _round9(q * one_minus)
+    exact_variance = (q * one_minus) / n
+    return {
+        "q": q, "oneMinus": one_minus, "product": product,
+        "variance": _round9(exact_variance),
+        "seFraction": _round9(math.sqrt(exact_variance)),
+        "answer": _round9(100.0 * math.sqrt(exact_variance)),
+        "quadN": 4.0 * n,
+    }
+
+
+def cramer_rao_bound_for_a_proportion_brute(p):
+    """Enumerate the sampling distribution of the estimator that attains the bound, rather
+    than inverting an information formula: sum k over the binomial pmf and read its spread."""
+    n, q = int(p["n"]), float(p["pct"]) / 100.0
+    ks = np.arange(0, n + 1)
+    pmf = _binom.pmf(ks, n, q)
+    assert abs(pmf.sum() - 1.0) < 1e-12, "the enumerated sampling distribution does not close"
+    phat = ks / n
+    mean = float(np.sum(pmf * phat))
+    assert abs(mean - q) < 1e-12, "the sample proportion came out biased, so it cannot attain the bound"
+    variance = float(np.sum(pmf * (phat - mean) ** 2))
+    return 100.0 * math.sqrt(variance)
+
+
+def standard_error_of_a_fitted_rate_exact(p):
+    rate, n = float(p["rate"]), float(p["n"])
+    root = _round9(math.sqrt(n))
+    return {
+        "root": root, "answer": _round9(rate / root), "quadN": 4.0 * n,
+        "quadRoot": _round9(2.0 * root), "quadSe": _round9(rate / (2.0 * root)),
+    }
+
+
+def standard_error_of_a_fitted_rate_brute(p):
+    """Integrate the Fisher information out of the density itself — the expected squared
+    score — instead of quoting the count-over-squared-rate result the template derives."""
+    rate, n = float(p["rate"]), int(p["n"])
+    score_sq = lambda x: math.exp(-rate * x) * rate * (1.0 / rate - x) ** 2
+    info_one, err = integrate.quad(score_sq, 0.0, np.inf, epsabs=1e-13, epsrel=1e-13)
+    assert err < 1e-10, "the information integral did not converge tightly enough"
+    return 1.0 / math.sqrt(n * info_one)
+
+
+def mle_of_a_tail_probability_exact(p):
+    gaps, hours, horizon = float(p["gaps"]), float(p["hours"]), float(p["horizon"])
+    rate = _round9(gaps / hours)
+    exponent = _round9((gaps / hours) * horizon)
+    return {
+        "rate": rate, "exponent": exponent,
+        "answer": _round9(math.exp(-exponent)), "horizonMin": _round9(60.0 * horizon),
+    }
+
+
+def mle_of_a_tail_probability_brute(p):
+    """Maximise the likelihood in the TAIL-PROBABILITY parameterisation directly. If invariance
+    failed, this search would land somewhere other than the transformed rate estimate."""
+    gaps, hours, horizon = float(p["gaps"]), float(p["hours"]), float(p["horizon"])
+    rate_of = lambda q: -math.log(q) / horizon
+    loglik = lambda q: gaps * math.log(rate_of(q)) - rate_of(q) * hours
+    dloglik = lambda q: (gaps / rate_of(q) - hours) * (-1.0 / (q * horizon))
+    root = optimize.brentq(dloglik, 1e-12, 1.0 - 1e-12, xtol=1e-16, rtol=8.9e-16)
+    assert loglik(root) > loglik(root * 1.001) and loglik(root) > loglik(root * 0.999), \
+        "the located tail probability is not a maximum of the likelihood"
+    return root
+
+
+def pooled_rate_standard_error_exact(p):
+    x1, x2, t1, t2 = float(p["x1"]), float(p["x2"]), float(p["t1"]), float(p["t2"])
+    total_events, total_days = x1 + x2, t1 + t2
+    return {
+        "totalEvents": total_events, "totalDays": total_days,
+        "rate": _round9(total_events / total_days),
+        "rootEvents": _round9(math.sqrt(total_events)),
+        "answer": _round9(math.sqrt(total_events) / total_days),
+        "rate1": _round9(x1 / t1), "rate2": _round9(x2 / t2),
+    }
+
+
+def pooled_rate_standard_error_brute(p):
+    """Enumerate the Poisson law of the pooled COUNT and read its spread, rather than
+    inverting the information. The count, not the rate, is what carries the variance."""
+    x1, x2, t1, t2 = float(p["x1"]), float(p["x2"]), float(p["t1"]), float(p["t2"])
+    total_events, total_days = x1 + x2, t1 + t2
+    mean_count = total_events                      # rate-hat times total exposure, by construction
+    ks = np.arange(0, int(mean_count) + 400)
+    pmf = _poisson.pmf(ks, mean_count)
+    assert abs(pmf.sum() - 1.0) < 1e-12, "the enumerated count distribution does not close"
+    variance_count = float(np.sum(pmf * (ks - mean_count) ** 2))
+    assert abs(variance_count - mean_count) < 1e-6, "a Poisson count's variance should equal its mean"
+    return math.sqrt(variance_count) / total_days
+
+
+def bias_corrected_uniform_endpoint_exact(p):
+    n, max_obs = float(p["n"]), float(p["maxObs"])
+    n_plus_one = n + 1.0
+    factor = _round9(n_plus_one / n)
+    answer = _round9((max_obs * n_plus_one) / n)
+    return {
+        "nPlusOne": n_plus_one, "factor": factor, "answer": answer,
+        "bias": _round9(answer - max_obs), "expectedMax": _round9((max_obs * n) / n_plus_one),
+    }
+
+
+def bias_corrected_uniform_endpoint_brute(p):
+    """Integrate the expected maximum out of its density on the unit interval and undo the
+    shrinkage that integral reports — the n-over-n-plus-one identity is never written down."""
+    n, max_obs = int(p["n"]), float(p["maxObs"])
+    density = lambda x: n * x ** (n - 1)           # density of the max of n uniforms on [0, 1]
+    mass, err = integrate.quad(density, 0.0, 1.0, epsabs=1e-12, epsrel=1e-12)
+    assert abs(mass - 1.0) < 1e-11, "the maximum's density does not integrate to one"
+    shrinkage, err = integrate.quad(lambda x: x * density(x), 0.0, 1.0, epsabs=1e-12, epsrel=1e-12)
+    assert err < 1e-11, "the expected-maximum integral did not converge tightly enough"
+    return max_obs / shrinkage
+
+
+SOLVERS.update({
+    "statistics/mle-of-an-exponential-rate": {"exact": mle_of_an_exponential_rate_exact, "brute": mle_of_an_exponential_rate_brute},
+    "statistics/cramer-rao-bound-for-a-proportion": {"exact": cramer_rao_bound_for_a_proportion_exact, "brute": cramer_rao_bound_for_a_proportion_brute},
+    "statistics/standard-error-of-a-fitted-rate": {"exact": standard_error_of_a_fitted_rate_exact, "brute": standard_error_of_a_fitted_rate_brute},
+    "statistics/mle-of-a-tail-probability": {"exact": mle_of_a_tail_probability_exact, "brute": mle_of_a_tail_probability_brute},
+    "statistics/pooled-rate-standard-error": {"exact": pooled_rate_standard_error_exact, "brute": pooled_rate_standard_error_brute},
+    "statistics/bias-corrected-uniform-endpoint": {"exact": bias_corrected_uniform_endpoint_exact, "brute": bias_corrected_uniform_endpoint_brute},
 })

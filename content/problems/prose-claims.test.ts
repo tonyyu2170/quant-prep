@@ -3830,6 +3830,82 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => d.squareA + d.squareB + d.squareC === d.sumSquares,
       breaks: (_p, d) => ({ ...d, sumSquares: d.sumSquares + 1 }) },
   ],
+
+  "statistics/mle-of-an-exponential-rate": [
+    { says: "keyInsight: the sample reaches the estimate only through the count and the elapsed time",
+      holds: (p, d) => same(d.answer, p.gaps / p.hours),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the mean gap is the reciprocal of the rate, and the two agree only at a rate of one",
+      holds: (p, d) => same(d.answer, 1) || !same(d.answer, p.hours / p.gaps),
+      nonVacuous: (p) => p.gaps !== p.hours,
+      breaks: (p, d) => ({ ...d, answer: p.hours / p.gaps }) },
+    { says: "Sanity: the printed mean gap is the window shared out among the gaps",
+      holds: (p, d) => same(d.meanGapMin, (60 * p.hours) / p.gaps),
+      breaks: (_p, d) => ({ ...d, meanGapMin: d.meanGapMin + 1 }) },
+  ],
+
+  "statistics/cramer-rao-bound-for-a-proportion": [
+    { says: "keyInsight: information adds over independent draws, so the variance floor is the per-draw one divided by the count",
+      holds: (p, d) => same((d.answer / 100) ** 2 * p.n, d.product),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: a standard error is not the variance it came from, and here it is strictly the larger",
+      holds: (_p, d) => P(d.answer) > P(100 * d.variance),
+      breaks: (_p, d) => ({ ...d, answer: 100 * d.variance }) },
+    { says: "Sanity: a proportion's per-draw variance peaks at a quarter, at an even split",
+      holds: (_p, d) => d.product <= 0.25 + EPS,
+      nonVacuous: (_p, d) => d.q === 0.5,
+      breaks: (_p, d) => ({ ...d, product: 0.3 }) },
+  ],
+
+  "statistics/standard-error-of-a-fitted-rate": [
+    { says: "keyInsight: the standard error is a fixed fraction of the rate, set by the sample size alone",
+      holds: (p, d) => same(d.answer / p.rate, 1 / d.root),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: dividing by the count rather than its root overstates the precision",
+      holds: (p, d) => P(d.answer) > P(p.rate / p.n),
+      breaks: (p, d) => ({ ...d, answer: p.rate / p.n }) },
+    { says: "Sanity: quadrupling the sample halves the standard error",
+      holds: (_p, d) => same(d.quadSe, d.answer / 2),
+      breaks: (_p, d) => ({ ...d, quadSe: d.answer }) },
+  ],
+
+  "statistics/mle-of-a-tail-probability": [
+    { says: "keyInsight: the estimate of a function is that function of the estimate, with no second fit",
+      holds: (p, d) => same(d.answer, Math.exp(-(p.gaps / p.hours) * p.horizon)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: dropping the minus sign returns the reciprocal, which is above one and so cannot be a probability",
+      holds: (_p, d) => P(d.answer) > 0 && P(d.answer) < 1,
+      breaks: (_p, d) => ({ ...d, answer: 1 / d.answer }) },
+    { says: "Sanity: the exponent is how many failures the fitted process expects inside the horizon",
+      holds: (p, d) => same(d.exponent, (p.gaps / p.hours) * p.horizon),
+      breaks: (_p, d) => ({ ...d, exponent: d.exponent * 2 }) },
+  ],
+
+  "statistics/pooled-rate-standard-error": [
+    { says: "keyInsight: pooling adds counts and adds exposures, so the result is the average of the two site rates only by coincidence",
+      holds: (_p, d) => same(d.rate1, d.rate2) || !same(d.rate, (d.rate1 + d.rate2) / 2),
+      breaks: (_p, d) => ({ ...d, rate: (d.rate1 + d.rate2) / 2 }) },
+    { says: "commonTrap: the standard error is the root of the pooled COUNT over the exposure, not the root of the pooled rate",
+      holds: (_p, d) => !same(d.answer, Math.sqrt(d.rate)),
+      breaks: (_p, d) => ({ ...d, answer: Math.sqrt(d.rate) }) },
+    { says: "Combine: the standard error times the total exposure is the root of the total count",
+      holds: (_p, d) => same(d.answer * d.totalDays, d.rootEvents),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+  ],
+
+  "statistics/bias-corrected-uniform-endpoint": [
+    { says: "keyInsight: the correction is a scale factor read off the expected shortfall, not a different estimator",
+      // Both sides are the same quantity, so this compares floats rather than renderings: a
+      // value sitting on a four-figure rounding boundary would flip `same` on the ninth decimal.
+      holds: (p, d) => Math.abs(d.answer - (p.maxObs * (p.n + 1)) / p.n) < EPS,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the corrected estimate must sit ABOVE the largest size seen, so neither the maximum itself nor a downward scaling can be it",
+      holds: (p, d) => P(d.answer) > P(p.maxObs),
+      breaks: (p, d) => ({ ...d, answer: p.maxObs }) },
+    { says: "Sanity: the correction adds exactly one expected gap, and shrinks as the sample grows",
+      holds: (p, d) => same(d.bias, p.maxObs / p.n),
+      breaks: (_p, d) => ({ ...d, bias: d.bias + 1 }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {
