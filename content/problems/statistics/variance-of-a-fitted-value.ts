@@ -32,7 +32,7 @@ import { fmtNum } from "../util";
 export const varianceOfAFittedValue: ProblemTemplate = {
   id: "statistics/variance-of-a-fitted-value",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 3,
   firms: [{ firm: "de-shaw", weight: 0.25 }, { firm: "sig", weight: 0.2 }, { firm: "jump", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "why a fitted line is sharpest at the centre of its data and fans out from there" },

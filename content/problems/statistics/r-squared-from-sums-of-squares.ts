@@ -15,7 +15,7 @@ import { fmtNum } from "../util";
 export const rSquaredFromSumsOfSquares: ProblemTemplate = {
   id: "statistics/r-squared-from-sums-of-squares",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 1,
   firms: [{ firm: "two-sigma", weight: 0.25 }, { firm: "citadel", weight: 0.2 }, { firm: "de-shaw", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "R-squared as the share of variation a fit explains" },

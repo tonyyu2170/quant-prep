@@ -674,6 +674,7 @@ export const TOPIC_LABELS: Record<string, string> = {
   "statistics/moments": "statistics",
   "statistics/estimation": "estimation",
   "statistics/inference": "inference",
+  "statistics/regression": "regression",
   "finance/options": "options",
   "finance/arbitrage": "arbitrage",
   "finance/fixed-income": "fixed income",

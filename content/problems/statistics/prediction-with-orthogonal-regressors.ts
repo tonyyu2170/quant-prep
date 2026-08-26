@@ -33,7 +33,7 @@ import { fmtNum } from "../util";
 export const predictionWithOrthogonalRegressors: ProblemTemplate = {
   id: "statistics/prediction-with-orthogonal-regressors",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 3,
   firms: [{ firm: "jane-street", weight: 0.25 }, { firm: "imc", weight: 0.2 }, { firm: "akuna", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "zero sample correlation decouples a multiple regression into two simple ones" },

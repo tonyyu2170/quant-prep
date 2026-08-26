@@ -17,7 +17,7 @@ import { exact4, fmtNum } from "../util";
 export const interceptAfterShiftingX: ProblemTemplate = {
   id: "statistics/intercept-after-shifting-x",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "de-shaw", weight: 0.25 }, { firm: "millennium", weight: 0.2 }, { firm: "drw", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "re-parameterising a fitted line by shifting the predictor's origin" },

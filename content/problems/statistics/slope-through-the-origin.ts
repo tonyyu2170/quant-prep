@@ -17,7 +17,7 @@ import { fmtNum } from "../util";
 export const slopeThroughTheOrigin: ProblemTemplate = {
   id: "statistics/slope-through-the-origin",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.25 }, { firm: "two-sigma", weight: 0.2 }, { firm: "sig", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "least squares with no intercept: the normal equation over the raw sums" },

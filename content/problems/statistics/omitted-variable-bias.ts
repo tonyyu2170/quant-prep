@@ -32,7 +32,7 @@ import { exact4, fmtNum } from "../util";
 export const omittedVariableBias: ProblemTemplate = {
   id: "statistics/omitted-variable-bias",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "millennium", weight: 0.25 }, { firm: "two-sigma", weight: 0.2 }, { firm: "hrt", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "what a dropped correlated regressor does to the coefficient that stays" },

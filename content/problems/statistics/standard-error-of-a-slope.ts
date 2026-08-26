@@ -19,7 +19,7 @@ import { exact4, fmtNum } from "../util";
 export const standardErrorOfASlope: ProblemTemplate = {
   id: "statistics/standard-error-of-a-slope",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "citadel", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }, { firm: "sig", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the standard error of a least-squares slope, and what actually buys it" },

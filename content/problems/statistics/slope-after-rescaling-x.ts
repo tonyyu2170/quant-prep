@@ -22,7 +22,7 @@ import { exact4, fmtNum } from "../util";
 export const slopeAfterRescalingX: ProblemTemplate = {
   id: "statistics/slope-after-rescaling-x",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "optiver", weight: 0.25 }, { firm: "imc", weight: 0.2 }, { firm: "jump", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "how a regression slope transforms under a change of units on either axis" },

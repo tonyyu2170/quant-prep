@@ -15,7 +15,7 @@ import { exact4, fmtNum } from "../util";
 export const regressionInterceptFromMeans: ProblemTemplate = {
   id: "statistics/regression-intercept-from-means",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 1,
   firms: [{ firm: "two-sigma", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }, { firm: "jump", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the least-squares line passes through the point of means" },

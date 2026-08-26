@@ -59,7 +59,7 @@ import { exact4, fmtNum } from "../util";
 export const slopeAfterAddingAPoint: ProblemTemplate = {
   id: "statistics/slope-after-adding-a-point",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 3,
   firms: [{ firm: "hrt", weight: 0.25 }, { firm: "optiver", weight: 0.2 }, { firm: "drw", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the rank-one update to a least-squares slope, and what leverage buys a single point" },

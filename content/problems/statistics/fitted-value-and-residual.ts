@@ -18,7 +18,7 @@ import { exact4, fmtNum } from "../util";
 export const fittedValueAndResidual: ProblemTemplate = {
   id: "statistics/fitted-value-and-residual",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 1,
   firms: [{ firm: "two-sigma", weight: 0.25 }, { firm: "de-shaw", weight: 0.2 }, { firm: "citadel", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the residual as the observed value less the fitted one" },

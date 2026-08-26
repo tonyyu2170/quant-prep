@@ -28,7 +28,7 @@ import { exact4, fmtNum } from "../util";
 export const regressionToTheMeanPrediction: ProblemTemplate = {
   id: "statistics/regression-to-the-mean-prediction",
   version: 1,
-  topic: "statistics/estimation",
+  topic: "statistics/regression",
   difficulty: 2,
   firms: [{ firm: "jane-street", weight: 0.25 }, { firm: "citadel-securities", weight: 0.2 }, { firm: "optiver", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "Galton's regression to the mean as a least-squares prediction" },
