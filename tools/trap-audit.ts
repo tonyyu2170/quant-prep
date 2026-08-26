@@ -9,7 +9,7 @@
  * choice lists and constraint conjuncts — editing either silently reopens a trap, and a comment
  * saying "keep m away from one" is not a mechanism.
  *
- *   npx tsx tools/_b22-audit.ts
+ *   npm run audit:traps
  *
  * Reading it: the CONTROL row must win 100%, or the harness is broken and every zero beneath it
  * is meaningless. minMiss is the closest LOSING draw in multiples of the grading tolerance — a

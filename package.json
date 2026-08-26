@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "audit:traps": "tsx tools/trap-audit.ts",
     "verify:emit": "tsx verification/emit.ts",
     "verify:fermi-emit": "tsx verification/fermi-fixture.ts"
   },

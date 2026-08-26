@@ -15,6 +15,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run audit:traps
       - run: npm run verify:emit
       - uses: actions/setup-python@v5
         with:
