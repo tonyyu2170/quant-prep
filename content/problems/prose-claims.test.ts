@@ -3904,3 +3904,154 @@ describe("the prose-claim predicates fail when they should", () => {
       expect(claims.length, `${slug} has too few claims to cover its prose`).toBeGreaterThanOrEqual(3);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// The two fields a student reads and no gate audited.
+//
+// B18 shipped five false general statements in `keyInsight` and `commonTrap` — the batch's
+// largest single defect class — and every gate passed them, because nothing here required a
+// claim to be ABOUT either field. They are not internal notes: ProblemRunner.tsx renders both
+// under "Key insight." and "Common trap." on every solve, so a false one is a wrong statement
+// shown to whoever just answered correctly.
+//
+// The obvious fix — require a predicate for both fields on every template — was measured
+// before it was written, and it is a ~500-predicate retrofit: of the 262 templates in this
+// registry only 25 cover both fields today. So the requirement is frozen at that line
+// instead: the templates below are exempt, and everything else — which means every template
+// written from now on — must carry a claim for each field.
+//
+// The list only shrinks. It is not a suppression file: an entry is a template whose two
+// rendered sentences are still unchecked, and deleting one means writing the two predicates,
+// not deleting the template's prose. New content cannot be added to it, because a new slug is
+// not in it and the author who wanted it there would have to say so in a diff.
+const PROSE_CLAIM_EXEMPT = new Set(`
+  brainteasers/alternating-block-sum brainteasers/ants-pole-collisions brainteasers/average-speed-round-trip
+  brainteasers/bird-between-trains brainteasers/bridge-crossing-time brainteasers/chocolate-bar-breaks
+  brainteasers/clock-hands-angle brainteasers/coin-row-take-ends brainteasers/divisor-count-factorisation
+  brainteasers/egg-drop-min-trials brainteasers/frog-well-escape brainteasers/josephus-every-second
+  brainteasers/light-switches-left-on brainteasers/modular-power-remainder
+  brainteasers/mutilated-board-tiling brainteasers/nim-three-pile-move brainteasers/painted-block-one-face
+  brainteasers/pirates-gold-split brainteasers/spider-and-fly-box brainteasers/subtraction-game-last-loses
+  brainteasers/subtraction-game-last-wins brainteasers/trailing-zeros-factorial brainteasers/two-pile-nim
+  distributions/binomial-at-least-one distributions/binomial-at-most distributions/binomial-exact-count
+  distributions/binomial-fit-then-pmf distributions/cuniform-below-threshold
+  distributions/duniform-fit-range distributions/duniform-subrange distributions/exponential-cdf-threshold
+  distributions/exponential-fit-rate distributions/exponential-memoryless distributions/first-contact-race
+  distributions/geometric-conditional-memoryless distributions/geometric-exact-trial
+  distributions/geometric-more-than-k distributions/hypergeom-exact-draw
+  distributions/hypergeom-zero-successes distributions/max-serial-draw distributions/negbinom-exact-trial
+  distributions/negbinom-fit-p distributions/normal-above distributions/normal-below
+  distributions/normal-between distributions/normal-quantile-then-range distributions/poisson-at-most
+  distributions/poisson-exact-count distributions/poisson-fit-then-tail
+  distributions/poisson-rescaled-at-least-one distributions/spare-chain-uptime ev-variance/chord-crossings
+  ev-variance/conditional-expectation-given-event ev-variance/covariance-sum-difference
+  ev-variance/geometric-waiting-time ev-variance/indicator-match-count ev-variance/local-maxima
+  ev-variance/matching-indicators-variance ev-variance/median-of-three ev-variance/profit-net-of-cost
+  ev-variance/spread-of-three-spins finance/american-vs-european-call-credit
+  finance/atm-straddle-from-dollar-vol finance/bond-premium-from-zeros finance/book-delta-calls-and-puts
+  finance/book-overround-arbitrage finance/box-spread-arbitrage finance/butterfly-max-profit
+  finance/call-lower-bound-arbitrage finance/covered-call-max-profit finance/duration-price-change
+  finance/forward-mispricing-arbitrage finance/gamma-pnl-from-a-move finance/growing-perpetuity-value
+  finance/multi-winner-book-arbitrage finance/one-step-binomial-call-price finance/par-coupon-from-zeros
+  finance/payment-stream-present-value finance/put-butterfly-from-call-quotes finance/put-call-parity
+  finance/put-call-parity-with-dividend finance/put-hedge-from-parity finance/shares-to-rehedge-after-a-move
+  finance/straddle-implied-move finance/theta-gamma-breakeven-move finance/triangular-fx-arbitrage
+  finance/two-step-binomial-call-price geometric/border-band geometric/broken-stick-left-share
+  geometric/buffon-fit-length-inverse geometric/buffon-fit-then-other-board geometric/buffon-short-needle
+  geometric/chord-angle-cap geometric/concentric-circles geometric/concentric-fit-then-ring
+  geometric/corner-quarter-disk geometric/delayed-arrival-meeting geometric/disk-in-rect-complement
+  geometric/fit-window-then-other-window geometric/meeting-inverse-fit geometric/meeting-window
+  geometric/segment-subinterval geometric/square-inner-disk geometric/stick-triangle-conditional
+  geometric/three-points-spacing geometric/triangle-parallel-cut geometric/two-points-gap
+  geometric/unit-square-product linear-algebra/constant-plus-diagonal-determinant
+  linear-algebra/determinant-scaling-and-power linear-algebra/equicorrelation-fit-then-inverse
+  linear-algebra/inverse-of-a-constant-plus-diagonal linear-algebra/trace-of-a-matrix-power
+  linear-algebra/two-by-two-eigenvalues markov/consecutive-run-wait markov/deuce-win-by-two
+  markov/machine-uptime-stationary markov/maze-food-before-trap markov/switching-coins-share
+  markov/system-days-to-failure markov/tunnel-doors-escape markov/two-state-after-k-days
+  number-theory/coprime-count-two-primes number-theory/crt-two-congruences
+  number-theory/diophantine-count-solutions number-theory/frobenius-fit-then-count
+  number-theory/frobenius-largest-unpayable number-theory/gcd-lcm-product
+  number-theory/linear-congruence-solve number-theory/multiples-in-a-range ruin/adverse-drift-reach-upside
+  ruin/complement-ruin-first ruin/doubling-fit-then-duration ruin/doubling-strategy
+  ruin/drift-one-sided-duration ruin/drift-touch-downside ruin/fair-expected-duration ruin/fair-reach-goal
+  ruin/fit-capital-fair ruin/fit-capital-unfair ruin/fit-goal-from-duration-fair ruin/fit-then-duration
+  ruin/infer-capital-then-new-goal ruin/restart-after-survival ruin/stake-rescale
+  ruin/survive-then-remaining-duration ruin/unfair-expected-duration ruin/unfair-reach-goal
+  ruin/walk-hit-loss-first ruin/walk-hit-upper-first solid-geometry/box-fit-then-diagonal
+  solid-geometry/cone-frustum-fraction solid-geometry/displacement-water-level-rise
+  solid-geometry/spherical-cap-fraction solid-geometry/triangular-prism-volume
+  solid-geometry/volume-scaling-under-similarity statistics/adjusted-r-squared-from-sums
+  statistics/bias-of-the-plug-in-variance statistics/chi-square-statistic-for-a-die
+  statistics/clt-probability-for-a-sample-mean statistics/confidence-interval-half-width
+  statistics/correlation-bound-third-pair statistics/correlation-from-covariance
+  statistics/correlation-significance-t-statistic statistics/covariance-from-a-table
+  statistics/duplicated-sample-slope-variance statistics/efficiency-of-two-unbiased-estimators
+  statistics/expected-maximum-of-uniforms statistics/expected-range-of-uniforms
+  statistics/false-positive-among-many-backtests statistics/finite-population-correction
+  statistics/fitted-value-and-residual statistics/intercept-after-shifting-x
+  statistics/likelihood-ratio-for-a-biased-coin statistics/median-of-an-odd-sample-from-two-groups
+  statistics/median-vs-mean-with-an-outlier statistics/min-variance-weight statistics/mse-decomposition
+  statistics/omitted-variable-bias statistics/one-proportion-z-statistic statistics/overlapping-window-sums
+  statistics/p-value-from-a-z-statistic statistics/paired-test-statistic-with-correlation
+  statistics/pooled-mean-of-two-groups statistics/portfolio-variance-two-asset
+  statistics/power-of-a-two-sided-test statistics/prediction-with-orthogonal-regressors
+  statistics/probability-a-given-order-statistic-exceeds statistics/r-squared-from-sums-of-squares
+  statistics/regression-intercept-from-means statistics/regression-slope-from-moments
+  statistics/regression-to-the-mean-prediction statistics/reverse-regression-slope
+  statistics/sample-mean-and-variance statistics/sample-size-for-a-proportion
+  statistics/sample-size-for-margin statistics/sample-size-for-target-power
+  statistics/sample-variance-of-a-linear-combination statistics/sharpe-time-scaling
+  statistics/slope-after-adding-a-point statistics/slope-after-rescaling-x
+  statistics/slope-through-the-origin statistics/standard-error-of-a-sharpe-ratio
+  statistics/standard-error-of-a-slope statistics/standard-error-of-the-mean
+  statistics/two-proportion-z-statistic statistics/two-sample-z-statistic
+  statistics/two-sided-z-test-statistic statistics/type-two-error-and-power
+  statistics/variance-of-a-difference-in-means statistics/variance-of-a-fitted-value
+  statistics/variance-of-a-scaled-sum statistics/weighted-least-squares-single-mean
+  statistics/years-to-a-significant-sharpe statistics/z-score-from-mean-and-sd
+  stochastic/brownian-covariance-correlation stochastic/compound-sum-variance
+  stochastic/expected-square-of-a-walk stochastic/exponential-martingale-value stochastic/gbm-expected-price
+  stochastic/gbm-fit-then-below-mean stochastic/gbm-probability-above-strike
+  stochastic/martingale-missing-payoff stochastic/reflection-principle-touch-level
+  stochastic/risk-neutral-up-probability symmetry/all-wins-before-loss symmetry/ants-circle-directions
+  symmetry/ballot-always-ahead symmetry/beat-every-rival symmetry/comparing-heads-counts
+  symmetry/decisive-face-wait symmetry/disjoint-subsets symmetry/first-ace-position
+  symmetry/friends-together-round-table symmetry/last-ball-colour symmetry/relative-order-of-picks
+  symmetry/standing-table-legs
+`.trim().split(/\s+/));
+
+describe("the two rendered prose fields carry a predicate", () => {
+  /** The convention the registry already uses: a claim about a field names it in `says`. */
+  const claimsFor = (claims: Claim[], field: string) => claims.filter((c) => c.says.includes(field));
+
+  it("every non-exempt template checks both keyInsight and commonTrap", () => {
+    const missing: string[] = [];
+    for (const [slug, claims] of Object.entries(CLAIMS)) {
+      if (PROSE_CLAIM_EXEMPT.has(slug)) continue;
+      for (const field of ["keyInsight", "commonTrap"])
+        if (claimsFor(claims, field).length === 0) missing.push(`${slug} — no claim mentions ${field}`);
+    }
+    expect(missing, "these render a sentence to the student that nothing checks").toEqual([]);
+  });
+
+  it("the exemption list is 237 live slugs and cannot quietly outlive them", () => {
+    // A stale entry is worse than a missing one: it exempts nothing and hides that the count
+    // moved. Pinning the size makes adding a slug a deliberate edit rather than a reflex.
+    expect(PROSE_CLAIM_EXEMPT.size).toBe(237);
+    const dead = [...PROSE_CLAIM_EXEMPT].filter((slug) => !byId.has(slug));
+    expect(dead, "exempted slugs that no longer exist — delete the line").toEqual([]);
+  });
+
+  it("fires on a template that renders an unchecked sentence", () => {
+    // Watching it fail, on the shape B18 actually shipped: claims that check the arithmetic
+    // and say nothing about the two sentences underneath it.
+    const arithmeticOnly = [{ says: "Combine: the legs add to the answer", holds: () => true, breaks: (_p: Params, d: Derived) => d }];
+    expect(claimsFor(arithmeticOnly, "keyInsight")).toHaveLength(0);
+    expect(claimsFor(arithmeticOnly, "commonTrap")).toHaveLength(0);
+    // and passes on the shape it is asking for
+    const withProse = [...arithmeticOnly, { says: "keyInsight and commonTrap: the spread carries the multiplier and not the add-on", holds: () => true, breaks: (_p: Params, d: Derived) => d }];
+    expect(claimsFor(withProse, "keyInsight")).toHaveLength(1);
+    expect(claimsFor(withProse, "commonTrap")).toHaveLength(1);
+  });
+});
