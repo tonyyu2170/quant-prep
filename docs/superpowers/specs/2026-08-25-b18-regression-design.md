@@ -172,3 +172,187 @@ zero sample correlation by construction.
 
 `tools/_b18-roster.ts` holds the probe stubs and is **deleted at Task 7**, unlike `_b14-roster.ts`,
 which was left behind and is still in the tree.
+
+## Outcome
+
+**Shipped in full 2026-08-26**, Tasks 0-7, on `b18-regression` (twelve content templates over four
+tasks, seven review-fix commits, Python, the topic split, one reassignment, ship). Measured at
+Task 7, not predicted:
+
+| | before | after | spec said |
+|---|---|---|---|
+| bank | 307 | **319** | 319 ✓ |
+| bank difficulty | 80/148/79 | **83/154/82** | 83/154/82 ✓ |
+| statistics | 47 | **59** | 59 ✓ |
+| `statistics/regression` | — | **16** at **3/9/4** | 17 at 3/9/5 ✗ |
+| `statistics/estimation` | 15 | **11** at 1/7/3 | 10 ✗ |
+| `statistics/moments` | 17 | 17 | unchanged ✓ |
+| `statistics/inference` | 15 | 15 | unchanged ✓ |
+| market-playable | 302 | **314** | 314 ✓ |
+| probability's share | 59% | **56.74%** (181/319) | 57% ✓ |
+| `abs: 0` pin | 42 | **42** | 42 ✓ |
+
+`tsc` clean, 319 emitted, **656 tests** (36 files), "Verified 319 problems", `next build` green.
+
+The `abs: 0` pin at `registry.test.ts:213` did not move, and reconciles against its own comment
+rather than merely matching: brainteasers/logic 12 (5 choice + 7 exact), counting 17,
+number-theory 8, solid-geometry 2, estimation 2 + inference 1 (the three sample sizes). None of the
+twelve is a count or an exact-integer answer, as predicted.
+
+**Per-template chain audit over BOTH whole topics** (200 seeds each, `auditChains` as the gate calls
+it, per-template sums reconciled against the topic aggregate so the zeros are measured and not
+narrated): `regression` 16 templates, checked **9400**, claimFree **14800**, segments 24200;
+`estimation` 11 templates, checked **7200**, claimFree **4200**, segments 11400. Zero mismatches,
+zero unevaluable, partition exact on both. **No template sits at `checked = 0` or `claimFree = 0`**
+. The thinnest single template is `slope-through-the-origin` at
+checked 200 (one chain per draw), and the thinnest claimFree is 200 — one symbolic opening per draw,
+the house convention exactly — at ten templates across the two topics (3 in `regression`, 7 in
+`estimation`). The nine templates this repo
+has shipped at `claimFree = 0` behind a green topic gate are not in either of these.
+
+**Mutation check:** `r-squared-from-sums-of-squares`'s answer expression scaled by 1.02, re-emitted,
+`verify.py` reported **225 issues** — decomposed by re-running the three loops separately as
+**100 derived-key + 100 answerKey + 25 brute-force** (100 instances, brute capped at
+`BF_INSTANCES = 25`). Restored, re-emitted, green. The Task 5 commit had already measured 225 /
+225 / 425 on three different templates, so the count is a per-template quantity and never a
+constant.
+
+`tools/_b18-roster.ts` deleted; `tools/_b14-roster.ts` deliberately left in the tree.
+
+### What the gates caught
+
+- **Every template had a draw region where its own `commonTrap` graded as CORRECT.** Not one, not
+  the hard ones — all twelve, across four tasks, and **thirteen constraint conjuncts** were added
+  to punish them. The measurements are the point: `r-squared` answered exactly 0.5 on 9 of 290
+  draws, the MODAL answer, where quoting the residual share is indistinguishable from the explained
+  one; `regression-intercept-from-means` gave an intercept of exactly 0 on 12 of 1080 draws, which
+  is its own negation; `slope-after-adding-a-point` graded "raw deviations, no mean shift" correct
+  on **1368 of 6336** tuples with the mean-shift conjunct dropped. A trap is only a trap where the
+  arithmetic separates it from the answer, and the plan sketched one conjunct where the shipped
+  templates needed four.
+- **A constraint that rejects too much CRASHES PRODUCTION, and no gate sees it.** The most serious
+  finding of the batch. `#11 slope-after-adding-a-point` shipped at **5.13% acceptance** — 812 of
+  15840 tuples — and `drawParams` retries 100 times and then throws
+  (`packages/engine/src/problem.ts:46`). Measured over 200,000 seeds: **1099 threw**, 0.55%, into
+  two paths with no `try/catch` — `ProblemRunner.tsx:41` inside a `useMemo` (an uncaught render
+  exception, roughly one serve in two hundred) and `market.ts:66`. Every gate missed it:
+  `registry.test.ts` uses 50 seeds and the first failure is at seed 637, `emit.ts` uses 0-99, and
+  `emittedSpread` seeds off an FNV hash of the id that happened to survive — **166 of 400 arbitrary
+  bases would have thrown**, so a rename was a coin flip on the suite. The fix thinned the CHOICE
+  LISTS to what the constraint already admitted (`n` never reached 24, `dx` never reached 4, 5 or
+  6 on a legal draw), leaving the legal set **bit-identical** — sha256 over all 812 draws unchanged
+  at `1d5a3b02`, every trap margin still valid — rather than relaxing a conjunct. Acceptance
+  5.13% → 12.82%, throws 1099 → **1** per 200,000. Task 7 re-measured all twelve: eleven at zero,
+  `slope-after-adding-a-point` at the documented 1.
+- **`keyInsight` and `commonTrap` are read by NOTHING in this repo** — `emit` audits statements and
+  solution bodies, `CLAIMS` reads derived values — and **five separate defects** shipped into them
+  before a clause-by-clause hand re-read caught them. Two were false statements about the template's
+  own algebra: "a far-out point moves the slope even when it lies close to where the old line would
+  have put it" (`b' - b` is proportional to `dy - b*dx`, so a point ON the line moves nothing at any
+  leverage — the constraint depends on that fact, so the insight contradicted the code beneath it),
+  and "the newcomer's weight is the square of its distance from the predictor's mean" (the weight is
+  `w*dx^2`; dropping `w` turns the sentence into the trap `commonTrap` names first, and at
+  `n=11, sxx=150, b=1.2, dx=10, dy=8` it returns 1.04 — exactly the raw-deviation trap, wrong on all
+  812 draws). The solution body had it right; only the field a candidate would memorise did not.
+- **A quantifier the audit did not support.** "Every trap in the audit misses by at least 6.0
+  tolerances" was false against two traps named in the same file (plain average 4.44,
+  half-application 5.88). Replaced with per-trap figures and a note saying why no replacement
+  universal goes there — a quantifier over a set a future editor can extend is how four rounds of
+  stale figures happened.
+- **The rounded-operand non-negotiable was violated four times, all in the plan's own sketches**:
+  #3's sanity-check root (measured failing 36 of 290 draws), #10's inner root, #11's `w`, and #10's
+  outer multiply feeding a four-figure rendering back in as an operand. Three of the four would
+  probably have passed the printed-precision gate — it reconciles at DISPLAYED precision, and a
+  rounded operand is display-identical. Caught by reading the code, never by a gate.
+- **No `constraint` threshold a draw can land on exactly.** `constraint` sees the raw float while
+  `derived` rounds at 1e-9, so a threshold on a reachable value decides those draws by IEEE dirt
+  rather than by the rule. #7 shipped 927 draws at a `0.3` floor and 933 at `0.25` — same intent,
+  six draws apart, decided by nothing. #11's three thresholds were then chosen to be unlandable and
+  the bracketing pairs recorded (0.145 sits between the reachable 0.14482759 and 0.14634146; 0.15,
+  0.2 and 0.25 are all hit exactly).
+- **Trap margins must be measured through the engine's own `grade()`**, which compares with `<=`: a
+  scratch harness using `<` undercounts a trap sitting exactly on the tolerance boundary by one,
+  which is how 1673 was first reported as 1672.
+- **The Python counterparts fit a constructed data set** rather than re-evaluating the closed form
+  the template teaches, so a wrong formula loses against the fit instead of being echoed back. All
+  five JS content gates stayed green under three deliberate mutations (the R² denominator, the sign
+  of the omitted-variable bias term, the leverage denominator); only the Python caught them.
+
+### What the plan got wrong
+
+- **#4's rescaling direction was backwards.** The plan said the response moves to units
+  "`ybarScale` times larger", contradicting `answer = b*ybarScale/k` — stated three times in the
+  same plan and the thing actually measured against. Both variables move to SMALLER units. Task 2
+  anchored on the formula and the docs were corrected after.
+- **#7's sketched identity was subscripted**, and subscripts are numbers to the emit tokenizer, so
+  the sketch contradicted the `constants` array the same template required. Replaced with the
+  plain-letter form.
+- **#10's Answer step multiplied the labelled root by sigma**, consuming a rounded operand — the
+  fourth appearance of the one defect, and in the plan rather than the code.
+- **#11's `w` was never addressed anywhere in the plan.** `n/(n+1)` does not terminate at `n = 11`
+  or `n = 14`, so printing it as a label and multiplying by it puts a four-figure rendering in as an
+  operand. The shipped fix clears the fraction by `n+1` instead — every operand an exact integer,
+  the quotient unchanged, `w` never printed at all, and it is how the arithmetic is done by hand.
+- **`claimFree` and `checked` were conflated** in how the audit was described. They measure
+  different things: `checked = 0` means a template is UNAUDITED, `claimFree = 0` means it has no
+  purely-symbolic opening segment and so violates the house convention. The per-topic gate floors
+  (`checked > 1000`, `claimFree > 0`) can each be satisfied by ONE template for a whole topic, which
+  is how nine templates have shipped at `claimFree = 0` behind a green topic gate across three
+  batches. Task 7 audited per template, and reconciled the per-template sums against the topic
+  aggregate — a per-template number that does not sum to the gate's own total is an artefact, not an
+  audit.
+- **`regression 17 / estimation 10 at 3/9/5` became `16 / 11 at 3/9/4`.**
+  `weighted-least-squares-single-mean` (a d3) asks for the minimum-variance unbiased combination of
+  three independent model prices — inverse-variance weighting, with no regressor, no fit and no
+  regression vocabulary anywhere a student reads; the only matches were the id string and the topic
+  line. The spec had named it as the reassignment candidate **if `estimation` fell below its audit
+  floor**. It did not — `estimation` clears `checked > 1000` six times over — and the template was
+  reassigned anyway, on content grounds. Predicting a split by counting ids is not the same as
+  reading what each template asks.
+- The spec's roster table holds **stub** counts, not shipped ones: re-probing under the real id
+  matters because `emittedSpread` seeds off an FNV hash of the id and `maxRepeat` re-rolls.
+
+### Lessons for a next batch
+
+- **Two of the worst findings are permanently checkable, and would make a better B19 opener than
+  more content.** Neither needs new machinery:
+  - **P(throw) per template over 200k seeds.** `drawParams` throwing is an uncaught production
+    render exception, no existing gate samples enough seeds to see it (50, then 0-99), and the one
+    gate that might is seeded off an id hash — so it is a coin flip that a rename does not break the
+    suite. A whole-bank sweep is a loop around `drawParams` in a `try`; Task 7's ran in seconds.
+    Pin a ceiling and the 85x outlier can never ship again.
+  - **`keyInsight` and `commonTrap` are read by nothing.** Five defects shipped into them in one
+    batch, two of them statements the template's own algebra contradicts. They are the two fields a
+    candidate is most likely to memorise. At minimum they belong in the `CLAIMS` scope; even a
+    number-free-prose and register check would have caught the 127-word insight.
+- **A trap is not a trap until the arithmetic separates it from the answer.** Measure every named
+  `commonTrap` against the real `grade()` over the FULL legal draw space before shipping, not over a
+  seed sample. All twelve templates here had a region where their own trap won.
+- **The two lessons pull against each other, and the resolution is always the same.**
+  Trap-punishability constraints push acceptance down; low acceptance throws in production. Fix by
+  thinning the CHOICE LISTS to what the constraint already admits — that keeps the legal set
+  bit-identical and every trap measurement valid — never by relaxing a conjunct.
+- **The non-negotiable beats the sketch every time.** Four rounded-operand violations in this batch
+  originated in the plan, not in drafting. A sketch is a suggestion; the rounded-operand rule is not.
+- **Reconcile a measurement against the gate that owns it.** Every per-template figure in this
+  outcome was summed and checked against the topic aggregate the gate itself computes. A checker
+  nobody has watched fail is not evidence, and a number nobody has reconciled is not a measurement.
+
+**Registry note, not fixed here:** `registry.test.ts:20` pins `MARKET_TEMPLATES.length` to
+`PROBLEMS.length - choices` — exact by derivation — and line 21 then adds
+`toBeGreaterThanOrEqual(314)`. The spec asked for the market floor "pinned exactly, never as a loose
+floor"; line 20 already delivers that, so line 21 is redundant rather than wrong. Recorded, left
+alone — out of Task 7's scope.
+
+### B19 candidates
+
+Both were named in this spec as deferred:
+
+- **Time series** — AR(1) (mean reversion, the half-life, the stationary variance) and the variance
+  ratio. It is the strand a regression batch most naturally opens onto, and the one every desk
+  interview reaches for.
+- **MLE / Fisher information** — the score, the information bound, the asymptotic variance of an
+  estimator. It sits behind `statistics/estimation`, which this batch has just left at 11.
+
+Weigh the two permanently-checkable gates above first: they are cheap, they close defects this batch
+proved are invisible, and content added on top of them is content that cannot ship the same way.
