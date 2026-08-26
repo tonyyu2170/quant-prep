@@ -212,6 +212,9 @@ import { slopeThroughTheOrigin } from "./statistics/slope-through-the-origin";
 import { omittedVariableBias } from "./statistics/omitted-variable-bias";
 import { standardErrorOfASlope } from "./statistics/standard-error-of-a-slope";
 import { regressionToTheMeanPrediction } from "./statistics/regression-to-the-mean-prediction";
+import { varianceOfAFittedValue } from "./statistics/variance-of-a-fitted-value";
+import { slopeAfterAddingAPoint } from "./statistics/slope-after-adding-a-point";
+import { predictionWithOrthogonalRegressors } from "./statistics/prediction-with-orthogonal-regressors";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
 import { sampleMeanAndVariance } from "./statistics/sample-mean-and-variance";
 import { varianceOfAScaledSum } from "./statistics/variance-of-a-scaled-sum";
@@ -530,6 +533,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   omittedVariableBias,
   standardErrorOfASlope,
   regressionToTheMeanPrediction,
+  varianceOfAFittedValue,
+  slopeAfterAddingAPoint,
+  predictionWithOrthogonalRegressors,
   sharpeTimeScaling,
   sampleMeanAndVariance,
   varianceOfAScaledSum,

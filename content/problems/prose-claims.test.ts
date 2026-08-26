@@ -2626,6 +2626,57 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (p, d) => (P(d.answer) - p.mean) * p.z > 0,
       breaks: (p, d) => ({ ...d, answer: r9(p.mean - p.r * p.z * p.sd) }) },
   ],
+  "statistics/variance-of-a-fitted-value": [
+    { says: "Solve: the fitted value's standard error recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.sigma * Math.sqrt(1 / p.n + (p.d * p.d) / p.sxx))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The height term and the tilt term are what the prose says they are, and they add to the bracket",
+      // 1e-8, not EPS: invN, leverage and h are each rounded at the ninth decimal independently.
+      holds: (p, d) => same(d.invN, r9(1 / p.n)) && same(d.leverage, r9((p.d * p.d) / p.sxx)) && Math.abs(d.h - (d.invN + d.leverage)) < 1e-8,
+      breaks: (_p, d) => ({ ...d, leverage: d.leverage + 1 }) },
+    { says: "The printed root squares back to the bracket it was taken over, so the chain over the exact literals is honest",
+      holds: (_p, d) => d.root > 0 && Math.abs(d.root ** 2 - d.h) < 1e-8,
+      breaks: (_p, d) => ({ ...d, root: d.root * 2 }) },
+    { says: "Sanity check: the tilt term is strictly positive, so the line is less precise here than at the mean of the predictor",
+      // The falsifier is the template's own commonTrap — dropping the tilt term and quoting
+      // the residual spread over the root of the count — which this predicate has to reject.
+      holds: (p, d) => same(d.centreSE, r9(p.sigma / Math.sqrt(p.n))) && P(d.answer) > P(d.centreSE),
+      breaks: (_p, d) => ({ ...d, answer: d.centreSE }) },
+  ],
+  "statistics/slope-after-adding-a-point": [
+    { says: "Solve: the refitted slope recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(((p.n + 1) * p.b * p.sxx + p.n * p.dx * p.dy) / ((p.n + 1) * p.sxx + p.n * p.dx * p.dx))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The cleared form is the rank-one update itself: the same slope with the weight left as the fraction n over n+1",
+      // The template multiplies top and bottom by n+1 so that no non-terminating weight is ever
+      // printed. This is the check that the clearing changed nothing — the fractional form is
+      // computed here and compared, so a slip in the clearing cannot pass unnoticed.
+      holds: (p, d) => Math.abs(d.answer - (p.b * p.sxx + (p.n / (p.n + 1)) * p.dx * p.dy) / (p.sxx + (p.n / (p.n + 1)) * p.dx * p.dx)) < 1e-7,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "Every operand printed in the two cleared chains is a whole number, so nothing on the page is rounded",
+      holds: (p, d) => Number.isInteger(d.sxy) && Number.isInteger(d.numer) && Number.isInteger(d.denom) &&
+        d.sxy === r9(p.b * p.sxx) && d.numer === r9(d.nPlus * p.b * p.sxx + p.n * p.dx * p.dy) && d.denom === d.nPlus * p.sxx + p.n * p.dx * p.dx,
+      breaks: (_p, d) => ({ ...d, numer: d.numer + 0.5 }) },
+    { says: "Sanity check: the refit is a weighted average, so it lands strictly between the old slope and the new point's own",
+      holds: (p, d) => same(d.pointSlope, r9(p.dy / p.dx)) && (P(d.answer) - p.b) * (P(d.pointSlope) - P(d.answer)) > 0,
+      breaks: (p, d) => ({ ...d, answer: p.b }) },
+  ],
+  "statistics/prediction-with-orthogonal-regressors": [
+    { says: "Solve: the two-signal prediction recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.ybar + p.b1 * p.d1 + p.b2 * p.d2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Each adjustment is its own slope against its own deviation, and neither borrows the other's",
+      holds: (p, d) => same(d.t1, r9(p.b1 * p.d1)) && same(d.t2, r9(p.b2 * p.d2)),
+      breaks: (p, d) => ({ ...d, t1: r9(p.b1 * p.d2) }) },
+    { says: "Answer: taking both adjustments back off the prediction returns the sample mean",
+      // 1e-7, not EPS: answer, t1 and t2 are rounded at the ninth decimal independently. The
+      // falsifier is the sign slip — subtracting the second adjustment instead of adding it.
+      holds: (p, d) => Math.abs(d.answer - d.t1 - d.t2 - p.ybar) < 1e-7,
+      breaks: (p, d) => ({ ...d, answer: r9(p.ybar + p.b1 * p.d1 - p.b2 * p.d2) }) },
+    { says: "Sanity check: both adjustments bite, so the prediction differs from the mean and from either single-signal fit",
+      holds: (p, d) => P(d.answer) !== p.ybar && P(d.answer) !== P(r9(p.ybar + d.t1)) && P(d.answer) !== P(r9(p.ybar + d.t2)),
+      breaks: (p, d) => ({ ...d, answer: p.ybar }) },
+  ],
   "statistics/sharpe-time-scaling": [
     { says: "Solve: the horizon Sharpe recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9((p.edge / p.sd) * Math.sqrt(p.periods))),
