@@ -7,7 +7,7 @@ import { fmtNum } from "../util";
 export const weightedLeastSquaresSingleMean: ProblemTemplate = {
   id: "statistics/weighted-least-squares-single-mean",
   version: 1,
-  topic: "statistics/regression",
+  topic: "statistics/estimation",
   difficulty: 3,
   firms: [{ firm: "hrt", weight: 0.25 }, { firm: "jump", weight: 0.2 }, { firm: "jane-street", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "inverse-variance weighting of independent measurements" },
