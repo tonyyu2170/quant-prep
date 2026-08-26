@@ -2040,6 +2040,15 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, intrinsic: 1e6 }) },
   ],
   "finance/growing-perpetuity-value": [
+    { says: "keyInsight: only the gap matters — lift the required return and the growth rate together and the value does not move",
+      holds: (p, d) => same(d.answer, (100 * p.cf) / (p.yieldPct + 1 - (p.growthPct + 1))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: ignoring growth and dividing by the required return alone, which undervalues anything that grows",
+      // Stated as "never below", so the zero-growth draws exercise it rather than excuse it —
+      // a guard that short-circuits on the first legal draw makes the falsifier untestable.
+      holds: (_p, d) => P(d.answer) >= P(d.flatValue),
+      nonVacuous: (p, d) => p.growthPct > 0 && P(d.answer) > P(d.flatValue),
+      breaks: (_p, d) => ({ ...d, answer: d.flatValue / 2 }) },
     { says: "Solve: the valuation recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.cf / ((p.yieldPct - p.growthPct) / 100))),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
@@ -2069,6 +2078,13 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, debit: -1 }) },
   ],
   "finance/payment-stream-present-value": [
+    { says: "keyInsight: each date is discounted by its OWN factor and the factors are then added",
+      holds: (p, d) => same(d.sumUsed, p.n === 3 ? p.df1 + d.df2 + d.df3 : p.df1 + d.df2 + d.df3 + d.df4)
+        && same(d.answer, p.pmt * d.sumUsed),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: discounting every payment at the first year's factor, which the sloping curve makes too generous",
+      holds: (p, d) => P(d.answer) < P(p.pmt * p.n * p.df1),
+      breaks: (p, d) => ({ ...d, answer: p.pmt * p.n * p.df1 }) },
     { says: "Solve: the present value recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.pmt * (p.n === 3 ? p.df1 + r9(p.df1 - p.drop) + r9(p.df1 - 2 * p.drop) : p.df1 + r9(p.df1 - p.drop) + r9(p.df1 - 2 * p.drop) + r9(p.df1 - 3 * p.drop)))),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
@@ -2320,6 +2336,15 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, quoted: d.fair }) },
   ],
   "finance/duration-price-change": [
+    { says: "keyInsight: the dollar loss is the percentage applied to the MARKET value",
+      // Relative, not `same`: the market value runs to eight figures, and a product that lands a
+      // whisker off an integer renders at four significant figures while the answer renders in full.
+      holds: (_p, d) => Math.abs(d.answer - (d.marketValue * d.pctChange) / 100) <= 1e-6 * Math.abs(d.answer),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: applying it to the face instead, which agrees only on a bond priced at par",
+      holds: (p, d) => p.price === 100 || !same(d.answer, (d.face * d.pctChange) / 100),
+      nonVacuous: (p) => p.price !== 100,
+      breaks: (_p, d) => ({ ...d, answer: (d.face * d.pctChange) / 100 }) },
     { says: "Solve: the dollar loss recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.faceM * p.price * p.modDur * p.bp)),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
@@ -2334,6 +2359,13 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: d.marketValue * 2 }) },
   ],
   "finance/bond-premium-from-zeros": [
+    { says: "keyInsight: the bond trades above par exactly when its coupon beats what the curve would pay a new issue",
+      holds: (p, d) => (P(p.couponPct) > P(d.parCoupon)) === (P(d.answer) > 0),
+      nonVacuous: (_p, d) => P(d.answer) < 0,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+    { says: "commonTrap: the question asks for the distance from par, which is not the price",
+      holds: (_p, d) => same(d.answer, d.price - 100) && !same(d.answer, d.price),
+      breaks: (_p, d) => ({ ...d, answer: d.price }) },
     { says: "Solve: the premium recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.couponPct * (p.n === 2 ? 2 * p.df1 - p.drop : 3 * p.df1 - 3 * p.drop) + 100 * (p.df1 - (p.n - 1) * p.drop) - 100)),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
@@ -2348,6 +2380,12 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: 0.1 }) },
   ],
   "finance/par-coupon-from-zeros": [
+    { says: "keyInsight: the par coupon is a ratio, the shortfall on the final dollar over the summed zeros",
+      holds: (_p, d) => same(d.answer, d.shortfall / d.sumDf),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: dividing that shortfall by the number of years, which is always too small because every factor is under one",
+      holds: (p, d) => P(d.answer) > P(d.shortfall / p.n),
+      breaks: (p, d) => ({ ...d, answer: d.shortfall / p.n }) },
     { says: "Solve: the par coupon recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9(p.face * (1 - (p.df1 - (p.n - 1) * p.drop)) / (p.n * p.df1 - p.drop * p.n * (p.n - 1) / 2))),
       breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
@@ -4024,12 +4062,12 @@ const PROSE_CLAIM_EXEMPT = new Set(`
   ev-variance/geometric-waiting-time ev-variance/indicator-match-count ev-variance/local-maxima
   ev-variance/matching-indicators-variance ev-variance/median-of-three ev-variance/profit-net-of-cost
   ev-variance/spread-of-three-spins finance/american-vs-european-call-credit
-  finance/atm-straddle-from-dollar-vol finance/bond-premium-from-zeros finance/book-delta-calls-and-puts
+  finance/atm-straddle-from-dollar-vol finance/book-delta-calls-and-puts
   finance/book-overround-arbitrage finance/box-spread-arbitrage finance/butterfly-max-profit
-  finance/call-lower-bound-arbitrage finance/covered-call-max-profit finance/duration-price-change
-  finance/forward-mispricing-arbitrage finance/gamma-pnl-from-a-move finance/growing-perpetuity-value
-  finance/multi-winner-book-arbitrage finance/one-step-binomial-call-price finance/par-coupon-from-zeros
-  finance/payment-stream-present-value finance/put-butterfly-from-call-quotes finance/put-call-parity
+  finance/call-lower-bound-arbitrage finance/covered-call-max-profit
+  finance/forward-mispricing-arbitrage finance/gamma-pnl-from-a-move
+  finance/multi-winner-book-arbitrage finance/one-step-binomial-call-price
+  finance/put-butterfly-from-call-quotes finance/put-call-parity
   finance/put-call-parity-with-dividend finance/put-hedge-from-parity finance/shares-to-rehedge-after-a-move
   finance/straddle-implied-move finance/theta-gamma-breakeven-move finance/triangular-fx-arbitrage
   finance/two-step-binomial-call-price geometric/border-band geometric/broken-stick-left-share
@@ -4111,10 +4149,10 @@ describe("the two rendered prose fields carry a predicate", () => {
     expect(missing, "these render a sentence to the student that nothing checks").toEqual([]);
   });
 
-  it("the exemption list is 237 live slugs and cannot quietly outlive them", () => {
+  it("the exemption list is 232 live slugs and cannot quietly outlive them", () => {
     // A stale entry is worse than a missing one: it exempts nothing and hides that the count
     // moved. Pinning the size makes adding a slug a deliberate edit rather than a reflex.
-    expect(PROSE_CLAIM_EXEMPT.size).toBe(237);
+    expect(PROSE_CLAIM_EXEMPT.size).toBe(232);
     const dead = [...PROSE_CLAIM_EXEMPT].filter((slug) => !byId.has(slug));
     expect(dead, "exempted slugs that no longer exist — delete the line").toEqual([]);
   });

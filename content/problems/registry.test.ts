@@ -18,7 +18,6 @@ describe("problem registry invariants", () => {
     // one to come here and say so. That is the same discipline the per-topic counts above use
     // (toBe, not a floor). A loose floor detects nothing, which is what the last one did.
     expect(MARKET_TEMPLATES.length).toBe(PROBLEMS.length - PROBLEMS.filter((t) => t.choices).length);
-    expect(MARKET_TEMPLATES.length).toBeGreaterThanOrEqual(314);
   });
   it("has unique ids and topic-prefixed ids", () => {
     expect(new Set(PROBLEMS.map((t) => t.id)).size).toBe(PROBLEMS.length);
