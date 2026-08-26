@@ -3670,6 +3670,10 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
     { says: "commonTrap: striking out every multiple of the second number removes ones that were never counted, and dividing by the product instead of the least common multiple undercounts the overlap",
       holds: (p, d) => (p.notBy % p.by === 0 || !same(d.answer, r9(d.hitsBy - Math.floor(p.upto / p.notBy)))) && (d.shared === 1 || !same(d.answer, r9(d.hitsBy - Math.floor(p.upto / (p.by * p.notBy))))),
+      // Both conjuncts escape on a condition, so the gate is told to require the guarded branch
+      // to actually fire somewhere — otherwise a later param change could make the escape
+      // universal and leave the claim passing while checking nothing.
+      nonVacuous: (p, d) => p.notBy % p.by !== 0 && d.shared !== 1,
       breaks: (p, d) => ({ ...d, answer: r9(d.hitsBy - Math.floor(p.upto / p.notBy)), hitsBy: d.hitsBy, both: p.notBy }) },
     { says: "Solve: the count recomputed fresh from params matches the printed answer",
       holds: (p, d) => d.answer === Math.floor(p.upto / p.by) - Math.floor(p.upto / d.both),
@@ -3826,6 +3830,7 @@ const CLAIMS: Record<string, Claim[]> = {
       // answer, because a times r/a is r on the nose. 150 of 711 draws. The claim carries
       // the same condition the prose does rather than overstating it.
       holds: (p, d) => (p.r % p.a === 0 || !same(d.answer, r9(p.r / p.a))) && same(d.raw, r9(d.inverse * p.r)) && d.answer === d.raw % p.m,
+      nonVacuous: (p) => p.r % p.a !== 0,
       breaks: (p, d) => ({ ...d, raw: d.raw + p.m }) },
     { says: "Solve: the answer really does leave the wanted remainder when multiplied up",
       holds: (p, d) => (p.a * d.answer) % p.m === p.r,
@@ -4274,9 +4279,14 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "keyInsight: the two block determinants MULTIPLY while the two traces ADD — the whole matrix's trace is the sum, its determinant the product",
       holds: (p, d) => same(d.traceAll, r9(p.t1 + p.t2)) && same(d.answer, r9(p.d1 * p.d2)),
       breaks: (_p, d) => ({ ...d, traceAll: d.traceAll * 1.02 }) },
-    { says: "Both quoted blocks are real matrices: each trace squared clears four times its determinant",
-      holds: (p, d) => p.t1 * p.t1 >= 4 * p.d1 && p.t2 * p.t2 >= 4 * p.d2 && d.answer !== 0,
-      breaks: (_p, d) => ({ ...d, answer: 0 }) },
+    { says: "All four eigenvalues multiplied — the two blocks' spectra reconstructed from their traces and determinants — give the same answer",
+      holds: (p, d) => {
+        const roots = (t: number, det: number) => { const r = Math.sqrt(t * t - 4 * det); return [(t + r) / 2, (t - r) / 2]; };
+        const [u1, u2] = roots(p.t1, p.d1);
+        const [v1, v2] = roots(p.t2, p.d2);
+        return same(d.answer, r9(u1 * u2 * v1 * v2));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
     { says: "commonTrap: multiplying the traces in, or adding the two determinants, both give a different number",
       holds: (p, d) => !same(d.answer, r9(p.t1 * p.t2 * p.d1 * p.d2)) && !same(d.answer, r9(p.d1 + p.d2)),
       breaks: (p, d) => ({ ...d, answer: r9(p.d1 + p.d2) }) },
@@ -4302,9 +4312,9 @@ const CLAIMS: Record<string, Claim[]> = {
     { says: "keyInsight: the row addition contributes no factor at all — the answer is the sign times the scaled determinant and nothing else",
       holds: (p, d) => same(d.answer, r9(d.sign * d.scaled)) && same(d.scaled, r9(p.det * p.k)),
       breaks: (_p, d) => ({ ...d, scaled: d.scaled * 1.02 }) },
-    { says: "An odd number of exchanges, so the sign really does flip",
-      holds: (p, d) => p.swaps % 2 === 1 && d.sign === -1,
-      breaks: (_p, d) => ({ ...d, sign: 1 }) },
+    { says: "The whole sequence of operations multiplies the starting determinant by exactly minus the row scaling — no more, no less",
+      holds: (p, d) => same(r9(d.answer / p.det), r9(-p.k)) && d.answer !== 0 && d.sign === -1,
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
     { says: "commonTrap: dropping the swap sign, or raising the row scaling to the matrix size, both give a different number",
       holds: (p, d) => !same(d.answer, d.scaled) && !same(d.answer, r9(d.sign * p.det * Math.pow(p.k, p.n))),
       breaks: (_p, d) => ({ ...d, answer: d.scaled }) },

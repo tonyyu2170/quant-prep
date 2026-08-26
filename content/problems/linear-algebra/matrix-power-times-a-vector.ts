@@ -19,10 +19,11 @@ export const matrixPowerTimesAVector: ProblemTemplate = {
     beta:  { choices: [-4, -1, 1, 2, 4] },
     k:     { choices: [2, 3, 4] },
   },
-  // The last two conjuncts are trap constraints. Equal powers let the whole start vector be
+  // The last three conjuncts are trap constraints. Equal powers let the whole start vector be
   // raised as one lump and still land right; a second mode too small to see lets it be dropped
-  // outright, and that one was winning within a sixth of the grading band before the floor.
-  constraint: (p) => p.lam1 !== p.lam2 && Math.abs(p.alpha) * Math.pow(Math.abs(p.lam1), p.k) < 1e6 && Math.pow(p.lam1, p.k) !== Math.pow(p.lam2, p.k) && Math.abs(p.beta * Math.pow(p.lam2, p.k)) > 0.05 * Math.abs(p.alpha * Math.pow(p.lam1, p.k) + p.beta * Math.pow(p.lam2, p.k)),
+  // outright, and that one was winning within a sixth of the grading band before the floor; the
+  // last excludes the ten draws where powering the SUMMED eigenvalues also lands on the answer.
+  constraint: (p) => p.lam1 !== p.lam2 && Math.abs(p.alpha) * Math.pow(Math.abs(p.lam1), p.k) < 1e6 && Math.pow(p.lam1, p.k) !== Math.pow(p.lam2, p.k) && Math.abs(p.beta * Math.pow(p.lam2, p.k)) > 0.05 * Math.abs(p.alpha * Math.pow(p.lam1, p.k) + p.beta * Math.pow(p.lam2, p.k)) && (p.alpha + p.beta) * Math.pow(p.lam1 + p.lam2, p.k) !== p.alpha * Math.pow(p.lam1, p.k) + p.beta * Math.pow(p.lam2, p.k),
   derived: (p) => {
     // Eigenvector ratios one apart, so the change-of-basis determinant is one.
     const MPAIR: Record<number, [number, number]> = { 1: [1, 2], 2: [2, 3], 3: [3, 4], 4: [-2, -1], 5: [-3, -2] };
