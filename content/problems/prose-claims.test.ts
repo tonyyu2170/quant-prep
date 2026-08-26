@@ -2577,6 +2577,55 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => P(d.answer) >= 0.4 && P(d.answer) <= 5,
       breaks: (_p, d) => ({ ...d, answer: 100 }) },
   ],
+  "statistics/omitted-variable-bias": [
+    { says: "Solve: the short regression's coefficient recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.b1 + p.b2 * p.delta)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "What the missing signal hands over is the dropped coefficient times the slope linking the two signals",
+      holds: (p, d) => same(d.biasTerm, r9(p.b2 * p.delta)),
+      breaks: (_p, d) => ({ ...d, biasTerm: d.biasTerm + 1 }) },
+    { says: "Answer: taking the bias term back off the short coefficient returns the joint fit's coefficient",
+      // 1e-7, not EPS: `answer` and `biasTerm` are rounded at the ninth decimal independently,
+      // so the residue of the subtraction reaches the ninth decimal too. The falsifier is the
+      // template's own commonTrap — subtracting the bias instead of adding it — which this
+      // predicate has to reject or the trap is unpunishable.
+      holds: (p, d) => Math.abs(d.answer - d.biasTerm - p.b1) < 1e-7,
+      breaks: (p, d) => ({ ...d, answer: r9(p.b1 - p.b2 * p.delta) }) },
+    { says: "Sanity check: with a non-zero slope between the signals the short fit never hands back the long fit's coefficient",
+      holds: (p, d) => P(d.answer) !== p.b1,
+      breaks: (p, d) => ({ ...d, answer: p.b1 }) },
+  ],
+  "statistics/standard-error-of-a-slope": [
+    { says: "Solve: the slope's standard error recomputed fresh from the printed sums matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(Math.sqrt(d.rss / (p.n - 2)) / Math.sqrt(p.sxx))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The residual variance: the residual sum of squares printed in the statement is it times the degrees of freedom, exactly",
+      holds: (p, d) => d.rss === p.sVar * (p.n - 2),
+      breaks: (_p, d) => ({ ...d, rss: d.rss + 1 }) },
+    { says: "The residual standard deviation squares back to the residual variance, so the printed root is exact",
+      // Integer-exact by construction — every sVar is a perfect square — so this is `===` and
+      // not an epsilon: a residual variance that stopped being one must fail here, loudly.
+      holds: (p, d) => d.sSD ** 2 === p.sVar && d.sSD > 0,
+      breaks: (_p, d) => ({ ...d, sSD: d.sSD + 1 }) },
+    { says: "Sanity: a standard error is positive, and the predictor's spread only ever shrinks it below the residual spread",
+      holds: (_p, d) => P(d.answer) > 0 && P(d.answer) < d.sSD,
+      breaks: (_p, d) => ({ ...d, answer: -d.answer }) },
+  ],
+  "statistics/regression-to-the-mean-prediction": [
+    { says: "Solve: the predicted score recomputed fresh from params matches the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.mean + p.r * p.z * p.sd)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The deviation in points and the correlation's share of it are each the printed product",
+      holds: (p, d) => same(d.dev, r9(p.z * p.sd)) && same(d.shrunk, r9(p.r * p.z * p.sd)),
+      breaks: (_p, d) => ({ ...d, shrunk: d.shrunk + 1 }) },
+    { says: "Answer: the shrinkage is real — the prediction sits strictly nearer the mean than last year's score did",
+      // The falsifier is the template's own commonTrap, predicting the full deviation again.
+      holds: (p, d) => Math.abs(P(d.answer) - p.mean) < Math.abs(P(d.dev)),
+      breaks: (p, d) => ({ ...d, answer: r9(p.mean + p.z * p.sd) }) },
+    { says: "Sanity check: shrinking toward the mean never crosses it, so the prediction keeps last year's side",
+      holds: (p, d) => (P(d.answer) - p.mean) * p.z > 0,
+      breaks: (p, d) => ({ ...d, answer: r9(p.mean - p.r * p.z * p.sd) }) },
+  ],
   "statistics/sharpe-time-scaling": [
     { says: "Solve: the horizon Sharpe recomputed fresh from params matches the printed answer",
       holds: (p, d) => same(d.answer, r9((p.edge / p.sd) * Math.sqrt(p.periods))),

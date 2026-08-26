@@ -209,6 +209,9 @@ import { rSquaredFromSumsOfSquares } from "./statistics/r-squared-from-sums-of-s
 import { slopeAfterRescalingX } from "./statistics/slope-after-rescaling-x";
 import { interceptAfterShiftingX } from "./statistics/intercept-after-shifting-x";
 import { slopeThroughTheOrigin } from "./statistics/slope-through-the-origin";
+import { omittedVariableBias } from "./statistics/omitted-variable-bias";
+import { standardErrorOfASlope } from "./statistics/standard-error-of-a-slope";
+import { regressionToTheMeanPrediction } from "./statistics/regression-to-the-mean-prediction";
 import { sharpeTimeScaling } from "./statistics/sharpe-time-scaling";
 import { sampleMeanAndVariance } from "./statistics/sample-mean-and-variance";
 import { varianceOfAScaledSum } from "./statistics/variance-of-a-scaled-sum";
@@ -524,6 +527,9 @@ export const PROBLEMS: ProblemTemplate[] = [
   slopeAfterRescalingX,
   interceptAfterShiftingX,
   slopeThroughTheOrigin,
+  omittedVariableBias,
+  standardErrorOfASlope,
+  regressionToTheMeanPrediction,
   sharpeTimeScaling,
   sampleMeanAndVariance,
   varianceOfAScaledSum,
