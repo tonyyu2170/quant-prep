@@ -3661,6 +3661,16 @@ const CLAIMS: Record<string, Claim[]> = {
   ],
   // ---- pure-math/number-theory (B15) ----
   "number-theory/multiples-in-a-range": [
+    { says: "keyInsight: counting is division with the remainder thrown away, and the overlap is counted by the least common multiple rather than the product",
+      holds: (p, d) => {
+        let hits = 0;
+        for (let n = 1; n <= p.upto; n++) if (n % p.by === 0 && n % p.notBy !== 0) hits++;
+        return hits === d.answer && d.hitsBoth === Math.floor(p.upto / d.both) && d.both * d.shared === p.by * p.notBy;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "commonTrap: striking out every multiple of the second number removes ones that were never counted, and dividing by the product instead of the least common multiple undercounts the overlap",
+      holds: (p, d) => (p.notBy % p.by === 0 || !same(d.answer, r9(d.hitsBy - Math.floor(p.upto / p.notBy)))) && (d.shared === 1 || !same(d.answer, r9(d.hitsBy - Math.floor(p.upto / (p.by * p.notBy))))),
+      breaks: (p, d) => ({ ...d, answer: r9(d.hitsBy - Math.floor(p.upto / p.notBy)), hitsBy: d.hitsBy, both: p.notBy }) },
     { says: "Solve: the count recomputed fresh from params matches the printed answer",
       holds: (p, d) => d.answer === Math.floor(p.upto / p.by) - Math.floor(p.upto / d.both),
       breaks: (_p, d) => ({ ...d, answer: d.answer + 3 }) },
@@ -3672,6 +3682,12 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (p, d) => ({ ...d, both: p.by * p.notBy * 2 }) },
   ],
   "number-theory/coprime-count-two-primes": [
+    { says: "keyInsight: the count depends only on WHICH primes divide the modulus — it is the modulus times each prime's reduced share, and it scales linearly with the number of blocks",
+      holds: (p, d) => same(d.perBlock, r9(d.modulus * (1 - 1 / p.pr) * (1 - 1 / p.qr))) && same(d.answer, r9(p.mult * d.perBlock)),
+      breaks: (_p, d) => ({ ...d, perBlock: d.perBlock * 1.02 }) },
+    { says: "commonTrap: striking out both multiple sets without adding the overlap back undercounts, and one less than the modulus is not the same as the two reduced primes multiplied",
+      holds: (p, d) => same(d.answer, r9(d.span - d.dropP - d.dropQ + p.mult)) && d.span - d.dropP - d.dropQ < d.answer && !same(d.answer, r9(p.mult * (d.modulus - 1))),
+      breaks: (_p, d) => ({ ...d, answer: r9(d.span - d.dropP - d.dropQ) }) },
     { says: "Solve: the survivor count recomputed fresh from params matches the printed answer",
       holds: (p, d) => d.answer === p.mult * (p.pr - 1) * (p.qr - 1),
       breaks: (_p, d) => ({ ...d, answer: d.answer + 2 }) },
@@ -3683,6 +3699,15 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, dropP: d.dropP + 1 }) },
   ],
   "number-theory/gcd-lcm-product": [
+    { says: "keyInsight: the divisor and the multiple take the smaller and the larger power of each prime, so multiplying them gives the two numbers multiplied",
+      holds: (p, d) => {
+        const g = (a: number, b: number): number => (b === 0 ? a : g(b, a % b));
+        return same(r9(p.g * d.answer), r9(d.first * d.second)) && g(d.first, d.second) === p.g && d.answer % d.first === 0 && d.answer % d.second === 0;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the plain product is NOT the least common multiple here, and dividing the common factor out twice lands a factor too low",
+      holds: (p, d) => !same(d.product, d.answer) && !same(d.answer, r9(d.product / (p.g * p.g))) && p.g > 1,
+      breaks: (_p, d) => ({ ...d, answer: d.product }) },
     { says: "Solve: the least common multiple recomputed fresh from params matches the printed answer",
       holds: (p, d) => d.answer === p.g * p.m * p.n,
       breaks: (_p, d) => ({ ...d, answer: d.answer * 2 }) },
@@ -3694,6 +3719,20 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, product: d.product + 1 }) },
   ],
   "number-theory/frobenius-largest-unpayable": [
+    { says: "keyInsight: the gaps stop for good at the answer — it is itself unreachable, and every one of the next run of totals is reachable",
+      holds: (p, d) => {
+        const reach = (n: number) => { for (let i = 0; i * p.coinA <= n; i++) if ((n - i * p.coinA) % p.coinB === 0) return true; return false; };
+        if (reach(d.answer)) return false;
+        for (let n = d.answer + 1; n <= d.answer + p.coinA; n++) if (!reach(n)) return false;
+        return true;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "commonTrap: the third denomination is already reachable and changes nothing, and subtracting only one of the two coins from the product overshoots",
+      holds: (p, d) => {
+        const reach = (n: number) => { for (let i = 0; i * p.coinA <= n; i++) if ((n - i * p.coinA) % p.coinB === 0) return true; return false; };
+        return reach(d.redundant) && !same(d.answer, r9(d.product - p.coinA)) && !same(d.answer, r9(d.product - p.coinB));
+      },
+      breaks: (p, d) => ({ ...d, answer: r9(d.product - p.coinA) }) },
     { says: "Solve: the largest unreachable total recomputed fresh from params matches the printed answer",
       holds: (p, d) => d.answer === p.coinA * p.coinB - p.coinA - p.coinB,
       breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
@@ -3713,6 +3752,19 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: d.product + 1 }) },
   ],
   "number-theory/crt-two-congruences": [
+    { says: "keyInsight: the two conditions pin exactly one count in every stretch as long as the product — not none, and not two",
+      holds: (p, d) => {
+        let hits = 0, found = -1;
+        for (let k = 0; k < d.modulus; k++) if (k % p.m1 === p.r1 && k % p.m2 === p.r2) { hits++; found = k; }
+        return hits === 1 && found === d.answer;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "commonTrap: adding the two remainders, or multiplying them, satisfies neither condition in general",
+      holds: (p, d) => {
+        const ok = (n: number) => n % p.m1 === p.r1 && n % p.m2 === p.r2;
+        return ok(d.answer) && !(ok(p.r1 + p.r2) && p.r1 + p.r2 !== d.answer) && !(ok(p.r1 * p.r2) && p.r1 * p.r2 !== d.answer);
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 2 }) },
     { says: "Solve: the smallest count really does satisfy both remainder conditions",
       holds: (p, d) => d.answer % p.m1 === p.r1 && d.answer % p.m2 === p.r2,
       breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
@@ -3728,6 +3780,20 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, steps: d.steps + 1 }) },
   ],
   "number-theory/diophantine-count-solutions": [
+    { says: "keyInsight: the solutions are evenly spaced — consecutive first-crate counts differ by the OTHER crate size every time",
+      holds: (p, d) => {
+        const xs: number[] = [];
+        for (let x = 0; x <= d.maxFirst; x++) if ((p.c - p.a * x) % p.b === 0) xs.push(x);
+        return xs.length === d.answer && xs.every((x, i) => i === 0 || x - xs[i - 1] === p.b);
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "commonTrap: dividing the load by the SUM of the two crate sizes answers a different question, and a count of none of one size is still a legitimate combination",
+      holds: (p, d) => {
+        const xs: number[] = [];
+        for (let x = 0; x <= d.maxFirst; x++) if ((p.c - p.a * x) % p.b === 0) xs.push(x);
+        return !same(d.answer, r9(Math.floor(p.c / (p.a + p.b)))) && xs.length > 0 && xs[0] < p.b;
+      },
+      breaks: (p, d) => ({ ...d, answer: r9(Math.floor(p.c / (p.a + p.b))) }) },
     { says: "Solve: the count recomputed fresh from params matches the printed answer",
       holds: (p, d) => {
         let n = 0;
@@ -3743,6 +3809,24 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: d.answer * 5 + 20 }) },
   ],
   "number-theory/linear-congruence-solve": [
+    { says: "keyInsight: multiplication by the coefficient is reversible because it shares no factor with the modulus, and the inverse that undoes it is unique",
+      holds: (p, d) => {
+        let hits = 0;
+        for (let k = 1; k < p.m; k++) if ((p.a * k) % p.m === 1) hits++;
+        return d.product % p.m === 1 && hits === 1 && (p.a * d.answer) % p.m === p.r;
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "commonTrap: ordinary division of the target by the coefficient is not the answer unless the coefficient happens to divide it, and the inverse still has to be applied to the target",
+      // The first draft read `p.r % p.a === 0 || !Number.isInteger(p.r / p.a)`, which is A or
+      // not-A and checks nothing, and paired it with a falsifier that swapped two values whose
+      // inequality was all the predicate tested. Both defects are what this file's header
+      // warns about; the claim now asserts the applying step itself.
+      // The template's own wording is "usually leaves no whole number", and that hedge is
+      // real: where the coefficient DOES divide the target, ordinary division lands on the
+      // answer, because a times r/a is r on the nose. 150 of 711 draws. The claim carries
+      // the same condition the prose does rather than overstating it.
+      holds: (p, d) => (p.r % p.a === 0 || !same(d.answer, r9(p.r / p.a))) && same(d.raw, r9(d.inverse * p.r)) && d.answer === d.raw % p.m,
+      breaks: (p, d) => ({ ...d, raw: d.raw + p.m }) },
     { says: "Solve: the answer really does leave the wanted remainder when multiplied up",
       holds: (p, d) => (p.a * d.answer) % p.m === p.r,
       breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
@@ -3761,6 +3845,23 @@ const CLAIMS: Record<string, Claim[]> = {
       breaks: (_p, d) => ({ ...d, answer: -1 }) },
   ],
   "number-theory/frobenius-fit-then-count": [
+    { says: "keyInsight: the unreachable totals pair off with the reachable ones, so half of everything below the largest gap is unreachable — and a direct enumeration agrees",
+      holds: (p, d) => {
+        const reach = (n: number) => { for (let i = 0; i * p.coinA <= n; i++) if ((n - i * p.coinA) % p.coinB === 0) return true; return false; };
+        let gaps = 0;
+        for (let n = 0; n <= d.largest; n++) if (!reach(n)) gaps++;
+        return gaps === d.unpayable && same(d.unpayable, r9(((p.coinA - 1) * (p.coinB - 1)) / 2));
+      },
+      breaks: (_p, d) => ({ ...d, unpayable: d.unpayable + 1 }) },
+    { says: "commonTrap: dividing the largest gap by the known coin does not recover the other one, and the gaps thin out unevenly rather than at a fixed spacing",
+      holds: (p, d) => {
+        const reach = (n: number) => { for (let i = 0; i * p.coinA <= n; i++) if ((n - i * p.coinA) % p.coinB === 0) return true; return false; };
+        const gaps: number[] = [];
+        for (let n = 1; n <= d.largest; n++) if (!reach(n)) gaps.push(n);
+        const steps = new Set(gaps.slice(1).map((g, i) => g - gaps[i]));
+        return !same(d.recovered, r9(d.largest / p.coinA)) && steps.size > 1;
+      },
+      breaks: (p, d) => ({ ...d, recovered: r9(d.largest / p.coinA) }) },
     { says: "Solve: the recovered denomination reproduces the quoted largest gap",
       holds: (p, d) => p.coinA * d.recovered - p.coinA - d.recovered === d.largest,
       breaks: (_p, d) => ({ ...d, recovered: d.recovered + 1 }) },
@@ -4421,11 +4522,7 @@ const PROSE_CLAIM_EXEMPT = new Set(`
   linear-algebra/inverse-of-a-constant-plus-diagonal linear-algebra/trace-of-a-matrix-power
   linear-algebra/two-by-two-eigenvalues markov/consecutive-run-wait markov/deuce-win-by-two
   markov/machine-uptime-stationary markov/maze-food-before-trap markov/switching-coins-share
-  markov/system-days-to-failure markov/tunnel-doors-escape markov/two-state-after-k-days
-  number-theory/coprime-count-two-primes number-theory/crt-two-congruences
-  number-theory/diophantine-count-solutions number-theory/frobenius-fit-then-count
-  number-theory/frobenius-largest-unpayable number-theory/gcd-lcm-product
-  number-theory/linear-congruence-solve number-theory/multiples-in-a-range ruin/adverse-drift-reach-upside
+  markov/system-days-to-failure markov/tunnel-doors-escape markov/two-state-after-k-days ruin/adverse-drift-reach-upside
   ruin/complement-ruin-first ruin/doubling-fit-then-duration ruin/doubling-strategy
   ruin/drift-one-sided-duration ruin/drift-touch-downside ruin/fair-expected-duration ruin/fair-reach-goal
   ruin/fit-capital-fair ruin/fit-capital-unfair ruin/fit-goal-from-duration-fair ruin/fit-then-duration
@@ -4491,7 +4588,7 @@ describe("the two rendered prose fields carry a predicate", () => {
   it("the exemption list is 232 live slugs and cannot quietly outlive them", () => {
     // A stale entry is worse than a missing one: it exempts nothing and hides that the count
     // moved. Pinning the size makes adding a slug a deliberate edit rather than a reflex.
-    expect(PROSE_CLAIM_EXEMPT.size).toBe(232);
+    expect(PROSE_CLAIM_EXEMPT.size).toBe(224);
     const dead = [...PROSE_CLAIM_EXEMPT].filter((slug) => !byId.has(slug));
     expect(dead, "exempted slugs that no longer exist — delete the line").toEqual([]);
   });
