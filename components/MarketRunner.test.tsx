@@ -18,12 +18,15 @@ describe("MarketRunner", () => {
   });
 
   it("takes the quote in the quantity's own scale, not in scoring units", () => {
-    // Seed 1's first round is a probability at unit 0.001 and truth ~0.191. Quoting the truth
-    // itself must settle inside for full credit. Under the rejected "type in units" reading the
-    // same input meant 0.191 x 0.001, three orders of magnitude low, and would be picked off.
-    const r = marketRounds(1)[0];
-    expect(r.unit).not.toBe(1);   // a unit-1 round could not tell the two readings apart
-    render(<MarketRunner seed={1} />);
+    // Quoting the truth itself must settle inside for full credit. Under the rejected "type in
+    // units" reading the same input meant truth x unit, orders of magnitude off, and would be
+    // picked off. The seed is SEARCHED rather than pinned: a unit-1 round cannot tell the two
+    // readings apart, and which template any given seed opens on moves every time the bank
+    // grows — seed 1 opened on a probability at unit 0.001 until B22 added eleven templates.
+    const seed = [...Array(50).keys()].find((s) => marketRounds(s)[0].unit !== 1);
+    expect(seed, "no seed in 0..49 opens on a round carrying a scale").toBeDefined();
+    const r = marketRounds(seed!)[0];
+    render(<MarketRunner seed={seed!} />);
     fireEvent.change(screen.getByLabelText("bid"), { target: { value: String(r.truth) } });
     fireEvent.change(screen.getByLabelText("ask"), { target: { value: String(r.truth) } });
     fireEvent.click(screen.getByRole("button", { name: /^quote$/i }));

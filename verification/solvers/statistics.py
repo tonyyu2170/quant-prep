@@ -405,7 +405,46 @@ def sample_size_for_margin_brute(p):
     return float(n)
 
 
+def sprt_consecutive_wins_exact(p):
+    p0, ratio = int(p["p0"]), int(p["ratio"])
+    alpha, beta = int(p["alpha"]), int(p["beta"])
+    bound = _round9((100 - beta) / alpha)
+    step = ratio / 100
+    wins = math.ceil(math.log(bound) / math.log(step))
+    return {
+        "nullRate": _round9(p0 / 100),
+        "altRate": _round9(p0 * ratio / 10000),
+        "step": _round9(step),
+        "alphaRate": _round9(alpha / 100),
+        "betaRate": _round9(beta / 100),
+        "power": _round9((100 - beta) / 100),
+        "bound": bound,
+        "winsLess": wins - 1,
+        "reached": _round9(step ** wins),
+        "shortOf": _round9(step ** (wins - 1)),
+        "answer": wins,
+    }
+
+
+def sprt_consecutive_wins_brute(p):
+    """The likelihood ratio is COMPOUNDED one win at a time until it clears the boundary, and
+    the wins are counted. No logarithm and no ceiling appear — which is the whole content of
+    the closed form the template teaches."""
+    e = sprt_consecutive_wins_exact(p)
+    step = e["altRate"] / e["nullRate"]
+    lr, wins = 1.0, 0
+    while lr < e["bound"]:
+        lr *= step
+        wins += 1
+        assert wins <= 5000, "compounding ran away"
+    return float(wins)
+
+
 SOLVERS = {
+    "statistics/sprt-consecutive-wins": {
+        "exact": sprt_consecutive_wins_exact,
+        "brute": sprt_consecutive_wins_brute,
+    },
     "statistics/adjusted-r-squared-from-sums": {
         "exact": adjusted_r_squared_from_sums_exact,
         "brute": adjusted_r_squared_from_sums_brute,

@@ -312,6 +312,17 @@ import { constantPlusDiagonalDeterminant } from "./linear-algebra/constant-plus-
 import { determinantScalingAndPower } from "./linear-algebra/determinant-scaling-and-power";
 import { inverseOfAConstantPlusDiagonal } from "./linear-algebra/inverse-of-a-constant-plus-diagonal";
 import { equicorrelationFitThenInverse } from "./linear-algebra/equicorrelation-fit-then-inverse";
+import { solveTwoByTwoSystem } from "./linear-algebra/solve-two-by-two-system";
+import { singularMatrixMissingEntry } from "./linear-algebra/singular-matrix-missing-entry";
+import { projectionFirstComponent } from "./linear-algebra/projection-first-component";
+import { orthogonalResidualSquared } from "./linear-algebra/orthogonal-residual-squared";
+import { quadraticThroughThreePoints } from "./linear-algebra/quadratic-through-three-points";
+import { blockTriangularDeterminant } from "./linear-algebra/block-triangular-determinant";
+import { eigenvectorComponentRatio } from "./linear-algebra/eigenvector-component-ratio";
+import { determinantAfterRowOperations } from "./linear-algebra/determinant-after-row-operations";
+import { matrixPowerTimesAVector } from "./linear-algebra/matrix-power-times-a-vector";
+import { tridiagonalDeterminant } from "./linear-algebra/tridiagonal-determinant";
+import { sprtConsecutiveWins } from "./statistics/sprt-consecutive-wins";
 import { multiplesInARange } from "./number-theory/multiples-in-a-range";
 import { coprimeCountTwoPrimes } from "./number-theory/coprime-count-two-primes";
 import { gcdLcmProduct } from "./number-theory/gcd-lcm-product";
@@ -651,6 +662,17 @@ export const PROBLEMS: ProblemTemplate[] = [
   riskNeutralUpProbability,
   twoByTwoEigenvalues,
   traceOfAMatrixPower,
+  solveTwoByTwoSystem,
+  singularMatrixMissingEntry,
+  projectionFirstComponent,
+  orthogonalResidualSquared,
+  quadraticThroughThreePoints,
+  blockTriangularDeterminant,
+  eigenvectorComponentRatio,
+  determinantAfterRowOperations,
+  matrixPowerTimesAVector,
+  tridiagonalDeterminant,
+  sprtConsecutiveWins,
   reflectionPrincipleTouchLevel,
   exponentialMartingaleValue,
   gbmExpectedPrice,

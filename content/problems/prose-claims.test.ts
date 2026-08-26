@@ -4086,6 +4086,203 @@ const CLAIMS: Record<string, Claim[]> = {
       holds: (_p, d) => same(d.twoPoints, 2 * d.answer),
       breaks: (_p, d) => ({ ...d, twoPoints: d.answer }) },
   ],
+
+  // ---- B22: the ten new linear-algebra templates and the SPRT run length ----------------
+  "linear-algebra/solve-two-by-two-system": [
+    { says: "Solve: Cramer's ratio recomputed from the printed determinants matches the answer",
+      holds: (_p, d) => same(d.answer, r9(d.numer / d.det)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "Both printed equations are actually satisfied by the answer and the other unknown",
+      holds: (p, d) => same(r9(p.a1 * d.answer + p.b1 * p.y), d.c1) && same(r9(p.a2 * d.answer + p.b2 * p.y), d.c2),
+      breaks: (_p, d) => ({ ...d, c1: d.c1 + 1 }) },
+    { says: "keyInsight: the rule never asks what the other unknown is — the numerator determinant is built from the constants and the y column alone",
+      holds: (p, d) => same(d.numer, r9(d.c1 * p.b2 - d.c2 * p.b1)) && d.det !== 0,
+      breaks: (_p, d) => ({ ...d, numer: d.numer * 1.02 }) },
+    { says: "commonTrap: answering with the other unknown, or inverting the ratio, both give a different number",
+      holds: (p, d) => !same(d.answer, p.y) && !same(d.answer, r9(d.det / d.numer)),
+      breaks: (p, d) => ({ ...d, answer: p.y }) },
+  ],
+  "linear-algebra/singular-matrix-missing-entry": [
+    { says: "Solve: the missing entry recomputed as the anti-diagonal product over the known diagonal entry",
+      holds: (p, d) => same(d.answer, r9((d.b * p.c) / p.a)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "With the answer in place the determinant is exactly zero",
+      holds: (p, d) => Math.abs(p.a * d.answer - d.b * p.c) < EPS,
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "keyInsight: singular at this size means one row is a multiple of the other — the cross products agree",
+      holds: (p, d) => same(r9(p.c * d.b), r9(p.a * d.answer)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "commonTrap: the anti-diagonal product alone, and the division taken the wrong way round, are both different numbers",
+      holds: (p, d) => !same(d.cross, d.answer) && !same(r9((p.a * p.c) / d.b), d.answer),
+      breaks: (_p, d) => ({ ...d, answer: d.cross }) },
+  ],
+  "linear-algebra/projection-first-component": [
+    { says: "Solve: the component recomputed from the two printed dot products matches the answer",
+      holds: (_p, d) => same(d.answer, r9((d.ab / d.aa) * d.a1)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "What is left after the projection is genuinely perpendicular to the direction",
+      holds: (p, d) => {
+        const c = d.ab / d.aa;
+        return Math.abs((d.b1 - c * d.a1) * d.a1 + (d.b2 - c * d.a2) * d.a2 + (d.b3 - c * d.a3) * d.a3) < 1e-6;
+      },
+      breaks: (_p, d) => ({ ...d, b1: d.b1 + 1 }) },
+    { says: "keyInsight: the coefficient is a ratio of two dot products — the direction against itself is the denominator",
+      holds: (p, d) => same(d.ab, r9(p.c * d.aa)) && same(d.aa, r9(d.a1 * d.a1 + d.a2 * d.a2 + d.a3 * d.a3)),
+      breaks: (_p, d) => ({ ...d, aa: d.aa * 1.02 }) },
+    { says: "commonTrap: the coefficient is NOT the component, because the direction never starts with a one",
+      holds: (p, d) => !same(p.c, d.answer) && Math.abs(d.a1) > 1,
+      breaks: (p, d) => ({ ...d, answer: p.c }) },
+  ],
+  "linear-algebra/orthogonal-residual-squared": [
+    { says: "Solve: the perpendicular squared length recomputed as the whole less the projection",
+      holds: (_p, d) => same(d.answer, r9(d.bb - d.projSq)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: the split is a right angle, so the two squared lengths add back to the whole",
+      holds: (_p, d) => same(r9(d.projSq + d.answer), d.bb) && d.answer > 0,
+      breaks: (_p, d) => ({ ...d, projSq: d.projSq * 1.02 }) },
+    { says: "The leftover built directly from the perpendicular direction agrees with the subtraction",
+      holds: (p, d) => same(d.answer, r9(p.s * p.s * d.rr)),
+      breaks: (_p, d) => ({ ...d, rr: d.rr + 1 }) },
+    { says: "commonTrap: scaling the squared length linearly rather than by the square gives a different number, and so does the unsquared length",
+      holds: (p, d) => same(d.projSq, r9(p.c * p.c * d.aa)) && !same(d.answer, r9(d.bb - p.c * d.aa)) && !same(r9(Math.sqrt(d.answer)), d.answer),
+      breaks: (p, d) => ({ ...d, projSq: r9(p.c * d.aa) }) },
+  ],
+  "linear-algebra/quadratic-through-three-points": [
+    { says: "Solve: Newton's forward formula recomputed from the printed differences matches the answer",
+      holds: (p, d) => same(d.answer, r9(p.y1 + d.steps * d.d1 + d.pairs * d.d2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: fitting the three coefficients explicitly and evaluating there gives the same height",
+      holds: (p, d) => {
+        const a = d.d2 / 2;
+        const b = d.d1 - 3 * a;
+        const c = p.y1 - a - b;
+        return same(d.answer, r9(a * p.t * p.t + b * p.t + c));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The second difference is what the three heights actually give, and it never vanishes",
+      holds: (p, d) => same(d.d2, r9(p.y3 - 2 * p.y2 + p.y1)) && d.d2 !== 0,
+      breaks: (_p, d) => ({ ...d, d2: d.d2 * 1.02 }) },
+    { says: "commonTrap: extrapolating linearly, or forgetting to halve the curvature term, both miss",
+      holds: (p, d) => !same(d.linearOnly, d.answer) && !same(r9(p.y1 + d.steps * d.d1 + d.steps * d.stepsLess * d.d2), d.answer),
+      breaks: (_p, d) => ({ ...d, answer: d.linearOnly }) },
+  ],
+  "linear-algebra/block-triangular-determinant": [
+    { says: "Solve: the determinant recomputed as the product of the two block determinants",
+      holds: (p, d) => same(d.answer, r9(p.d1 * p.d2)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: the two block determinants MULTIPLY while the two traces ADD — the whole matrix's trace is the sum, its determinant the product",
+      holds: (p, d) => same(d.traceAll, r9(p.t1 + p.t2)) && same(d.answer, r9(p.d1 * p.d2)),
+      breaks: (_p, d) => ({ ...d, traceAll: d.traceAll * 1.02 }) },
+    { says: "Both quoted blocks are real matrices: each trace squared clears four times its determinant",
+      holds: (p, d) => p.t1 * p.t1 >= 4 * p.d1 && p.t2 * p.t2 >= 4 * p.d2 && d.answer !== 0,
+      breaks: (_p, d) => ({ ...d, answer: 0 }) },
+    { says: "commonTrap: multiplying the traces in, or adding the two determinants, both give a different number",
+      holds: (p, d) => !same(d.answer, r9(p.t1 * p.t2 * p.d1 * p.d2)) && !same(d.answer, r9(p.d1 + p.d2)),
+      breaks: (p, d) => ({ ...d, answer: r9(p.d1 + p.d2) }) },
+  ],
+  "linear-algebra/eigenvector-component-ratio": [
+    { says: "Solve: the ratio recomputed from the first row of the shifted system matches the answer",
+      holds: (p, d) => same(d.answer, r9((p.lam - d.a) / p.b)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "The second row gives the same ratio, as a singular system must",
+      holds: (p, d) => same(d.answer, r9(d.c / (p.lam - p.d))),
+      breaks: (_p, d) => ({ ...d, c: d.c + 1 }) },
+    { says: "keyInsight: subtracting the eigenvalue down the diagonal is exactly what makes the matrix singular",
+      holds: (p, d) => Math.abs((d.a - p.lam) * (p.d - p.lam) - p.b * d.c) < EPS,
+      breaks: (_p, d) => ({ ...d, c: d.c * 1.02 }) },
+    { says: "commonTrap: the ratio taken upside down, or read off the matrix without the shift, are both different numbers",
+      holds: (p, d) => !same(r9(1 / d.answer), d.answer) && !same(r9(d.c / d.a), d.answer),
+      breaks: (_p, d) => ({ ...d, a: r9(d.c / d.answer) }) },
+  ],
+  "linear-algebra/determinant-after-row-operations": [
+    { says: "Solve: the determinant recomputed as the swap sign times the row scaling",
+      holds: (p, d) => same(d.answer, r9(d.sign * p.det * p.k)),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: the row addition contributes no factor at all — the answer is the sign times the scaled determinant and nothing else",
+      holds: (p, d) => same(d.answer, r9(d.sign * d.scaled)) && same(d.scaled, r9(p.det * p.k)),
+      breaks: (_p, d) => ({ ...d, scaled: d.scaled * 1.02 }) },
+    { says: "An odd number of exchanges, so the sign really does flip",
+      holds: (p, d) => p.swaps % 2 === 1 && d.sign === -1,
+      breaks: (_p, d) => ({ ...d, sign: 1 }) },
+    { says: "commonTrap: dropping the swap sign, or raising the row scaling to the matrix size, both give a different number",
+      holds: (p, d) => !same(d.answer, d.scaled) && !same(d.answer, r9(d.sign * p.det * Math.pow(p.k, p.n))),
+      breaks: (_p, d) => ({ ...d, answer: d.scaled }) },
+  ],
+  "linear-algebra/matrix-power-times-a-vector": [
+    { says: "Solve: the two modes recomputed from params and added match the printed answer",
+      holds: (p, d) => same(d.answer, r9(p.alpha * Math.pow(p.lam1, p.k) + p.beta * Math.pow(p.lam2, p.k))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: iterating the printed matrix by hand, never touching an eigenvalue, lands on the same number",
+      holds: (p, d) => {
+        let x = d.x0, y = d.y0;
+        for (let i = 0; i < p.k; i++) { const nx = d.a * x + d.b * y; y = d.c * x + d.d * y; x = nx; }
+        return same(d.answer, r9(x));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The quoted eigenvalues really are the matrix's: they sum to its trace and multiply to its determinant",
+      holds: (p, d) => same(r9(d.a + d.d), r9(p.lam1 + p.lam2)) && same(r9(d.a * d.d - d.b * d.c), r9(p.lam1 * p.lam2)),
+      breaks: (_p, d) => ({ ...d, a: d.a + 1 }) },
+    { says: "commonTrap: powering the whole start vector, or dropping the second mode, both give a different number",
+      holds: (p, d) => !same(d.answer, r9(d.x0 * Math.pow(p.lam1, p.k))) && !same(d.answer, d.firstMode),
+      breaks: (_p, d) => ({ ...d, answer: d.firstMode }) },
+  ],
+  "linear-algebra/tridiagonal-determinant": [
+    { says: "Solve: the continuant recursion rerun from params matches the printed answer",
+      holds: (p, d) => {
+        let prev = 1, cur = p.d;
+        for (let i = 2; i <= p.n; i++) { const next = p.d * cur - p.b * p.b * prev; prev = cur; cur = next; }
+        return same(d.answer, cur);
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer * 1.02 }) },
+    { says: "keyInsight: eliminating the actual matrix, with no recursion anywhere, gives the same determinant",
+      holds: (p, d) => {
+        const n = p.n;
+        const m: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? p.d : Math.abs(i - j) === 1 ? p.b : 0)));
+        let det = 1;
+        for (let col = 0; col < n; col++) {
+          let piv = col;
+          for (let r = col; r < n; r++) if (Math.abs(m[r][col]) > Math.abs(m[piv][col])) piv = r;
+          if (Math.abs(m[piv][col]) < 1e-12) return false;
+          if (piv !== col) { const t = m[piv]; m[piv] = m[col]; m[col] = t; det = -det; }
+          det *= m[col][col];
+          for (let r = col + 1; r < n; r++) {
+            const f = m[r][col] / m[col][col];
+            for (let c2 = col; c2 < n; c2++) m[r][c2] -= f * m[col][c2];
+          }
+        }
+        // The determinant of an integer matrix is an integer, and elimination leaves float
+        // dirt on it. fmtNum prints an exact integer in full and rounds a non-integer to four
+        // significant figures, so -15832090.999999998 renders as -15830000 against an exact
+        // -15832091 — a display mismatch with no arithmetic behind it. Rounding is exact here
+        // and still leaves a 2% wrong answer millions away.
+        return same(d.answer, Math.round(det));
+      },
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The off-diagonal enters SQUARED, and the size-two case shows it",
+      holds: (p, d) => same(d.two, r9(p.d * p.d - p.b * p.b)) && same(d.bb, r9(p.b * p.b)),
+      breaks: (_p, d) => ({ ...d, two: d.two * 1.02 }) },
+    { says: "commonTrap: the diagonal product alone overstates the size, and forgetting to square the band gives a different number",
+      holds: (p, d) => {
+        let prev = 1, cur = p.d;
+        for (let i = 2; i <= p.n; i++) { const next = p.d * cur - p.b * prev; prev = cur; cur = next; }
+        return Math.abs(d.answer) < Math.pow(Math.abs(p.d), p.n) && !same(d.answer, cur);
+      },
+      breaks: (p, d) => ({ ...d, answer: Math.pow(p.d, p.n) }) },
+  ],
+  "statistics/sprt-consecutive-wins": [
+    { says: "Solve: the run length recomputed from the boundary and the per-win ratio matches the answer",
+      holds: (p, d) => d.answer === Math.ceil(r9(Math.log(d.bound) / Math.log(d.step))),
+      breaks: (_p, d) => ({ ...d, answer: d.answer + 1 }) },
+    { says: "The boundary is cleared at the answer and not one win earlier, at the precision the page prints",
+      holds: (_p, d) => P(d.reached) > P(d.bound) && P(d.shortOf) < P(d.bound),
+      breaks: (_p, d) => ({ ...d, reached: d.shortOf }) },
+    { says: "keyInsight: the boundary is fixed by the two error rates alone — neither win probability appears in it",
+      holds: (p, d) => same(d.bound, r9(d.power / d.alphaRate)) && same(d.power, r9(1 - d.betaRate)),
+      breaks: (_p, d) => ({ ...d, bound: d.bound * 1.02 }) },
+    { says: "commonTrap: taking the boundary as one over the type-one rate alone gives a different run length",
+      holds: (p, d) => d.answer !== Math.ceil(r9(Math.log(1 / d.alphaRate) / Math.log(d.step))),
+      breaks: (p, d) => ({ ...d, answer: Math.ceil(r9(Math.log(1 / d.alphaRate) / Math.log(d.step))) }) },
+  ],
 };
 
 const firstLegalDraw = (t: ProblemTemplate) => {

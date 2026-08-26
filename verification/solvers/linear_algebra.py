@@ -213,7 +213,298 @@ def equicorrelation_fit_then_inverse_brute(p):
     return _round9(float(inv[0, 0] if wanted == 1 else inv[0, 1]))
 
 
+
+# --- B22 --------------------------------------------------------------------------------
+# Every brute below assembles a real matrix and measures it. Where the answer is an integer
+# the measurement is Bareiss elimination (exact); where it is not, LAPACK is used and the
+# quantity stays small enough that 1e-9 absolute is comfortable.
+
+_PAIR = {
+    1: ([2, 1, 1], [1, -1, -1]),
+    2: ([2, 1, 2], [1, -2, 0]),
+    3: ([2, 1, 0], [-1, 2, 0]),
+    4: ([3, 2, 2], [2, -3, 0]),
+    5: ([3, 1, 1], [-1, 3, 0]),
+    6: ([2, 2, 1], [1, -1, 0]),
+    7: ([4, 1, 2], [1, -2, -1]),
+    8: ([2, 3, 1], [3, -2, 0]),
+}
+
+_MPAIR = {1: (1, 2), 2: (2, 3), 3: (3, 4), 4: (-2, -1), 5: (-3, -2)}
+
+
+def solve_two_by_two_system_exact(p):
+    x, y = int(p["x"]), int(p["y"])
+    a1, b1, a2, b2 = int(p["a1"]), int(p["b1"]), int(p["a2"]), int(p["b2"])
+    c1, c2 = a1 * x + b1 * y, a2 * x + b2 * y
+    return {
+        "c1": c1, "c2": c2,
+        "det": a1 * b2 - a2 * b1,
+        "numer": c1 * b2 - c2 * b1,
+        "b1Abs": abs(b1), "b2Abs": abs(b2),
+        "answer": x,
+    }
+
+
+def solve_two_by_two_system_brute(p):
+    """numpy.linalg.solve returns the whole solution vector by LU, never forming the two
+    determinants Cramer's rule is built from."""
+    e = solve_two_by_two_system_exact(p)
+    a = np.array([[float(p["a1"]), float(p["b1"])], [float(p["a2"]), float(p["b2"])]])
+    rhs = np.array([float(e["c1"]), float(e["c2"])])
+    return _round9(float(np.linalg.solve(a, rhs)[0]))
+
+
+def singular_matrix_missing_entry_exact(p):
+    a, k, c = int(p["a"]), int(p["k"]), int(p["c"])
+    return {"b": a * k, "cross": a * k * c, "answer": k * c}
+
+
+def singular_matrix_missing_entry_brute(p):
+    """The determinant is a straight line in the missing entry, so measuring it at two points
+    with Bareiss and extrapolating to its root finds the entry without ever writing bc/a."""
+    a, k, c = int(p["a"]), int(p["k"]), int(p["c"])
+    b = a * k
+    at0 = _int_det([[a, b], [c, 0]])
+    at1 = _int_det([[a, b], [c, 1]])
+    slope = at1 - at0
+    return _round9(-at0 / slope)
+
+
+def projection_first_component_exact(p):
+    a, r = _PAIR[int(p["shape"])]
+    c, s = int(p["c"]), int(p["s"])
+    aa = sum(v * v for v in a)
+    b = [c * a[i] + s * r[i] for i in range(3)]
+    return {
+        "a1": a[0], "a2": a[1], "a3": a[2],
+        "b1": b[0], "b2": b[1], "b3": b[2],
+        "aa": aa, "ab": c * aa,
+        "residual1": s * r[0],
+        "answer": c * a[0],
+    }
+
+
+def projection_first_component_brute(p):
+    """Least squares on a one-column design: lstsq minimises the distance directly and never
+    forms the ratio of dot products the template teaches."""
+    e = projection_first_component_exact(p)
+    a = np.array([[float(e["a1"])], [float(e["a2"])], [float(e["a3"])]])
+    b = np.array([float(e["b1"]), float(e["b2"]), float(e["b3"])])
+    coef = np.linalg.lstsq(a, b, rcond=None)[0][0]
+    return _round9(float(coef * e["a1"]))
+
+
+def orthogonal_residual_squared_exact(p):
+    a, r = _PAIR[int(p["shape"])]
+    c, s = int(p["c"]), int(p["s"])
+    aa = sum(v * v for v in a)
+    rr = sum(v * v for v in r)
+    b = [c * a[i] + s * r[i] for i in range(3)]
+    return {
+        "a1": a[0], "a2": a[1], "a3": a[2],
+        "b1": b[0], "b2": b[1], "b3": b[2],
+        "aa": aa, "rr": rr,
+        "ab": c * aa,
+        "bb": sum(v * v for v in b),
+        "projSq": c * c * aa,
+        "answer": s * s * rr,
+    }
+
+
+def orthogonal_residual_squared_brute(p):
+    """A QR projection: the residual is b less its reconstruction from an orthonormal basis
+    for the direction, and Pythagoras is never invoked."""
+    e = orthogonal_residual_squared_exact(p)
+    a = np.array([[float(e["a1"])], [float(e["a2"])], [float(e["a3"])]])
+    b = np.array([float(e["b1"]), float(e["b2"]), float(e["b3"])])
+    q, _ = np.linalg.qr(a)
+    resid = b - q @ (q.T @ b)
+    return _round9(float(resid @ resid))
+
+
+def quadratic_through_three_points_exact(p):
+    y1, y2, y3, t = int(p["y1"]), int(p["y2"]), int(p["y3"]), int(p["t"])
+    d1 = y2 - y1
+    d2 = y3 - 2 * y2 + y1
+    return {
+        "d1": d1,
+        "dSecond": y3 - y2,
+        "d2": d2,
+        "steps": t - 1,
+        "stepsLess": t - 2,
+        "pairs": ((t - 1) * (t - 2)) // 2,
+        "linearOnly": y1 + (t - 1) * d1,
+        "answer": y1 + (t - 1) * d1 + (((t - 1) * (t - 2)) // 2) * d2,
+    }
+
+
+def quadratic_through_three_points_brute(p):
+    """The Vandermonde system is actually solved for the three coefficients and the polynomial
+    evaluated. No difference table is ever built."""
+    y1, y2, y3, t = int(p["y1"]), int(p["y2"]), int(p["y3"]), int(p["t"])
+    v = np.array([[1.0, 1.0, 1.0], [4.0, 2.0, 1.0], [9.0, 3.0, 1.0]])
+    coef = np.linalg.solve(v, np.array([float(y1), float(y2), float(y3)]))
+    return _round9(float(coef[0] * t * t + coef[1] * t + coef[2]))
+
+
+def block_triangular_determinant_exact(p):
+    return {"traceAll": int(p["t1"]) + int(p["t2"]), "answer": int(p["d1"]) * int(p["d2"])}
+
+
+def block_triangular_determinant_brute(p):
+    """A real 4x4 is assembled from companion blocks — with a deliberately non-zero top-right
+    block — and Bareiss takes its determinant. The factorisation rule is what is under test,
+    so it is never used, and the unstated block being irrelevant is demonstrated rather than
+    assumed."""
+    t1, d1, t2, d2 = int(p["t1"]), int(p["d1"]), int(p["t2"]), int(p["d2"])
+    a = [[0, -d1], [1, t1]]
+    dd = [[0, -d2], [1, t2]]
+    top_right = [[7, -3], [2, 5]]
+    m = [
+        [a[0][0], a[0][1], top_right[0][0], top_right[0][1]],
+        [a[1][0], a[1][1], top_right[1][0], top_right[1][1]],
+        [0, 0, dd[0][0], dd[0][1]],
+        [0, 0, dd[1][0], dd[1][1]],
+    ]
+    return _int_det(m)
+
+
+def eigenvector_component_ratio_exact(p):
+    m, lam, b, d = int(p["m"]), int(p["lam"]), int(p["b"]), int(p["d"])
+    a = lam - b * m
+    return {
+        "a": a,
+        "c": m * (lam - d),
+        "gap": lam - a,
+        "lamLessD": lam - d,
+        "answer": m,
+    }
+
+
+def eigenvector_component_ratio_brute(p):
+    """numpy.linalg.eig returns eigenvectors directly; the matching one is picked by its
+    eigenvalue and its two components divided. The shifted system is never written down."""
+    e = eigenvector_component_ratio_exact(p)
+    lam = float(p["lam"])
+    m = np.array([[float(e["a"]), float(p["b"])], [float(e["c"]), float(p["d"])]])
+    vals, vecs = np.linalg.eig(m)
+    idx = int(np.argmin(np.abs(vals.real - lam)))
+    v = vecs[:, idx].real
+    return _round9(float(v[1] / v[0]))
+
+
+def determinant_after_row_operations_exact(p):
+    return {"sign": -1, "scaled": int(p["det"]) * int(p["k"]), "answer": -int(p["det"]) * int(p["k"])}
+
+
+def determinant_after_row_operations_brute(p):
+    """A matrix with the stated determinant is built, the three operations are actually
+    PERFORMED on its rows, and Bareiss measures what comes out. None of the three rules is
+    used — they are what is being tested."""
+    det, k, n, swaps = int(p["det"]), int(p["k"]), int(p["n"]), int(p["swaps"])
+    m = [[det if (i == 0 and j == 0) else (1 if i == j else 0) for j in range(n)] for i in range(n)]
+    for s in range(swaps):
+        i, j = s % n, (s + 1) % n
+        m[i], m[j] = m[j], m[i]
+    m[0] = [k * v for v in m[0]]
+    m[1] = [m[1][c] + 3 * m[0][c] for c in range(n)]
+    return _int_det(m)
+
+
+def matrix_power_times_a_vector_exact(p):
+    m1, m2 = _MPAIR[int(p["shape"])]
+    l1, l2 = int(p["lam1"]), int(p["lam2"])
+    al, be, k = int(p["alpha"]), int(p["beta"]), int(p["k"])
+    return {
+        "m1": m1, "m2": m2,
+        "a": l1 * m2 - l2 * m1,
+        "b": l2 - l1,
+        "c": m1 * m2 * (l1 - l2),
+        "d": l2 * m2 - l1 * m1,
+        "trace": l1 + l2,
+        "det": l1 * l2,
+        "x0": al + be,
+        "y0": al * m1 + be * m2,
+        "firstMode": al * l1 ** k,
+        "secondMode": be * l2 ** k,
+        "answer": al * l1 ** k + be * l2 ** k,
+    }
+
+
+def matrix_power_times_a_vector_brute(p):
+    """The integer matrix is raised to the power by repeated multiplication and applied to the
+    start vector. No eigenvalue, eigenvector or change of basis appears anywhere."""
+    e = matrix_power_times_a_vector_exact(p)
+    m = [[e["a"], e["b"]], [e["c"], e["d"]]]
+    pw = _int_matpow(m, int(p["k"]))
+    return pw[0][0] * e["x0"] + pw[0][1] * e["y0"]
+
+
+def tridiagonal_determinant_exact(p):
+    d, b, n = int(p["d"]), int(p["b"]), int(p["n"])
+    bb = b * b
+    prev, cur = 1, d
+    for _ in range(2, n + 1):
+        prev, cur = cur, d * cur - bb * prev
+    return {
+        "bb": bb,
+        "two": d * d - bb,
+        "three": d * (d * d - bb) - bb * d,
+        "sizeLess": n - 1,
+        "answer": cur,
+    }
+
+
+def tridiagonal_determinant_brute(p):
+    """The band matrix is assembled entry by entry and Bareiss eliminates it. The continuant
+    recursion the template teaches is never run."""
+    d, b, n = int(p["d"]), int(p["b"]), int(p["n"])
+    m = [[d if i == j else (b if abs(i - j) == 1 else 0) for j in range(n)] for i in range(n)]
+    return _int_det(m)
+
+
 SOLVERS = {
+    "linear-algebra/solve-two-by-two-system": {
+        "exact": solve_two_by_two_system_exact,
+        "brute": solve_two_by_two_system_brute,
+    },
+    "linear-algebra/singular-matrix-missing-entry": {
+        "exact": singular_matrix_missing_entry_exact,
+        "brute": singular_matrix_missing_entry_brute,
+    },
+    "linear-algebra/projection-first-component": {
+        "exact": projection_first_component_exact,
+        "brute": projection_first_component_brute,
+    },
+    "linear-algebra/orthogonal-residual-squared": {
+        "exact": orthogonal_residual_squared_exact,
+        "brute": orthogonal_residual_squared_brute,
+    },
+    "linear-algebra/quadratic-through-three-points": {
+        "exact": quadratic_through_three_points_exact,
+        "brute": quadratic_through_three_points_brute,
+    },
+    "linear-algebra/block-triangular-determinant": {
+        "exact": block_triangular_determinant_exact,
+        "brute": block_triangular_determinant_brute,
+    },
+    "linear-algebra/eigenvector-component-ratio": {
+        "exact": eigenvector_component_ratio_exact,
+        "brute": eigenvector_component_ratio_brute,
+    },
+    "linear-algebra/determinant-after-row-operations": {
+        "exact": determinant_after_row_operations_exact,
+        "brute": determinant_after_row_operations_brute,
+    },
+    "linear-algebra/matrix-power-times-a-vector": {
+        "exact": matrix_power_times_a_vector_exact,
+        "brute": matrix_power_times_a_vector_brute,
+    },
+    "linear-algebra/tridiagonal-determinant": {
+        "exact": tridiagonal_determinant_exact,
+        "brute": tridiagonal_determinant_brute,
+    },
     "linear-algebra/two-by-two-eigenvalues": {
         "exact": two_by_two_eigenvalues_exact,
         "brute": two_by_two_eigenvalues_brute,
