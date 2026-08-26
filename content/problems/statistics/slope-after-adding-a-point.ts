@@ -33,8 +33,10 @@ import { exact4, fmtNum } from "../util";
 //    space: a candidate who never notices that adding a point moves the two means grades
 //    correct on 1368 of the 6336 tuples. Drop this conjunct alone and 410 of the 2350 draws
 //    that survive grade that trap correct, along with 167 for a plain average of the old slope
-//    and the new point's own. Keep it and every trap in the audit misses by at least 6.0
-//    tolerances.
+//    and the new point's own. Keep it and that trap misses by at least 6.0 tolerances. (No
+//    quantifier over the audit as a whole: the plain average one line up misses by 4.44 and the
+//    half-application slip by 5.88, so "every trap misses by 6.0" was false, and any replacement
+//    universal goes stale the moment someone adds a row. Per-trap figures only.)
 //  * The DENOMINATOR CORRECTION, dx^2/denom, is the same factor's effect on the predictor's
 //    spread alone. It is what rejects the low-leverage dx values, and so it is the conjunct
 //    that shaped the grid above — which is why, on that grid, dropping it now readmits 1019
@@ -103,7 +105,7 @@ export const slopeAfterAddingAPoint: ProblemTemplate = {
     const paren = (v: number) => (v < 0 ? `(${fmtNum(v)})` : fmtNum(v));
     return [
       // Claim-free segment (non-negotiable 6): symbolic only, no printed operands.
-      { title: "Adding a point moves the means as well as the sums", body: `The slope is $\\dfrac{S_{xy}}{S_{xx}}$, both sums taken about the sample means — and those means shift when the new observation lands. Work through that shift and the new point does not contribute its raw deviations $d_x$ and $d_y$ to the two sums but a fraction $w$ of each, with $w=\\dfrac{n}{n+1}$: part of its distance from the old mean is spent dragging the mean itself toward it. So the refitted slope is $\\dfrac{S_{xy}+wd_xd_y}{S_{xx}+wd_x^{2}}$, and both sums move, not just the top one.` },
+      { title: "Adding a point moves the means as well as the sums", body: `The slope is $\\dfrac{S_{xy}}{S_{xx}}$, both sums taken about the sample means — and those means shift when the new observation lands. Work through that shift and the new point does not contribute its raw products $d_xd_y$ and $d_x^{2}$ to the two sums but a fraction $w$ of each, with $w=\\dfrac{n}{n+1}$: part of its distance from the old mean is spent dragging the mean itself toward it. So the refitted slope is $\\dfrac{S_{xy}+wd_xd_y}{S_{xx}+wd_x^{2}}$, and both sums move, not just the top one.` },
       { title: "The cross-product the old fit implies", body: `The old slope was the old cross-product over the old sum of squares, so the cross-product is the slope times that sum: $${fmtNum(p.b)}\\times${fmtNum(p.sxx)}=${fmtNum(d.sxy)}$.` },
       { title: "Clear the fraction before doing any arithmetic", body: `Multiplying the top and the bottom of the ratio by ${fmtNum(d.nPlus)} turns every $w$ into a whole number and leaves the slope untouched. The numerator becomes $${fmtNum(d.nPlus)}\\times${fmtNum(d.sxy)}+${fmtNum(p.n)}\\times${fmtNum(p.dx)}\\times${paren(p.dy)}=${fmtNum(d.numer)}$.` },
       { title: "The same clearing on the bottom", body: `The predictor's spread gains the new point's squared deviation, carried at the same weight: $${fmtNum(d.nPlus)}\\times${fmtNum(p.sxx)}+${fmtNum(p.n)}\\times${fmtNum(p.dx)}^{2}=${fmtNum(d.denom)}$.` },
@@ -111,8 +113,8 @@ export const slopeAfterAddingAPoint: ProblemTemplate = {
       { title: "Sanity check", body: `Read the ratio again and it is a weighted average of two slopes: the old one, carrying weight $S_{xx}$, and the new point's own slope $\\dfrac{d_y}{d_x}$ — here ${fmtNum(d.pointSlope)} — carrying weight $wd_x^{2}$. The answer therefore always lands between the two, and the weight the newcomer carries goes with the SQUARE of how far out in the predictor it sits: at twice this week's distance from the ore mean it would count for four times as much against $S_{xx}$. That weight is only half the story, though — a week that lands exactly on the old line moves the slope not at all, however far out it sits. Pair the distance with a miss and one week can rewrite a fit that ${fmtNum(p.n)} ordinary ones agreed on.` },
     ];
   },
-  keyInsight: "A least-squares fit remembers its observations only through two sums, so one more point updates it in closed form — and the update is a weighted average of the old slope and the newcomer's own, in which the newcomer's weight is the square of its distance from the predictor's mean. That distance is leverage, and leverage is not influence: it moves the slope only in proportion to how far the new point falls from the old line. A point lying exactly on that line changes nothing however extreme its predictor, and a point sitting at the predictor's mean changes nothing however wild its response — which is why an influential observation has to be diagnosed on leverage and residual together, and never on either one alone.",
-  commonTrap: "Adding the new point's raw deviations to both sums and forgetting that the means themselves shift, which overweights the newcomer by a factor of n+1 over n. The subtler version applies that factor to the cross-product but not to the sum of squares, updating half of the fit. The third slip is to leave the denominator alone entirely, as though only the response had moved.",
+  keyInsight: "One more point updates a least-squares fit in closed form: the new slope is a weighted average of the old one and the newcomer's own, weighted by the SQUARE of its distance from the predictor's mean and discounted by the n/(n+1) its arrival spends moving those means. Leverage is not influence, though — distance enters multiplied by the point's miss from the old line, so a point ON that line leaves the slope alone however extreme its predictor.",
+  commonTrap: "Carrying the new point's cross-product and squared deviation into the two sums at full weight, forgetting that the means themselves shift, which overweights the newcomer by a factor of n+1 over n. The subtler version applies that factor to the cross-product but not to the sum of squares, updating half of the fit. The third slip is to leave the denominator alone entirely, as though only the response had moved.",
   expectedPaceS: 130,
   verify: { method: "brute-force" },
   constants: [1, 2],
