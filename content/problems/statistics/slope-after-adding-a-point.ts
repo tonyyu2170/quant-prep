@@ -27,9 +27,9 @@ import { exact4, fmtNum } from "../util";
 //  * exact4 is the guarantee, not the grid: b steps in fifths against a multiple of ten, so
 //    every cross-product is a whole number today, and this fails loud if that changes.
 //
-// None of the three thresholds is landable. 0.145 sits between the reachable answers 0.14893617
-// and 0.15 (0.15, 0.2 and 0.25 are all hit exactly, which is why none of them is used); no draw
-// comes within 1e-12 of either 0.03 floor, the nearest being 1.8e-6 away.
+// None of the three thresholds is landable. 0.145 sits between the reachable answers 0.14482759
+// and 0.14634146 (0.15, 0.2 and 0.25 are all hit exactly, which is why none of them is used);
+// no draw comes within 1e-12 of either 0.03 floor, the nearest being 1.8e-6 away.
 //
 // `dy` draws negative on three of eight choices, so every printed product parenthesises it —
 // the emit tokenizer is sign-blind and the printed-precision reader cannot read "8--12".
@@ -87,10 +87,10 @@ export const slopeAfterAddingAPoint: ProblemTemplate = {
       { title: "Clear the fraction before doing any arithmetic", body: `Multiplying the top and the bottom of the ratio by ${fmtNum(d.nPlus)} turns every $w$ into a whole number and leaves the slope untouched. The numerator becomes $${fmtNum(d.nPlus)}\\times${fmtNum(d.sxy)}+${fmtNum(p.n)}\\times${fmtNum(p.dx)}\\times${paren(p.dy)}=${fmtNum(d.numer)}$.` },
       { title: "The same clearing on the bottom", body: `The predictor's spread gains the new point's squared deviation, carried at the same weight: $${fmtNum(d.nPlus)}\\times${fmtNum(p.sxx)}+${fmtNum(p.n)}\\times${fmtNum(p.dx)}^{2}=${fmtNum(d.denom)}$.` },
       { title: "Answer", body: `The refitted slope is the ratio of the two: $\\dfrac{${fmtNum(d.numer)}}{${fmtNum(d.denom)}}=${fmtNum(d.answer)}$ dollars of freight per dollar of ore. One week has taken the slope from ${fmtNum(p.b)} to ${fmtNum(d.answer)}.` },
-      { title: "Sanity check", body: `Read the ratio again and it is a weighted average of two slopes: the old one, carrying weight $S_{xx}$, and the new point's own slope $\\dfrac{d_y}{d_x}$ — here ${fmtNum(d.pointSlope)} — carrying weight $wd_x^{2}$. The answer therefore always lands between the two, and the weight the newcomer carries goes with the SQUARE of how far out in the predictor it sits: the same freight surprise at twice the ore move would pull the line about four times as hard. That is leverage, and it is why one extreme week can rewrite a fit that ${fmtNum(p.n)} ordinary ones agreed on.` },
+      { title: "Sanity check", body: `Read the ratio again and it is a weighted average of two slopes: the old one, carrying weight $S_{xx}$, and the new point's own slope $\\dfrac{d_y}{d_x}$ — here ${fmtNum(d.pointSlope)} — carrying weight $wd_x^{2}$. The answer therefore always lands between the two, and the weight the newcomer carries goes with the SQUARE of how far out in the predictor it sits: at twice this week's distance from the ore mean it would count for four times as much against $S_{xx}$. That weight is only half the story, though — a week that lands exactly on the old line moves the slope not at all, however far out it sits. Pair the distance with a miss and one week can rewrite a fit that ${fmtNum(p.n)} ordinary ones agreed on.` },
     ];
   },
-  keyInsight: "A least-squares fit has no memory of its observations, only of two sums, so one more point updates it in closed form — and the update is a weighted average in which the newcomer's weight is the square of its distance from the predictor's mean. Influence is bought with distance in x, not with distance from the line: a point far out in the predictor moves the slope even when it lies close to where the old line would have put it.",
+  keyInsight: "A least-squares fit has no memory of its observations, only of two sums, so one more point updates it in closed form — and the update is a weighted average in which the newcomer's weight is the square of its distance from the predictor's mean. That distance is leverage, not influence: it does not move the slope by itself, it multiplies whatever the old line got wrong about the point. A far-out point lying exactly on the old line changes nothing, while the same distance out with a modest miss moves the fit more than a wild point near the centre ever could.",
   commonTrap: "Adding the new point's raw deviations to both sums and forgetting that the means themselves shift, which overweights the newcomer by a factor of n+1 over n. The subtler version applies that factor to the cross-product but not to the sum of squares, updating half of the fit. The third slip is to leave the denominator alone entirely, as though only the response had moved.",
   expectedPaceS: 130,
   verify: { method: "brute-force" },

@@ -24,8 +24,9 @@ import { fmtNum } from "../util";
 //    of are the same number there: s^2*h is exactly the square of s*sqrt(h), so a candidate who
 //    reports the variance grades correct wherever the answer is near one. Two draws did. The
 //    guard is 0.052 and not 0.05 for the same reason as above — an answer of exactly 1.05 is
-//    reachable (n=10, sigma=3, d=3, Sxx=400), while nothing lands between 1.050053 and 1.054117.
-//    At 0.052 the variance trap misses by 10.8 tolerances at its closest.
+//    reachable (n=10, sigma=3, d=3, Sxx=400), which puts |answer-1| exactly ON a 0.05 floor,
+//    while no draw puts |answer-1| between 0.050053 and 0.054117. At 0.052 the variance trap
+//    misses by 10.8 tolerances at its closest.
 //
 // Every printed operand is a positive integer, so no parenthesising helper is needed here.
 export const varianceOfAFittedValue: ProblemTemplate = {
