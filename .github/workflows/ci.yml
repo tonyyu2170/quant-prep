@@ -1,5 +1,10 @@
 name: ci
-on: [push, pull_request]
+# workflow_dispatch is here because a run once wedged in `queued` for hours and could not be
+# recovered: cancel reported it completed, rerun reported it running, force-cancel reported
+# it not yet queued, and `run view` reported it queued — four contradictory states for one
+# run. With only push and pull_request triggers the sole way to get CI to run again was a
+# dummy commit. This lets anyone re-dispatch from the Actions tab or `gh workflow run ci`.
+on: [push, pull_request, workflow_dispatch]
 jobs:
   checks:
     runs-on: ubuntu-latest
