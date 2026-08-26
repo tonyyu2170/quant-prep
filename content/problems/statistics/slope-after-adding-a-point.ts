@@ -8,22 +8,43 @@ import { exact4, fmtNum } from "../util";
 // instead leaves ((n+1)S_xy + n*dx*dy) / ((n+1)S_xx + n*dx^2) — every operand an exact integer,
 // the quotient unchanged, and w never printed as a number at all. It is also how the
 // arithmetic is actually done by hand. The alternative on offer was to thin `n` down to the
-// values where n/(n+1) terminates; that would have thrown away the drafting measurement of the
-// full grid for nothing.
+// values where n/(n+1) terminates, which would have cut the draw space to buy something the
+// clearing gives for free.
 //
-// `constraint` is four conjuncts. The first two are trap distances measured over all 15840
-// tuples, not guesses, and they are the reason this template teaches what it claims to:
+// `params` lists EXACTLY the values `constraint` can admit, and that is a production
+// requirement rather than tidiness. `drawParams` retries a rejected tuple 100 times and then
+// THROWS (packages/engine/src/problem.ts:46), and neither caller catches it —
+// components/ProblemRunner.tsx:41 draws inside a useMemo off a random nonce, and
+// content/problems/market.ts:66 off an arbitrary rng seed. At the drafted grid this constraint
+// admitted 812 of 15840 tuples, 5.13%, and threw on 1099 of 200000 arbitrary seeds: an uncaught
+// render exception roughly one serve in two hundred, and by far the worst in the corpus. `n`
+// never reached 24 and `dx` never reached 4, 5 or 6 on any legal draw, so dropping those from
+// the grid leaves the legal set BIT-IDENTICAL — same 812 draws, same answers, same trap margins
+// — while acceptance rises to 12.82% and the throw rate falls to 1 seed in 200000. No gate sees
+// this: registry.test.ts uses 50 seeds, emit.ts uses 0-99, and `emittedSpread` seeds off an
+// FNV hash of the id, so a rename would have been a coin flip on the suite.
+//
+// `constraint` is four conjuncts, measured over the 6336-tuple grid through the engine's own
+// grade() — which compares with <=, and a trap sitting exactly on the tolerance boundary counts
+// as a WIN, so a scratch harness using < undercounts by one:
 //
 //  * The MEAN-SHIFT GAP is how far the answer moves between w = 1 and w = n/(n+1) — that is,
-//    how much the n/(n+1) factor is worth. Left ungated it is worth nothing on more than a
-//    quarter of the space: a candidate who never notices that adding a point moves the two
-//    means grades correct on 4388 of the 15840 tuples. At a floor of six grading tolerances
-//    that trap misses by at least 6.0 tolerances everywhere.
+//    how much the n/(n+1) factor is worth. Left ungated it is worth nothing on a fifth of the
+//    space: a candidate who never notices that adding a point moves the two means grades
+//    correct on 1368 of the 6336 tuples. Drop this conjunct alone and 410 of the 2350 draws
+//    that survive grade that trap correct, along with 167 for a plain average of the old slope
+//    and the new point's own. Keep it and every trap in the audit misses by at least 6.0
+//    tolerances.
 //  * The DENOMINATOR CORRECTION, dx^2/denom, is the same factor's effect on the predictor's
-//    spread alone, and it bounds the half-application slip — weighting the cross-product but
-//    not the sum of squares, which wins 1672 tuples on its own. Same floor, same reason.
+//    spread alone. It is what rejects the low-leverage dx values, and so it is the conjunct
+//    that shaped the grid above — which is why, on that grid, dropping it now readmits 1019
+//    draws and none of them grades a trap correct. It stays because the legal set is defined
+//    by all four together and the whole trap audit was measured under them; and because it is
+//    what guarantees the mean shift is visible in the predictor's spread on every draw served.
 //  * |answer| >= 0.145 keeps the refitted slope off zero, where a rel tolerance is exact
-//    equality in disguise; the numerator really does reach zero on this grid.
+//    equality in disguise; the numerator really does reach zero on this grid. It also removes
+//    the last draw on which the half-application slip — weighting the cross-product but not the
+//    sum of squares — still graded correct.
 //  * exact4 is the guarantee, not the grid: b steps in fifths against a multiple of ten, so
 //    every cross-product is a whole number today, and this fails loud if that changes.
 //
@@ -41,10 +62,10 @@ export const slopeAfterAddingAPoint: ProblemTemplate = {
   firms: [{ firm: "hrt", weight: 0.25 }, { firm: "optiver", weight: 0.2 }, { firm: "drw", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "the rank-one update to a least-squares slope, and what leverage buys a single point" },
   params: {
-    n: { choices: [9, 11, 14, 19, 24] },
+    n: { choices: [9, 11, 14, 19] },
     sxx: { choices: [100, 120, 150, 200, 240, 300] },
     b: { range: { min: 0.4, max: 2.4, step: 0.2 } },
-    dx: { choices: [4, 5, 6, 8, 10, 12] },
+    dx: { choices: [8, 10, 12] },
     dy: { choices: [-12, -8, -6, 6, 8, 12, 16, 20] },
   },
   constraint: (p) => {
@@ -90,7 +111,7 @@ export const slopeAfterAddingAPoint: ProblemTemplate = {
       { title: "Sanity check", body: `Read the ratio again and it is a weighted average of two slopes: the old one, carrying weight $S_{xx}$, and the new point's own slope $\\dfrac{d_y}{d_x}$ — here ${fmtNum(d.pointSlope)} — carrying weight $wd_x^{2}$. The answer therefore always lands between the two, and the weight the newcomer carries goes with the SQUARE of how far out in the predictor it sits: at twice this week's distance from the ore mean it would count for four times as much against $S_{xx}$. That weight is only half the story, though — a week that lands exactly on the old line moves the slope not at all, however far out it sits. Pair the distance with a miss and one week can rewrite a fit that ${fmtNum(p.n)} ordinary ones agreed on.` },
     ];
   },
-  keyInsight: "A least-squares fit has no memory of its observations, only of two sums, so one more point updates it in closed form — and the update is a weighted average in which the newcomer's weight is the square of its distance from the predictor's mean. That distance is leverage, not influence: it does not move the slope by itself, it multiplies whatever the old line got wrong about the point. A far-out point lying exactly on the old line changes nothing, while the same distance out with a modest miss moves the fit more than a wild point near the centre ever could.",
+  keyInsight: "A least-squares fit remembers its observations only through two sums, so one more point updates it in closed form — and the update is a weighted average of the old slope and the newcomer's own, in which the newcomer's weight is the square of its distance from the predictor's mean. That distance is leverage, and leverage is not influence: it moves the slope only in proportion to how far the new point falls from the old line. A point lying exactly on that line changes nothing however extreme its predictor, and a point sitting at the predictor's mean changes nothing however wild its response — which is why an influential observation has to be diagnosed on leverage and residual together, and never on either one alone.",
   commonTrap: "Adding the new point's raw deviations to both sums and forgetting that the means themselves shift, which overweights the newcomer by a factor of n+1 over n. The subtler version applies that factor to the cross-product but not to the sum of squares, updating half of the fit. The third slip is to leave the denominator alone entirely, as though only the response had moved.",
   expectedPaceS: 130,
   verify: { method: "brute-force" },
