@@ -221,15 +221,22 @@ constant.
 
 ### What the gates caught
 
-- **Every template had a draw region where its own `commonTrap` graded as CORRECT.** Not one, not
-  the hard ones — all twelve, across four tasks, and **thirteen constraint conjuncts** were added
-  to punish them. The measurements are the point: `r-squared` answered exactly 0.5 on 9 of 290
-  draws, the MODAL answer, where quoting the residual share is indistinguishable from the explained
-  one; `regression-intercept-from-means` gave an intercept of exactly 0 on 12 of 1080 draws, which
-  is its own negation; `slope-after-adding-a-point` graded "raw deviations, no mean shift" correct
-  on **1368 of 6336** tuples with the mean-shift conjunct dropped. A trap is only a trap where the
-  arithmetic separates it from the answer, and the plan sketched one conjunct where the shipped
-  templates needed four.
+- **Templates that graded their own `commonTrap` as CORRECT, per template — no quantifier.** The
+  measurements are the point, and only these are measured: `r-squared-from-sums-of-squares` answered
+  exactly 0.5 on **9 of 290** draws, the MODAL answer, where quoting the residual share is
+  indistinguishable from the explained one (fixed by `2 * rss !== tss`, 290 → 281);
+  `regression-intercept-from-means` gave an intercept of exactly 0 on **12 of 1080** draws, which is
+  its own negation, so subtracting the wrong way round graded correct (fixed by a `>= 1` floor, the
+  grid's smallest nonzero intercept being exactly 1, 1080 → 1068); `slope-after-adding-a-point`
+  graded "raw deviations, no mean shift" correct on **1368 of 6336** tuples with the mean-shift
+  conjunct dropped, and 410 of the 2350 survivors plus 167 for a plain average of the old slope and
+  the new point's own. Trap-punishability conjuncts were added across Tasks 1-4 — three recorded in
+  Tasks 1-2, four on #7, three on #9, four on #11 — the exact total depending on how a re-scoped
+  conjunct is counted, which is why no total is asserted here. **A trap is only a trap where the
+  arithmetic separates it from the answer**, and the plan sketched one conjunct where the shipped
+  templates carry four. Not every defect found this way was a trap defect:
+  `fitted-value-and-residual`'s was plausibility — it predicted negative share volume on 13 of 1742
+  draws — fixed by `fitted > 0`, which subsumed a rendering problem and let the `paren` helper go.
 - **A constraint that rejects too much CRASHES PRODUCTION, and no gate sees it.** The most serious
   finding of the batch. `#11 slope-after-adding-a-point` shipped at **5.13% acceptance** — 812 of
   15840 tuples — and `drawParams` retries 100 times and then throws
@@ -327,7 +334,9 @@ constant.
     number-free-prose and register check would have caught the 127-word insight.
 - **A trap is not a trap until the arithmetic separates it from the answer.** Measure every named
   `commonTrap` against the real `grade()` over the FULL legal draw space before shipping, not over a
-  seed sample. All twelve templates here had a region where their own trap won.
+  seed sample. Three templates here shipped a region where their own trap won, and the worst was
+  the MODAL answer of an easy-tier template — the region a seed sample is most likely to hit and
+  least likely to flag.
 - **The two lessons pull against each other, and the resolution is always the same.**
   Trap-punishability constraints push acceptance down; low acceptance throws in production. Fix by
   thinning the CHOICE LISTS to what the constraint already admits — that keeps the legal set
