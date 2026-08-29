@@ -11,7 +11,8 @@
  *
  *   npm run audit:traps
  *
- * Covered: linear-algebra 10, statistics/sprt 1 (B22), number-theory 8 (B24) — 19 of 347.
+ * Covered: linear-algebra 10, statistics/sprt 1 (B22); number-theory 8, markov 8,
+ * solid-geometry 6 (B24) — 33 of 347.
  * Everything else in the bank has a `commonTrap` no row has ever been written for, and
  * tools/fixed-point-scan.ts is NOT a substitute: a generic corruption of the answer says
  * nothing about whether that template's OWN named trap grades as correct.
@@ -45,7 +46,7 @@ function audit(id: string, rows: Record<string, Row>) {
       // `near` counts LOSING draws only. Folding winners in would drive it to ~0 for exactly
       // the rows where it matters, and the reading below promises the closest losing draw.
       if (grade(v, truth, t.accepted.tolerance)) wins.set(name, wins.get(name)! + 1);
-      else if (bound > 0) near.set(name, Math.min(near.get(name)!, Math.abs(v - truth) / bound));
+      else if (bound > 0 && Number.isFinite(v)) near.set(name, Math.min(near.get(name)!, Math.abs(v - truth) / bound));
     }
   });
   console.log(`\n${t.id}  (${n} legal draws)`);
@@ -310,6 +311,99 @@ audit("markov/two-state-after-k-days", {
     return calm;
   },
   "trap: the long-run share at a finite horizon": (_p, d) => d.stationary,
+});
+
+/* ---- solid-geometry (B24) ---------------------------------------------------------------
+ * Four of the six branch on a `wanted` param, and a row that ignores the branch is nonsense on
+ * half the draws — it can score zero for the wrong reason and read as a clean pass. Every row
+ * below therefore answers the question actually asked, and returns NaN where the slip does not
+ * apply to that branch at all (grade() rejects a non-finite value, packages/engine/src/grade.ts).
+ *
+ * Three slips the prose names that CANNOT be written as a row:
+ *   cone-frustum-fraction   "a cylinder of some average radius" — no definite radius is named,
+ *                           so there is no one value to grade.
+ *   volume-scaling          "cubing it for the surface too" — the question never asks for a
+ *                           surface, so the slip cannot produce a wrong answer to it.
+ *   displacement-water-rise "dividing by the tank's VOLUME rather than its floor area" — the
+ *                           statement gives a floor and no height, so the tank has no volume to
+ *                           divide by. The slip is unreachable from the numbers on the page.
+ */
+audit("solid-geometry/box-fit-then-diagonal", {
+  // Math.hypot twice, which is the two-Pythagorean-steps route the solution describes in words,
+  // rather than the one-shot sum of three squares the template computes.
+  "CONTROL two hypot steps / volume over base": (p, d) =>
+    p.wanted === 1 ? Math.hypot(Math.hypot(p.edgeA, p.edgeB), p.edgeC) : d.volume / d.faceArea,
+  "trap: three edges added, not their squares": (p) => (p.wanted === 1 ? p.edgeA + p.edgeB + p.edgeC : NaN),
+  "trap: stopped at the base diagonal": (p) => (p.wanted === 1 ? Math.hypot(p.edgeA, p.edgeB) : NaN),
+});
+audit("solid-geometry/cone-frustum-fraction", {
+  // The frustum's own volume formula, (h/3)(R^2+Rr+r^2), against the full cone — a different
+  // route from the difference of cubes, and the one a student who has memorised it would take.
+  "CONTROL frustum formula over the full cone": (p) => {
+    const h = p.bigR - p.smallR;
+    const frustum = (h / 3) * (p.bigR * p.bigR + p.bigR * p.smallR + p.smallR * p.smallR);
+    const whole = (p.bigR / 3) * p.bigR * p.bigR;
+    return p.wanted === 1 ? frustum / whole : 1 - frustum / whole;
+  },
+  "trap: tip taken as the plain radius ratio": (p) => {
+    const share = p.smallR / p.bigR;
+    return p.wanted === 2 ? share : 1 - share;
+  },
+  "trap: tip taken as the squared ratio": (p) => {
+    const share = (p.smallR / p.bigR) ** 2;
+    return p.wanted === 2 ? share : 1 - share;
+  },
+});
+audit("solid-geometry/displacement-water-level-rise", {
+  // Inverts base * rise = displaced by bisection, so the control never performs the division
+  // the template performs — a swapped numerator and denominator would not survive it.
+  "CONTROL rise found by bisection": (_p, d) => {
+    let lo = 0, hi = d.displaced + 1;
+    for (let i = 0; i < 200; i++) { const mid = (lo + hi) / 2; if (d.base * mid < d.displaced) lo = mid; else hi = mid; }
+    return (lo + hi) / 2;
+  },
+  "trap: the cube's face area, not its volume": (p, d) => (p.cube * p.cube) / d.base,
+});
+audit("solid-geometry/spherical-cap-fraction", {
+  // Integrates the cap as a stack of discs, pi(r^2 - z^2) dz, instead of using h^2(3r-h)/4r^3.
+  "CONTROL cap integrated as discs": (p) => {
+    const n = 20000, lo = -p.radius, hi = -p.radius + p.depth, dz = (hi - lo) / n;
+    let cap = 0;
+    for (let i = 0; i < n; i++) { const z = lo + (i + 0.5) * dz; cap += (p.radius * p.radius - z * z) * dz; }
+    const whole = (4 / 3) * Math.pow(p.radius, 3);
+    return p.wanted === 1 ? cap / whole : 1 - cap / whole;
+  },
+  "trap: depth over the diameter": (p) => {
+    const share = p.depth / (2 * p.radius);
+    return p.wanted === 1 ? share : 1 - share;
+  },
+  "trap: radius used where the formula wants three": (p) => {
+    const share = (p.depth * p.depth * (p.radius - p.depth)) / (4 * Math.pow(p.radius, 3));
+    return p.wanted === 1 ? share : 1 - share;
+  },
+});
+audit("solid-geometry/triangular-prism-volume", {
+  // Pick's theorem on the lattice triangle: area = interior + boundary/2 - 1, counted rather
+  // than halved. Exact integer arithmetic, which an abs: 0 control has to be.
+  "CONTROL area by Pick's theorem": (p) => {
+    let interior = 0;
+    for (let x = 1; x < p.legA; x++) for (let y = 1; y < p.legB; y++) if (x * p.legB + y * p.legA < p.legA * p.legB) interior++;
+    const boundary = p.legA + p.legB + gcd(p.legA, p.legB);
+    return (interior + boundary / 2 - 1) * p.length;
+  },
+  "trap: the whole rectangle, never halved": (_p, d) => d.solidBar,
+  "trap: the longer leg read as the hypotenuse": (p) =>
+    (p.legA * Math.sqrt(p.legB * p.legB - p.legA * p.legA) * p.length) / 2,
+});
+audit("solid-geometry/volume-scaling-under-similarity", {
+  // Weak by necessity — the template is one multiplication and there is no second route to it.
+  // Scaling three times in sequence rather than by Math.pow at least fails on a wrong exponent.
+  "CONTROL scaled three times in sequence": (p) => {
+    let v = p.wanted === 1 ? p.vol : 1;
+    for (let i = 0; i < 3; i++) v *= p.factor;
+    return v;
+  },
+  "trap: capacity scaled by the length factor once": (p) => (p.wanted === 1 ? p.vol * p.factor : p.factor),
 });
 
 console.log(broken === 0

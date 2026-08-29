@@ -1,5 +1,19 @@
-import type { ProblemTemplate } from "@qp/engine";
+import type { Params, ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
+
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+// `untripled` is the wrong answer `commonTrap` names second — the cap formula with a bare
+// radius where it wants three times it. The constraint needs its value to reject the draws
+// where it grades as correct, which is what licenses a second module-level helper here.
+const untripled = (p: Params) => (p.depth * p.depth * (p.radius - p.depth)) / (4 * Math.pow(p.radius, 3));
+const derive = (p: Params) => {
+  const round = (x: number) => Math.round(x * 1e9) / 1e9;
+  const capNumer = p.depth * p.depth * (3 * p.radius - p.depth);
+  const sphereDenom = 4 * Math.pow(p.radius, 3);
+  const frac = round(capNumer / sphereDenom);
+  return { tripleRadius: 3 * p.radius, bracket: 3 * p.radius - p.depth, depthSquared: p.depth * p.depth, capNumer, sphereDenom, capFraction: frac, answer: p.wanted === 1 ? frac : round(1 - frac) };
+};
 
 export const sphericalCapFraction: ProblemTemplate = {
   id: "solid-geometry/spherical-cap-fraction",
@@ -13,22 +27,11 @@ export const sphericalCapFraction: ProblemTemplate = {
     depth: { choices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16] },
     wanted: { choices: [1, 2] },
   },
-  constraint: (p) => p.depth < p.radius,
-  derived: (p) => {
-    const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    const capNumer = p.depth * p.depth * (3 * p.radius - p.depth);
-    const sphereDenom = 4 * Math.pow(p.radius, 3);
-    const frac = round(capNumer / sphereDenom);
-    return {
-      tripleRadius: 3 * p.radius,
-      bracket: 3 * p.radius - p.depth,
-      depthSquared: p.depth * p.depth,
-      capNumer,
-      sphereDenom,
-      capFraction: frac,
-      answer: p.wanted === 1 ? frac : round(1 - frac),
-    };
-  },
+  // The second conjunct closes the grading band around the slip `commonTrap` names second —
+  // using the radius where the formula wants three times it. On a shallow fill both fractions
+  // are near zero and the wrong one lands inside 0.5% of the right one (tools/trap-audit.ts).
+  constraint: (p) => p.depth < p.radius && Math.abs(derive(p).answer - (p.wanted === 1 ? untripled(p) : 1 - untripled(p))) > 0.005 * derive(p).answer,
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
   statement: (p) =>

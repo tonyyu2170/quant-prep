@@ -1,5 +1,15 @@
-import type { ProblemTemplate } from "@qp/engine";
+import type { Params, ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
+
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const round = (x: number) => Math.round(x * 1e9) / 1e9;
+  const bigCube = Math.pow(p.bigR, 3);
+  const smallCube = Math.pow(p.smallR, 3);
+  const frac = round((bigCube - smallCube) / bigCube);
+  return { bigCube, smallCube, difference: bigCube - smallCube, frustumFraction: frac, answer: p.wanted === 1 ? frac : round(1 - frac) };
+};
 
 export const coneFrustumFraction: ProblemTemplate = {
   id: "solid-geometry/cone-frustum-fraction",
@@ -13,20 +23,12 @@ export const coneFrustumFraction: ProblemTemplate = {
     smallR: { choices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16] },
     wanted: { choices: [1, 2] },
   },
-  constraint: (p) => p.smallR < p.bigR,
-  derived: (p) => {
-    const round = (x: number) => Math.round(x * 1e9) / 1e9;
-    const bigCube = Math.pow(p.bigR, 3);
-    const smallCube = Math.pow(p.smallR, 3);
-    const frac = round((bigCube - smallCube) / bigCube);
-    return {
-      bigCube,
-      smallCube,
-      difference: bigCube - smallCube,
-      frustumFraction: frac,
-      answer: p.wanted === 1 ? frac : round(1 - frac),
-    };
-  },
+  // The second conjunct closes the grading band around the SQUARED-ratio slip `commonTrap`
+  // names. On a narrow tip the cube and the square of the ratio are both nearly zero, so
+  // "one minus the square" lands inside 0.5% of "one minus the cube" — seven draws, every one
+  // of them a radius ratio below about 0.073 (tools/trap-audit.ts).
+  constraint: (p) => p.smallR < p.bigR && Math.abs(derive(p).answer - (p.wanted === 1 ? 1 - (p.smallR / p.bigR) ** 2 : (p.smallR / p.bigR) ** 2)) > 0.005 * derive(p).answer,
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { rel: 0.005 } },
   statement: (p) =>
