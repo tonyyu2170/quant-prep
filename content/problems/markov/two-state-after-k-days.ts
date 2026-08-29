@@ -29,7 +29,11 @@ export const twoStateAfterKDays: ProblemTemplate = {
     returnPct: { range: { min: 10, max: 45, step: 5 } },
     days: { range: { min: 2, max: 4, step: 1 } },
   },
-  constraint: (p) => p.leavePct + p.returnPct <= 80 && p.leavePct !== p.returnPct && !complementGrades(derive(p).answer),
+  // The last conjunct keeps the finite-horizon value a grading tolerance clear of the long-run
+  // share. Without it the chain has already forgotten today by day 4 on the fastest-mixing
+  // draws, and `commonTrap`'s "answering with the long-run share" is marked correct — 6 of
+  // 161 draws (tools/trap-audit.ts).
+  constraint: (p) => p.leavePct + p.returnPct <= 80 && p.leavePct !== p.returnPct && !complementGrades(derive(p).answer) && Math.abs(derive(p).answer - derive(p).stationary) > 0.005 * derive(p).answer,
   derived: derive,
   statement: (p, d) =>
     `A market is calm or choppy each day. A calm day is followed by a choppy one with probability ${fmtNum(d.leaveRate)}; a choppy day is followed by a calm one with probability ${fmtNum(d.returnRate)}. Today is calm. What is the probability that the day ${fmtNum(p.days)} days from now is also calm?`,

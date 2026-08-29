@@ -20,7 +20,10 @@ export const machineUptimeStationary: ProblemTemplate = {
     fixPct: { choices: [30, 40, 50, 60, 70, 80] },
     days: { choices: [10, 15, 20, 25, 30, 40, 50, 60, 75, 90] },
   },
-  constraint: (p) => p.fixPct > p.failPct,
+  // The rates must not sum to 100. When they do, the long-run share IS the bare repair rate
+  // and `commonTrap`'s "reading the answer off the repair rate alone" grades as correct —
+  // live on 20 of 350 draws before this conjunct (tools/trap-audit.ts).
+  constraint: (p) => p.fixPct > p.failPct && p.failPct + p.fixPct !== 100,
   derived: (p) => {
     const total = p.failPct + p.fixPct;
     const share = p.fixPct / total;

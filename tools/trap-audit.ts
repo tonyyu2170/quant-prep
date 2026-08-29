@@ -42,8 +42,10 @@ function audit(id: string, rows: Record<string, Row>) {
     const bound = Math.max(t.accepted.tolerance.abs ?? 0, (t.accepted.tolerance.rel ?? 0) * Math.abs(truth));
     for (const name of names) {
       const v = rows[name](p, d);
+      // `near` counts LOSING draws only. Folding winners in would drive it to ~0 for exactly
+      // the rows where it matters, and the reading below promises the closest losing draw.
       if (grade(v, truth, t.accepted.tolerance)) wins.set(name, wins.get(name)! + 1);
-      if (bound > 0) near.set(name, Math.min(near.get(name)!, Math.abs(v - truth) / bound));
+      else if (bound > 0) near.set(name, Math.min(near.get(name)!, Math.abs(v - truth) / bound));
     }
   });
   console.log(`\n${t.id}  (${n} legal draws)`);
@@ -212,6 +214,102 @@ audit("number-theory/multiples-in-a-range", {
   },
   "trap: second list struck out whole": (p) => Math.floor(p.upto / p.by) - Math.floor(p.upto / p.notBy),
   "trap: product used for the overlap": (p) => Math.floor(p.upto / p.by) - Math.floor(p.upto / (p.by * p.notBy)),
+});
+
+/* ---- markov (B24) -----------------------------------------------------------------------
+ * All eight grade at `rel: 0.005`, so unlike number-theory above `minMiss` is real here: a
+ * trap at 1.3x is a hit waiting for a wider draw, and two of these sit close.
+ *
+ * Every CONTROL solves the chain by FIXED-POINT ITERATION rather than by the closed form the
+ * template derives. That is the honest independent route for a Markov template — it re-derives
+ * the answer from the transition structure in the statement, so a wrong closed form would show
+ * up as a control below 100% instead of being quietly confirmed.
+ *
+ * deuce-win-by-two gets a control and NO trap row, deliberately. Its `commonTrap` names summing
+ * the split-then-split-then-win series, which the prose itself says "converges to the same
+ * number" — a valid-but-slow route, not a wrong answer. A row for it would be a second control
+ * dressed as a trap. It is written as the control instead, which is exactly what it is.
+ */
+const iterate = (n: number, step: () => void) => { for (let i = 0; i < n; i++) step(); };
+
+audit("markov/consecutive-run-wait", {
+  // e[i] = 1 + p*e[i+1] + q*e[0], solved as e[i] = A_i + B_i*e0 backwards from e[k] = 0.
+  "CONTROL run-length state recursion": (p) => {
+    const hit = p.hitsPer / p.outOf, miss = 1 - hit;
+    let a = 0, b = 0;
+    for (let i = p.runLength - 1; i >= 0; i--) { a = 1 + hit * a; b = hit * b + miss; }
+    return a / (1 - b);
+  },
+  "trap: reciprocal of the run probability": (_p, d) => d.runFloor,
+});
+audit("markov/deuce-win-by-two", {
+  // The infinite series the commonTrap names: p^2 * sum_n (2pq)^n. A genuinely different route
+  // to the same number, which is the finding — see the block comment.
+  "CONTROL the split-path series summed": (_p, d) => {
+    const win = d.prob, lose = d.lossProb;
+    let total = 0, term = win * win;
+    for (let n = 0; n < 4000; n++) { total += term; term *= 2 * win * lose; }
+    return total;
+  },
+});
+audit("markov/machine-uptime-stationary", {
+  "CONTROL chain iterated to stationarity": (p, d) => {
+    let live = 0.5;
+    iterate(20000, () => { live = live * (1 - d.failRate) + (1 - live) * d.fixRate; });
+    return p.days * live;
+  },
+  "trap: repair rate read off alone": (p, d) => p.days * d.fixRate,
+});
+audit("markov/maze-food-before-trap", {
+  "CONTROL two-room absorption iterated": (p) => {
+    let inA = 0, inB = 0;
+    iterate(20000, () => {
+      const nextA = 1 / p.doorsA + ((p.doorsA - 1) / p.doorsA) * inB;
+      const nextB = ((p.doorsB - 1) / p.doorsB) * inA;
+      inA = nextA; inB = nextB;
+    });
+    return inA;
+  },
+  "trap: bare ratio of the door counts": (p) => p.doorsB / (p.doorsA + p.doorsB),
+});
+audit("markov/switching-coins-share", {
+  "CONTROL chain iterated to stationarity": (_p, d) => {
+    let inA = 0.5;
+    iterate(20000, () => { inA = inA * (1 - d.tailsARate) + (1 - inA) * d.tailsBRate; });
+    return inA;
+  },
+  "trap: shares weighted by heads directly": (p) => p.headsAPct / (p.headsAPct + p.headsBPct),
+  "trap: heads weighted the other way round": (p) => p.headsBPct / (p.headsAPct + p.headsBPct),
+});
+audit("markov/system-days-to-failure", {
+  "CONTROL three-state hitting time iterated": (_p, d) => {
+    let fresh = 0, worn = 0;
+    iterate(40000, () => {
+      const nextFresh = 1 + (1 - d.wearRate) * fresh + d.wearRate * worn;
+      const nextWorn = 1 + d.repairRate * fresh + (1 - d.breakRate - d.repairRate) * worn;
+      fresh = nextFresh; worn = nextWorn;
+    });
+    return fresh;
+  },
+  "trap: mean time in each state added": (p) => 100 / p.wearPct + 100 / p.breakPct,
+});
+audit("markov/tunnel-doors-escape", {
+  "CONTROL memoryless recursion iterated": (p) => {
+    let hours = 0;
+    iterate(20000, () => { hours = (p.exitHours + (p.loopOneHours + hours) + (p.loopTwoHours + hours)) / 3; });
+    return hours;
+  },
+  // With memory the exit tunnel sits uniformly in a random permutation of the three, so each
+  // loop is walked before it with probability one half.
+  "trap: the miner remembers his tunnels": (p) => p.exitHours + (p.loopOneHours + p.loopTwoHours) / 2,
+});
+audit("markov/two-state-after-k-days", {
+  "CONTROL transition applied k times": (p, d) => {
+    let calm = 1;
+    for (let i = 0; i < p.days; i++) calm = calm * (1 - d.leaveRate) + (1 - calm) * d.returnRate;
+    return calm;
+  },
+  "trap: the long-run share at a finite horizon": (_p, d) => d.stationary,
 });
 
 console.log(broken === 0

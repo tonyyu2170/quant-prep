@@ -1,8 +1,16 @@
-import type { ProblemTemplate } from "@qp/engine";
+import type { Params, ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
 // A chain whose states are WHICH COIN is in hand. Balance gives (1-b)/((1-a)+(1-b)); in integer
 // percents that is (100-b)/(200-a-b), so every printed chain stays exact.
+// The constraint cannot see `derived` (packages/engine/src/problem.ts:24), so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  const tailsA = 100 - p.headsAPct;
+  const tailsB = 100 - p.headsBPct;
+  const total = tailsA + tailsB;
+  return { tailsA, tailsB, total, headsARate: p.headsAPct / 100, headsBRate: p.headsBPct / 100, tailsARate: tailsA / 100, tailsBRate: tailsB / 100, answer: tailsB / total, shareB: tailsA / total };
+};
 export const switchingCoinsShare: ProblemTemplate = {
   id: "markov/switching-coins-share",
   version: 1,
@@ -14,13 +22,13 @@ export const switchingCoinsShare: ProblemTemplate = {
     headsAPct: { range: { min: 20, max: 80, step: 2 } },
     headsBPct: { range: { min: 15, max: 85, step: 2 } },
   },
-  constraint: (p) => p.headsAPct !== p.headsBPct,
-  derived: (p) => {
-    const tailsA = 100 - p.headsAPct;
-    const tailsB = 100 - p.headsBPct;
-    const total = tailsA + tailsB;
-    return { tailsA, tailsB, total, headsARate: p.headsAPct / 100, headsBRate: p.headsBPct / 100, tailsARate: tailsA / 100, tailsBRate: tailsB / 100, answer: tailsB / total, shareB: tailsA / total };
-  },
+  // The last conjunct closes the grading BAND around the slip `commonTrap` names, not a point.
+  // Weighting the shares by the heads directly equals the truth only when the two percentages
+  // sum to 100, which these axes cannot reach — one is always even and the other always odd.
+  // It was still marked correct on 61 of 1116 draws, all of them inside the 0.5% tolerance
+  // rather than on it, which is why excluding a value here would have closed nothing.
+  constraint: (p) => p.headsAPct !== p.headsBPct && Math.abs(p.headsAPct / (p.headsAPct + p.headsBPct) - derive(p).answer) > 0.005 * derive(p).answer,
+  derived: derive,
   statement: (p, d) =>
     `You hold two coins. Coin A lands heads with probability ${fmtNum(d.headsARate)}; coin B lands heads with probability ${fmtNum(d.headsBRate)}. You flip whichever coin is in your hand: on heads you keep it, on tails you swap to the other. Over a very long run of flips, what fraction are made with coin A?`,
   answerKey: "answer",
