@@ -14,8 +14,12 @@ export const walkHitUpperFirst: ProblemTemplate = {
   firms: [{ firm: "jane-street", weight: 0.3 }, { firm: "jump", weight: 0.3 }],
   source: { kind: "original", inspiration: "symmetric random walk hitting which barrier first" },
   params: {
-    upBarrier: { range: { min: 2, max: 14, step: 1 } },
-    downBarrier: { range: { min: 2, max: 14, step: 1 } },
+    // 2..14 left this template sitting ON the emittedSpread ceiling: 156 tuples and a maxRepeat
+    // of exactly 4 against a rule of "repeating none above 4". A sampled counter that is already
+    // at its limit fails CI on the next batch that shifts these draws at all, for a reason having
+    // nothing to do with that batch. 2..16 buys the margin back.
+    upBarrier: { range: { min: 2, max: 16, step: 1 } },
+    downBarrier: { range: { min: 2, max: 16, step: 1 } },
   },
   constraint: (p) => upperFirstOf(p) >= 0.01 && upperFirstOf(p) <= 0.99 && !complementGrades(upperFirstOf(p)),
   derived: (p) => {
