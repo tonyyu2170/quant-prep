@@ -324,9 +324,12 @@ audit("markov/two-state-after-k-days", {
  *                           so there is no one value to grade.
  *   volume-scaling          "cubing it for the surface too" — the question never asks for a
  *                           surface, so the slip cannot produce a wrong answer to it.
- *   displacement-water-rise "dividing by the tank's VOLUME rather than its floor area" — the
- *                           statement gives a floor and no height, so the tank has no volume to
- *                           divide by. The slip is unreachable from the numbers on the page.
+ *
+ * displacement-water-rise USED to name a third: "dividing by the tank's VOLUME rather than its
+ * floor area". The statement gives a floor and no height, so there is no tank volume on the page
+ * and the slip was unreachable — a trap warning against a mistake nobody can make. Its prose now
+ * names taking the rise to be the cube's own height, which is both a real intuition and a value
+ * this file can grade.
  */
 audit("solid-geometry/box-fit-then-diagonal", {
   // Math.hypot twice, which is the two-Pythagorean-steps route the solution describes in words,
@@ -363,6 +366,10 @@ audit("solid-geometry/displacement-water-level-rise", {
     return (lo + hi) / 2;
   },
   "trap: the cube's face area, not its volume": (p, d) => (p.cube * p.cube) / d.base,
+  // Safe by construction rather than by a conjunct: `constraint` keeps the cube at or under half
+  // the shorter tank side, so the floor is at least 4x the cube's own face and the rise can never
+  // exceed a quarter of the cube's height. The miss is ~600x the tolerance at its closest.
+  "trap: the rise taken as the cube's height": (p) => p.cube,
 });
 audit("solid-geometry/spherical-cap-fraction", {
   // Integrates the cap as a stack of discs, pi(r^2 - z^2) dz, instead of using h^2(3r-h)/4r^3.

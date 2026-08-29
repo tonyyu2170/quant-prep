@@ -1,12 +1,24 @@
 "use client";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import DrillNav from "@/components/DrillNav";
 import ProblemRunner from "@/components/ProblemRunner";
 import { FIRMS, PROBLEMS, TOPIC_LABELS } from "@/content/problems";
 
+// `useSearchParams` opts the whole route out of static rendering unless it sits under a Suspense
+// boundary (Next 15). The fallback is never seen — the params are known before first paint — so
+// it is null rather than a skeleton that would flash.
 export default function Page() {
+  return <Suspense fallback={null}><Bank /></Suspense>;
+}
+
+function Bank() {
   const topics = useMemo(() => [...new Set(PROBLEMS.map((t) => t.topic))], []);
-  const [topic, setTopic] = useState<string | undefined>(undefined);
+  // Deep link from the stats page's per-topic list: ?topic=probability/bayes. Only a topic the
+  // bank actually ships is honoured — an old bookmark naming a retired one (finance/pricing, split
+  // away in B16) opens the whole bank rather than a filter that matches nothing.
+  const wanted = useSearchParams().get("topic") ?? undefined;
+  const [topic, setTopic] = useState<string | undefined>(wanted && topics.includes(wanted) ? wanted : undefined);
   const [difficulty, setDifficulty] = useState<1 | 2 | 3 | undefined>(undefined);
   const [firm, setFirm] = useState<string | undefined>(undefined);
   const chip = (active: boolean) => ({

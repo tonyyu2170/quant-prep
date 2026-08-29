@@ -5,6 +5,11 @@ import "@testing-library/jest-dom/vitest";
 import Page from "./page";
 import { FIRMS, problemsFor } from "@/content/problems";
 
+// The bank reads ?topic= so the stats page can deep-link a weak topic straight into the filter.
+// jsdom has no Next router, so the real `useSearchParams` returns null here; these tests drive
+// the chips rather than the deep link, and want the no-params case.
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+
 // The picker draws pool[(nonce + i) % len], so pinning Math.random pins which problem
 // each track shows: with the firm filter unwired every chip shows PROBLEMS[0] instead,
 // which fails on the first firm that template is not tagged with.

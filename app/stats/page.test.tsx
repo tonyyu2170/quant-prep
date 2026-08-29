@@ -37,9 +37,33 @@ describe("StatsPage score chart", () => {
       { problemId: "bayes/two-urns", problemVersion: 1, seed: 2, mode: "practice", topic: "probability/bayes", answer: "0.4", correct: true, timeMs: 2000, sessionId: null, createdAt: new Date().toISOString() },
     ]));
     render(<StatsPage />);
-    await screen.findByText("probability/bayes"); // per-topic list loaded
+    await screen.findByText("bayes"); // per-topic list loaded, under the label the drills use
     fireEvent.click(screen.getByRole("button", { name: "probability" }));
-    expect(screen.getByText("probability/bayes")).toBeInTheDocument();
+    expect(screen.getByText("bayes")).toBeInTheDocument();
     expect(screen.getAllByText(/1q/)).toHaveLength(1); // only the probability row remains in the list
+  });
+
+  // The row is the only affordance next to "you are weakest here", so it has to lead somewhere
+  // useful. It used to sit beside a link hardcoded to the arithmetic drill.
+  it("links each topic row into that topic's own slice of the bank", async () => {
+    localStorage.setItem("qp.attempts.v1", JSON.stringify([
+      { problemId: "bayes/two-urns", problemVersion: 1, seed: 2, mode: "practice", topic: "probability/bayes", answer: "0.4", correct: true, timeMs: 2000, sessionId: null, createdAt: new Date().toISOString() },
+    ]));
+    render(<StatsPage />);
+    const row = await screen.findByText("bayes");
+    expect(row.closest("a")).toHaveAttribute("href", "/drills/probability?topic=probability%2Fbayes");
+  });
+
+  // finance/pricing was split into options/arbitrage/fixed-income in B16 and ships nowhere, but
+  // it survives in attempt rows written before that. The history is real and stays visible; what
+  // it must NOT do is offer a drill for a topic the bank cannot serve.
+  it("marks a topic the bank no longer ships and offers no drill for it", async () => {
+    localStorage.setItem("qp.attempts.v1", JSON.stringify([
+      { problemId: "pricing/old", problemVersion: 1, seed: 3, mode: "practice", topic: "finance/pricing", answer: "1", correct: true, timeMs: 1000, sessionId: null, createdAt: new Date().toISOString() },
+    ]));
+    render(<StatsPage />);
+    const row = await screen.findByText(/finance\/pricing/);
+    expect(row).toHaveTextContent("retired");
+    expect(row.closest("a")).toBeNull();
   });
 });

@@ -7,6 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { AttemptRow, TestSessionRow } from "@/lib/store/types";
 import LineChart from "@/components/charts/LineChart";
 import BarChart from "@/components/charts/BarChart";
+import { TOPIC_LABELS } from "@/content/problems";
 
 const RANGES = { "7D": 7, "30D": 30, "90D": 90, ALL: 36500 } as const;
 type RangeKey = keyof typeof RANGES;
@@ -14,6 +15,18 @@ const TOPICS = ["All topics", "arithmetic", "sequences", "probability"] as const
 const SIM_PRESETS = ["optiver-80in8", "optiver-mc-80in8", "sequences-sprint"] as const;
 type SimPreset = (typeof SIM_PRESETS)[number];
 const SIM_LABELS: Record<SimPreset, string> = { "optiver-80in8": "Free-entry sprint scores", "optiver-mc-80in8": "Optiver 80-in-8 scores", "sequences-sprint": "Seq-sprint scores" };
+
+// Where a per-topic row links. Bank topics deep-link into the bank's own topic filter; the three
+// generated drills have their own routes. A topic in NEITHER is one the bank no longer ships —
+// `finance/pricing` survives in attempt rows written before the B16 split — so it keeps its row,
+// because it is real history, but is not offered as something to go and practise.
+const GENERATOR_ROUTES: Record<string, string> = {
+  arithmetic: "/drills/arithmetic",
+  sequences: "/drills/sequences",
+  "missing-operand": "/drills/missing-operand",
+};
+const drillHref = (t: string) =>
+  GENERATOR_ROUTES[t] ?? (TOPIC_LABELS[t] ? `/drills/probability?topic=${encodeURIComponent(t)}` : null);
 
 interface Benchmark { preset: string; label: string; value: number }
 
@@ -128,14 +141,21 @@ export default function StatsPage() {
 
       <div style={{ display: "flex", borderTop: "1px solid var(--rule)", marginTop: 4, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 280px", padding: "14px 26px 0 0" }}>
-          <p className="microlabel" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>Per-topic accuracy <Link href="/drills/arithmetic" style={{ letterSpacing: 0, textTransform: "none", fontWeight: 600 }}>drill →</Link></p>
-          {Object.entries(byTopic).map(([t, v]) => (
-            <p key={t} style={{ display: "flex", alignItems: "baseline", fontSize: 13, padding: "4px 0", color: "var(--body)" }}>
-              {t}<span style={dotLeader} />
-              <b className="mono" style={{ color: v.pct < 75 ? "var(--bad)" : "var(--ink)" }}>{v.pct}%</b>
-              <span className="mono" style={{ color: "var(--faint)", fontSize: 10, marginLeft: 8 }}>{v.n}q</span>
-            </p>
-          ))}
+          <p className="microlabel" style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>Per-topic accuracy <Link href="/drills/probability" style={{ letterSpacing: 0, textTransform: "none", fontWeight: 600 }}>drill →</Link></p>
+          {Object.entries(byTopic).map(([t, v]) => {
+            const href = drillHref(t);
+            const label = TOPIC_LABELS[t] ?? t;
+            return (
+              <p key={t} style={{ display: "flex", alignItems: "baseline", fontSize: 13, padding: "4px 0", color: "var(--body)" }}>
+                {href
+                  ? <Link href={href} style={{ color: "inherit" }}>{label}</Link>
+                  : <span>{label} <span className="mono" style={{ color: "var(--faint)", fontSize: 10 }}>retired</span></span>}
+                <span style={dotLeader} />
+                <b className="mono" style={{ color: v.pct < 75 ? "var(--bad)" : "var(--ink)" }}>{v.pct}%</b>
+                <span className="mono" style={{ color: "var(--faint)", fontSize: 10, marginLeft: 8 }}>{v.n}q</span>
+              </p>
+            );
+          })}
         </div>
         <div style={{ flex: "1 1 280px", padding: "14px 0 0 26px", borderLeft: "1px solid var(--rule)" }}>
           <p className="microlabel" style={{ marginBottom: 8 }}>Recent sims</p>

@@ -33,7 +33,7 @@ export const displacementWaterLevelRise: ProblemTemplate = {
     { title: "Sanity check", body: `The rise must come in below the cube's own height of ${fmtNum(p.cube)}, since the cube's volume is spread over a floor much wider than the cube itself: $${fmtNum(d.answer)}<${fmtNum(p.cube)}$. If the tank's floor were exactly the cube's footprint, the two would be equal — and nothing can make the rise exceed the cube's height.` },
   ],
   keyInsight: "Displacement converts a solid's volume into a height by dividing by a constant base area, and the solid's shape drops out entirely. That is the whole of Archimedes' insight, and it is why an irregular object's volume is measured by dunking it rather than by measuring it.",
-  commonTrap: "Dividing by the tank's volume rather than by its floor area, which produces a dimensionless number rather than a height. The other slip is using the cube's face area instead of its volume.",
+  commonTrap: "Answering with the cube's own height, as if the water simply climbed to the top of the block that displaced it. The other slip is using the cube's face area instead of its volume.",
   expectedPaceS: 90,
   verify: { method: "brute-force" },
   constants: [],
