@@ -1,9 +1,18 @@
-import type { ProblemTemplate } from "@qp/engine";
+import type { Params, ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
 // Licensed module-level helper: `constraint` must reject moduli sharing a factor, for which the
 // pair of congruences may have no solution at all. `constraint` never sees `derived`.
 const gcdOf = (a: number, b: number): number => (b === 0 ? a : gcdOf(b, a % b));
+// Hoisted for the last conjunct: `constraint` must reject the draws where MULTIPLYING the two
+// remainders lands on the answer, which is the first slip this template's prose names. It was
+// live on 73 of 1267 draws — every r1 = r2 = 1 draw answers 1, and so does the product. The
+// exclusion has to live in `constraint`, since that is what every draw-space gate reasons off.
+const derive = (p: Params) => {
+  let n = p.r1;
+  while (n % p.m2 !== p.r2) n += p.m1;
+  return { modulus: p.m1 * p.m2, steps: (n - p.r1) / p.m1, answer: n };
+};
 
 export const crtTwoCongruences: ProblemTemplate = {
   id: "number-theory/crt-two-congruences",
@@ -18,16 +27,8 @@ export const crtTwoCongruences: ProblemTemplate = {
     r1: { choices: [1, 2, 3, 4, 5, 6] },
     r2: { choices: [1, 2, 3, 4, 5, 6, 7] },
   },
-  constraint: (p) => gcdOf(p.m1, p.m2) === 1 && p.r1 < p.m1 && p.r2 < p.m2 && p.m1 * p.m2 >= 20,
-  derived: (p) => {
-    let n = p.r1;
-    while (n % p.m2 !== p.r2) n += p.m1;
-    return {
-      modulus: p.m1 * p.m2,
-      steps: (n - p.r1) / p.m1,
-      answer: n,
-    };
-  },
+  constraint: (p) => gcdOf(p.m1, p.m2) === 1 && p.r1 < p.m1 && p.r2 < p.m2 && p.m1 * p.m2 >= 20 && derive(p).answer !== p.r1 * p.r2,
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { abs: 0 } },
   statement: (p) =>

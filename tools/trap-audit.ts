@@ -11,6 +11,11 @@
  *
  *   npm run audit:traps
  *
+ * Covered: linear-algebra 10, statistics/sprt 1 (B22), number-theory 8 (B24) — 19 of 347.
+ * Everything else in the bank has a `commonTrap` no row has ever been written for, and
+ * tools/fixed-point-scan.ts is NOT a substitute: a generic corruption of the answer says
+ * nothing about whether that template's OWN named trap grades as correct.
+ *
  * Reading it: the CONTROL row must win 100%, or the harness is broken and every zero beneath it
  * is meaningless. minMiss is the closest LOSING draw in multiples of the grading tolerance — a
  * trap at 1.3x is a hit waiting for a wider draw.
@@ -115,6 +120,98 @@ audit("statistics/sprt-consecutive-wins", {
   "trap: floored instead": (_p, d) => Math.floor(d.exact ?? Math.log(d.bound) / Math.log(d.step)),
   "trap: beta dropped from the bound": (_p, d) => Math.ceil(Math.log(1 / d.alphaRate) / Math.log(d.step)),
   "trap: used the lower bound B": (_p, d) => Math.ceil(Math.log(d.betaRate / (1 - d.alphaRate)) / Math.log(d.step)),
+});
+
+/* ---- number-theory (B24) ----------------------------------------------------------------
+ * All eight grade at `abs: 0`, so a hit is exact equality and `minMiss` prints Infinity
+ * throughout — the `bound > 0` guard above skips it, which is why this family was audited
+ * first: there is no tolerance-band judgement to get wrong.
+ *
+ * Every CONTROL below recomputes the answer by a route the template does not use — a brute
+ * scan, the mirrored enumeration, an inverted formula. A control reading `d.answer` back is a
+ * tautology that always wins, and would make this harness's own claim ("a control below 100%
+ * voids its block") false.
+ *
+ * Traps the prose names that CANNOT be written as a row, recorded rather than invented:
+ *   crt-two-congruences         "expecting a solution when the two row sizes share a factor" —
+ *                               `constraint` excludes those draws, so there is no value to grade.
+ *   frobenius-fit-then-count    "enumerating the gaps by hand" — a method, not a number.
+ *   frobenius-largest-unpayable "hunting for a three-coin formula" — likewise.
+ */
+const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+const payable = (v: number, a: number, b: number) => {
+  for (let y = 0; y * b <= v; y++) if ((v - y * b) % a === 0) return true;
+  return false;
+};
+
+audit("number-theory/coprime-count-two-primes", {
+  "CONTROL brute coprime count": (p) => {
+    let n = 0;
+    for (let k = 1; k <= p.pr * p.qr * p.mult; k++) if (gcd(k, p.pr * p.qr) === 1) n++;
+    return n;
+  },
+  "trap: overlap never added back": (_p, d) => d.span - d.dropP - d.dropQ,
+  "trap: product less one, not both reduced": (p) => p.mult * (p.pr * p.qr - 1),
+});
+audit("number-theory/crt-two-congruences", {
+  "CONTROL brute scan of one period": (p) => {
+    for (let n = 0; n < p.m1 * p.m2; n++) if (n % p.m1 === p.r1 && n % p.m2 === p.r2) return n;
+    return NaN;
+  },
+  "trap: remainders added": (p) => p.r1 + p.r2,
+  "trap: remainders multiplied": (p) => p.r1 * p.r2,
+});
+audit("number-theory/diophantine-count-solutions", {
+  "CONTROL double scan over x and y": (p) => {
+    let n = 0;
+    for (let x = 0; x * p.a <= p.c; x++) for (let y = 0; y * p.b <= p.c; y++) if (x * p.a + y * p.b === p.c) n++;
+    return n;
+  },
+  "trap: load over the summed sizes": (p) => Math.floor(p.c / (p.a + p.b)),
+  "trap: using none of one size disallowed": (p) => {
+    let n = 0;
+    for (let x = 1; x * p.a <= p.c; x++) if ((p.c - x * p.a) % p.b === 0 && (p.c - x * p.a) / p.b >= 1) n++;
+    return n;
+  },
+});
+audit("number-theory/frobenius-fit-then-count", {
+  "CONTROL gaps by scan, coin by inversion": (p, d) => {
+    if (p.wanted === 2) return (d.largest + p.coinA) / (p.coinA - 1);
+    let n = 0;
+    for (let v = 0; v <= d.largest; v++) if (!payable(v, p.coinA, p.coinB)) n++;
+    return n;
+  },
+  "trap: gap divided by the known coin": (p, d) => (p.wanted === 2 ? d.largest / p.coinA : NaN),
+});
+audit("number-theory/frobenius-largest-unpayable", {
+  "CONTROL largest gap by downward scan": (p) => {
+    for (let v = p.coinA * p.coinB; v >= 0; v--) if (!payable(v, p.coinA, p.coinB)) return v;
+    return NaN;
+  },
+  "trap: only the smaller coin subtracted": (p) => p.coinA * p.coinB - p.coinA,
+  "trap: only the larger coin subtracted": (p) => p.coinA * p.coinB - p.coinB,
+});
+audit("number-theory/gcd-lcm-product", {
+  "CONTROL lcm from the two numbers themselves": (_p, d) => (d.first * d.second) / gcd(d.first, d.second),
+  "trap: the plain product as the lcm": (_p, d) => d.first * d.second,
+  "trap: the divisor taken out of both": (p) => p.m * p.n,
+});
+audit("number-theory/linear-congruence-solve", {
+  "CONTROL brute scan of x": (p) => {
+    for (let x = 0; x < p.m; x++) if ((p.a * x) % p.m === p.r) return x;
+    return NaN;
+  },
+  "trap: target divided by the multiplier": (p) => p.r / p.a,
+  "trap: the inverse reported unapplied": (_p, d) => d.inverse,
+});
+audit("number-theory/multiples-in-a-range", {
+  "CONTROL enumerate the whole range": (p) => {
+    let n = 0;
+    for (let k = 1; k <= p.upto; k++) if (k % p.by === 0 && k % p.notBy !== 0) n++;
+    return n;
+  },
+  "trap: second list struck out whole": (p) => Math.floor(p.upto / p.by) - Math.floor(p.upto / p.notBy),
+  "trap: product used for the overlap": (p) => Math.floor(p.upto / p.by) - Math.floor(p.upto / (p.by * p.notBy)),
 });
 
 console.log(broken === 0

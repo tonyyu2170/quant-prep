@@ -14,14 +14,27 @@ export const multiplesInARange: ProblemTemplate = {
   firms: [{ firm: "optiver", weight: 0.25 }, { firm: "imc", weight: 0.2 }, { firm: "akuna", weight: 0.15 }],
   source: { kind: "textbook", inspiration: "counting multiples by division, then removing the overlap" },
   params: {
-    upto: { choices: [200, 300, 400, 500, 600, 720, 840, 900, 1000, 1200] },
-    by: { choices: [3, 4, 6, 7, 8, 9, 11, 12] },
-    notBy: { choices: [5, 6, 8, 10, 13, 14, 15, 20] },
+    upto: { choices: [200, 250, 300, 360, 400, 480, 500, 600, 660, 720, 800, 840, 900, 960, 1000, 1200] },
+    // A PRIME `by` cannot survive the constraint at all: sharing a factor with a prime means
+    // being a multiple of it, which the divides-conjunct then rejects. 3, 7 and 11 contributed
+    // zero legal draws and only dragged the acceptance rate down, so they are composites now.
+    // 13 was dead in `notBy` for the same reason — nothing in `by` shares a factor with it.
+    by: { choices: [4, 6, 8, 9, 10, 12, 14, 15] },
+    notBy: { choices: [5, 6, 8, 10, 14, 15, 20, 21] },
   },
-  // The last conjunct guarantees the overlap is non-empty. Without it one draw in 610 has no
-  // number divisible by both, so nothing is struck out and the whole lesson is vacuous — and
-  // the prose's "removing the overlap leaves fewer" becomes false on the page.
-  constraint: (p) => p.by !== p.notBy && Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 1 && Math.floor(p.upto / p.by) - Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 5,
+  // The overlap conjunct guarantees it is non-empty. Without it one draw in 610 has no number
+  // divisible by both, so nothing is struck out and the whole lesson is vacuous — and the
+  // prose's "removing the overlap leaves fewer" becomes false on the page.
+  //
+  // The two conjuncts after `by !== notBy` are B24's, and both close a trap this template's own
+  // prose names (tools/trap-audit.ts). Coprime sizes make the product EQUAL the least common
+  // multiple, so "dividing by the product" was the right answer on 369 of 609 draws. And when
+  // `by` divides `notBy` every multiple of the second is already a multiple of the first, so
+  // striking the second list out whole removes nothing that was not counted — the trap wins
+  // outright, and the sentence describing it is false on the page. `upto` was widened from ten
+  // values to sixteen to pay for both: without that the space falls to 190 tuples and lands on
+  // `maxRepeat` 4, exactly the emittedSpread ceiling, one draw-shift from failing CI.
+  constraint: (p) => p.by !== p.notBy && gcdOf(p.by, p.notBy) > 1 && p.notBy % p.by !== 0 && Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 1 && Math.floor(p.upto / p.by) - Math.floor(p.upto / lcmOf(p.by, p.notBy)) >= 5,
   derived: (p) => {
     const shared = gcdOf(p.by, p.notBy);
     const both = lcmOf(p.by, p.notBy);

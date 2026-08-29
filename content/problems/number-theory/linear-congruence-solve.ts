@@ -1,9 +1,22 @@
-import type { ProblemTemplate } from "@qp/engine";
+import type { Params, ProblemTemplate } from "@qp/engine";
 import { fmtNum } from "../util";
 
 // Licensed module-level helper: `constraint` must reject multipliers sharing a factor with the
 // modulus, for which no inverse exists. `constraint` never sees `derived`.
 const gcdOf = (a: number, b: number): number => (b === 0 ? a : gcdOf(b, a % b));
+// Hoisted for the last two conjuncts. BOTH slips this template's prose names were live before
+// them (tools/trap-audit.ts): dividing the target by the multiplier landed on the answer for
+// 150 of 711 draws, and reporting the inverse unapplied for 74 — every r = 1 draw, where
+// (inverse * 1) mod m IS the inverse. `constraint` cannot see `derived`, so the chain is
+// hoisted here and both fields read this one function.
+const derive = (p: Params) => {
+  let inverse = 1;
+  while ((p.a * inverse) % p.m !== 1) inverse++;
+  // No zero branch is needed and none is written: the modulus shares no factor with either
+  // the inverse or r, and r is strictly between 0 and m, so the product is never a multiple
+  // of m. A `x === 0 ? m : x` guard here would be dead code pretending to be care.
+  return { inverse, product: p.a * inverse, raw: inverse * p.r, answer: (inverse * p.r) % p.m };
+};
 
 export const linearCongruenceSolve: ProblemTemplate = {
   id: "number-theory/linear-congruence-solve",
@@ -17,20 +30,8 @@ export const linearCongruenceSolve: ProblemTemplate = {
     m: { choices: [7, 11, 13, 17, 19, 23, 29, 31] },
     r: { choices: [1, 2, 3, 4, 5, 6, 8, 9, 10, 12] },
   },
-  constraint: (p) => gcdOf(p.a, p.m) === 1 && p.r < p.m && p.a < p.m,
-  derived: (p) => {
-    let inverse = 1;
-    while ((p.a * inverse) % p.m !== 1) inverse++;
-    // No zero branch is needed and none is written: the modulus shares no factor with either
-    // the inverse or r, and r is strictly between 0 and m, so the product is never a multiple
-    // of m. A `x === 0 ? m : x` guard here would be dead code pretending to be care.
-    return {
-      inverse,
-      product: p.a * inverse,
-      raw: inverse * p.r,
-      answer: (inverse * p.r) % p.m,
-    };
-  },
+  constraint: (p) => gcdOf(p.a, p.m) === 1 && p.r < p.m && p.a < p.m && derive(p).answer !== p.r / p.a && derive(p).answer !== derive(p).inverse,
+  derived: derive,
   answerKey: "answer",
   accepted: { tolerance: { abs: 0 } },
   statement: (p) =>

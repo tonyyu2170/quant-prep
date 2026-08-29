@@ -22,7 +22,10 @@ export const diophantineCountSolutions: ProblemTemplate = {
     b: { choices: [5, 7, 8, 9, 11, 13, 16, 17] },
     c: { choices: [120, 150, 180, 210, 240, 280, 300, 360, 420, 480] },
   },
-  constraint: (p) => p.a < p.b && gcdOf(p.a, p.b) === 1 && solutionCount(p.a, p.b, p.c) >= 1,
+  // The last conjunct keeps a boundary solution — none of one size — in the space. Without it,
+  // counting only mixed loads landed on the true count for 126 of 409 draws, which is exactly
+  // the slip `commonTrap` names (tools/trap-audit.ts).
+  constraint: (p) => p.a < p.b && gcdOf(p.a, p.b) === 1 && solutionCount(p.a, p.b, p.c) >= 1 && (p.c % p.a === 0 || p.c % p.b === 0),
   derived: (p) => ({
     // Both the true quotient and its floor. The gate reconciles a printed chain against what is
     // actually on the page, and `c/a = floor` is simply false — 180/11 is 16.36, not 16. There
